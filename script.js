@@ -332,34 +332,132 @@ function renderizarResultados() {
   if (!resultsGrid || !resultadoResumo) return;
 
   const params = new URLSearchParams(window.location.search);
-  const especialidade = params.get("especialidade") || "";
-  const cidade = params.get("cidade") || "";
+  const especialidade = (params.get("especialidade") || "").trim().toLowerCase();
+  const cidade = (params.get("cidade") || "").trim().toLowerCase();
 
-  const resultadosFiltrados = profissionais.filter((p) => {
+  const perfisSalvos =
+    JSON.parse(localStorage.getItem("physioProfiles")) || [];
+
+  const baseProfissionais = [
+    {
+      id: "demo-1",
+      nome: "Dra. Mariana Alves",
+      especialidade: "Fisioterapia Ortopédica",
+      cidade: "São Paulo",
+      atendimento: "Clínica e domiciliar",
+      telefone: "11999991111",
+      email: "mariana@example.com",
+      descricao: "Especialista em reabilitação musculoesquelética."
+    },
+    {
+      id: "demo-2",
+      nome: "Dr. Lucas Ferreira",
+      especialidade: "Fisioterapia Esportiva",
+      cidade: "Sorocaba",
+      atendimento: "Clínica",
+      telefone: "11999992222",
+      email: "lucas@example.com",
+      descricao: "Atendimento voltado à recuperação esportiva."
+    },
+    {
+      id: "demo-3",
+      nome: "Dra. Renata Moura",
+      especialidade: "Fisioterapia Neurológica",
+      cidade: "Sorocaba",
+      atendimento: "Domiciliar",
+      telefone: "11999993333",
+      email: "renata@example.com",
+      descricao: "Reabilitação funcional em condições neurológicas."
+    },
+    {
+      id: "demo-4",
+      nome: "Dra. Patrícia Lima",
+      especialidade: "Fisioterapia Respiratória",
+      cidade: "Itapetininga",
+      atendimento: "Clínica e domiciliar",
+      telefone: "11999994444",
+      email: "patricia@example.com",
+      descricao: "Suporte respiratório com foco em qualidade de vida."
+    },
+    {
+      id: "demo-5",
+      nome: "Dr. André Souza",
+      especialidade: "Fisioterapia Geriátrica",
+      cidade: "São Paulo",
+      atendimento: "Domiciliar",
+      telefone: "11999995555",
+      email: "andre@example.com",
+      descricao: "Atendimento para idosos com foco em mobilidade."
+    },
+    {
+      id: "demo-6",
+      nome: "Dra. Camila Rocha",
+      especialidade: "Pós-operatório",
+      cidade: "Itapetininga",
+      atendimento: "Clínica",
+      telefone: "11999996666",
+      email: "camila@example.com",
+      descricao: "Recuperação pós-cirúrgica estruturada."
+    }
+  ];
+
+  const todosProfissionais = [...baseProfissionais, ...perfisSalvos];
+
+  const resultadosFiltrados = todosProfissionais.filter((p) => {
+    const esp = (p.especialidade || "").trim().toLowerCase();
+    const cid = (p.cidade || "").trim().toLowerCase();
+
     return (
-      (!especialidade || p.especialidade === especialidade) &&
-      (!cidade || p.cidade === cidade)
+      (!especialidade || esp === especialidade) &&
+      (!cidade || cid === cidade)
     );
   });
 
   resultsGrid.innerHTML = "";
 
-  resultadosFiltrados.forEach((profissional, index) => {
+  if (resultadosFiltrados.length === 0) {
+    resultadoResumo.textContent = "Nenhum profissional encontrado para essa busca.";
+
+    resultsGrid.innerHTML = `
+      <article class="result-card">
+        <h3>Nenhum resultado</h3>
+        <p>Tente buscar outra especialidade ou cidade.</p>
+        <div class="card-actions">
+          <a href="buscar.html" class="btn btn-primary">Nova busca</a>
+          <a href="cadastro.html" class="btn btn-secondary">Cadastrar perfil</a>
+        </div>
+      </article>
+    `;
+    return;
+  }
+
+  resultadoResumo.textContent = `${resultadosFiltrados.length} profissional(is) encontrado(s).`;
+
+  resultadosFiltrados.forEach((profissional) => {
     const card = document.createElement("article");
     card.className = "result-card";
 
+    const whatsappLink = profissional.telefone
+      ? `https://wa.me/55${profissional.telefone.replace(/\D/g, "")}`
+      : "#";
+
     card.innerHTML = `
       <h3>${profissional.nome}</h3>
-
-      <p><strong>Especialidade:</strong> ${profissional.especialidade}</p>
-      <p><strong>Cidade:</strong> ${profissional.cidade}</p>
-      <p><strong>Atendimento:</strong> ${profissional.atendimento}</p>
+      <p><strong>Especialidade:</strong> ${profissional.especialidade || "-"}</p>
+      <p><strong>Cidade:</strong> ${profissional.cidade || "-"}</p>
+      <p><strong>Atendimento:</strong> ${profissional.atendimento || "-"}</p>
 
       <div class="card-actions">
-        <a href="profile.html?id=${index}" class="btn btn-secondary">Perfil</a>
-        <a href="${profissional.contato}" target="_blank" class="btn btn-primary">
-          Entrar em contato
+        <a href="profile.html?id=${profissional.id}" class="btn btn-secondary">
+          Ver perfil
         </a>
+        ${
+          profissional.telefone
+            ? `<a href="${whatsappLink}" target="_blank" class="btn btn-primary">
+                WhatsApp
+              </a>`
+            : ""
+        }
       </div>
     `;
 
