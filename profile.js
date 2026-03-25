@@ -148,20 +148,21 @@ else {
 // =========================
 // AVATAR CLICK (OPEN IMAGE)
 // =========================
-const avatar = container.querySelector(".clickable-avatar");
+const avatar = document.querySelector(".clickable-avatar");
 const modal = document.getElementById("imgModal");
 const modalImg = document.getElementById("imgModalContent");
 
 if (avatar && modal && modalImg) {
   avatar.addEventListener("click", (e) => {
-    e.preventDefault();   // 🔥 stops link behavior
-    e.stopPropagation();  // 🔥 stops bubbling
+    e.preventDefault();
+    e.stopPropagation();
 
-    modal.classList.add("show");
     modalImg.src = avatar.src;
+    modal.classList.add("show");
+  });
+
+  modal.addEventListener("click", () => {
+    modal.classList.remove("show");
+    modalImg.src = "";
   });
 }
-
-modal.addEventListener("click", () => {
-  modal.classList.remove("show");
-});

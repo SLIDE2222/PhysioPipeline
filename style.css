@@ -1373,3 +1373,31 @@ textarea {
 .profile-avatar-big a {
   pointer-events: none;
 }
+
+/* ===== IMAGE MODAL ===== */
+.img-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.85);
+
+  display: none; /* hidden by default */
+  align-items: center;
+  justify-content: center;
+
+  z-index: 9999;
+  padding: 20px;
+}
+
+.img-modal.show {
+  display: flex; /* THIS is what shows it */
+}
+
+#imgModalContent {
+  width: min(90vw, 420px);
+  height: min(90vw, 420px);
+
+  max-height: 80vh;
+  object-fit: cover;
+
+  border-radius: 28px; /* 🔥 rounded like you wanted */
+}
