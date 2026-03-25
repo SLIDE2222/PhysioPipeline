@@ -153,12 +153,15 @@ const modal = document.getElementById("imgModal");
 const modalImg = document.getElementById("imgModalContent");
 
 if (avatar && modal && modalImg) {
-  avatar.addEventListener("click", () => {
+  avatar.addEventListener("click", (e) => {
+    e.preventDefault();   // 🔥 stops link behavior
+    e.stopPropagation();  // 🔥 stops bubbling
+
     modal.classList.add("show");
     modalImg.src = avatar.src;
   });
-
-  modal.addEventListener("click", () => {
-    modal.classList.remove("show");
-  });
 }
+
+modal.addEventListener("click", () => {
+  modal.classList.remove("show");
+});
