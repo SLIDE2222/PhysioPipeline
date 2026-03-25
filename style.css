@@ -530,11 +530,6 @@ textarea {
 }
 
 @media (max-width: 640px) {
-  .section,
-  .page-section {
-    padding: 4rem 0;
-  }
-
   .hero-actions,
   .cta-actions {
     flex-direction: column;
@@ -1202,4 +1197,113 @@ textarea {
 
 .header.header-collapsed a[href="buscar.html"] {
   display: none;
+}
+
+/* =========================
+   PROFILE MOBILE FIX
+========================= */
+
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.profile-actions .btn {
+  width: auto;
+  flex: 0 0 auto;
+  min-height: 52px;
+  padding: 14px 18px;
+  border-radius: 18px;
+}
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 24px 0 40px;
+  }
+
+  .profile-card-full {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .profile-head-info h1 {
+    font-size: 1.45rem;
+    line-height: 1.15;
+  }
+
+  .profile-specialty,
+  .profile-city,
+  .profile-section p,
+  .profile-contact-list {
+    font-size: 0.98rem;
+  }
+
+  .profile-section {
+    padding-top: 18px;
+    margin-top: 18px;
+  }
+
+  .profile-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .profile-actions .btn,
+  .profile-actions .whatsapp-btn {
+    width: 100%;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 54px;
+    padding: 14px 16px;
+    border-radius: 18px;
+    text-align: center;
+  }
+
+  .whatsapp-btn {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-card-full {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .profile-avatar-big {
+    width: 64px;
+    height: 64px;
+    font-size: 1.6rem;
+  }
+
+  .profile-head-info h1 {
+    font-size: 1.3rem;
+  }
+
+  .profile-badges {
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .profile-badge {
+    font-size: 0.82rem;
+    padding: 7px 11px;
+  }
+
+  .profile-actions .btn,
+  .profile-actions .whatsapp-btn {
+    min-height: 50px;
+    font-size: 0.96rem;
+    border-radius: 16px;
+  }
 }
