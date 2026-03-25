@@ -368,6 +368,78 @@ function renderizarResultados() {
 }
 
 // =======================
+// MOBILE HEADER BEHAVIOR
+// =======================
+function setupMobileHeaderBehavior() {
+  const header = document.querySelector(".header");
+  const authArea = document.getElementById("authArea");
+
+  if (!header) return;
+
+  const isMobile = () => window.innerWidth <= 768;
+  const currentPage = window.location.pathname.split("/").pop() || "index.html";
+  const isHomePage =
+    currentPage === "index.html" || currentPage === "";
+
+  let lastScrollY = window.scrollY;
+
+  header.classList.add("header-mobile-hide");
+
+  function applyInitialState() {
+    if (!isMobile()) {
+      header.classList.remove("header-collapsed");
+      return;
+    }
+
+    // Hide auth/buttons by default on pages other than home
+    if (!isHomePage) {
+      header.classList.add("header-collapsed");
+    } else {
+      header.classList.remove("header-collapsed");
+    }
+  }
+
+  function handleScroll() {
+    if (!isMobile()) {
+      header.classList.remove("header-collapsed");
+      return;
+    }
+
+    const currentScrollY = window.scrollY;
+    const scrollingDown = currentScrollY > lastScrollY;
+    const scrolledEnough = currentScrollY > 40;
+
+    // On non-home pages, keep collapsed basically always
+    if (!isHomePage) {
+      header.classList.add("header-collapsed");
+      lastScrollY = currentScrollY;
+      return;
+    }
+
+    if (scrollingDown && scrolledEnough) {
+      header.classList.add("header-collapsed");
+    } else {
+      header.classList.remove("header-collapsed");
+    }
+
+    lastScrollY = currentScrollY;
+  }
+
+  applyInitialState();
+  window.addEventListener("scroll", handleScroll, { passive: true });
+  window.addEventListener("resize", applyInitialState);
+
+  // Optional: if auth area changes after login render, keep state correct
+  if (authArea) {
+    const observer = new MutationObserver(() => {
+      applyInitialState();
+    });
+
+    observer.observe(authArea, { childList: true, subtree: true });
+  }
+}
+
+// =======================
 // INIT
 // =======================
 setupAutocomplete("specialtyInput", "suggestionsList", especialidades);
@@ -378,3 +450,4 @@ setupCadastroForm();
 renderizarResultados();
 renderAuthArea();
 updateCTAProfileButton();
+setupMobileHeaderBehavior();

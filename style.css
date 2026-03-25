@@ -1093,3 +1093,32 @@ textarea {
 .card-actions .btn {
   flex: 1 1 180px;
 }
+
+/* =========================
+   MOBILE HEADER HIDE
+========================= */
+
+@media (max-width: 768px) {
+  .header-mobile-hide {
+    overflow: hidden;
+  }
+
+  .header-mobile-hide #authArea,
+  .header-mobile-hide .header-mobile-actions {
+    max-height: 220px;
+    opacity: 1;
+    transform: translateY(0);
+    transition: max-height 0.28s ease, opacity 0.22s ease, transform 0.22s ease,
+      margin 0.22s ease, padding 0.22s ease;
+  }
+
+  .header-mobile-hide.header-collapsed #authArea,
+  .header-mobile-hide.header-collapsed .header-mobile-actions {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-8px);
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none;
+  }
+}
