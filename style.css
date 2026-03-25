@@ -959,11 +959,6 @@ textarea {
     border-radius: 999px;
   }
 
-  .profile-actions .btn,
-  .card-actions .btn {
-    flex: 1 1 180px;
-  }
-
   .hero-stats {
     display: grid;
     grid-template-columns: 1fr;
@@ -1269,9 +1264,22 @@ textarea {
     text-align: center;
   }
 
-  .whatsapp-btn {
-    margin-top: 0;
-  }
+.whatsapp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 100%;
+  min-height: 56px;
+
+  padding: 14px 16px;
+
+  background: #2563eb; /* match your system */
+  color: white;
+
+  border-radius: 18px;
+  font-weight: 600;
+}
 }
 
 @media (max-width: 480px) {
@@ -1305,5 +1313,20 @@ textarea {
     min-height: 50px;
     font-size: 0.96rem;
     border-radius: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .profile-actions .btn,
+  .profile-actions .whatsapp-btn {
+    width: 100%;
+    flex: none;
+    min-height: 54px;
+    padding: 14px 16px;
+    border-radius: 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
