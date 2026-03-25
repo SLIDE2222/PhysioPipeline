@@ -1330,3 +1330,12 @@ textarea {
     justify-content: center;
   }
 }
+
+.clickable-avatar {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.clickable-avatar:active {
+  transform: scale(0.97);
+}

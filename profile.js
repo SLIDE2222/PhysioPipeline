@@ -36,9 +36,9 @@ if (!container) {
 else {
   const isOwner = loggedPhysioId === profissional.id;
 
-  const fotoHTML = profissional.foto
-    ? `<img src="${profissional.foto}" alt="${profissional.nome}">`
-    : `<span>${profissional.nome.charAt(0).toUpperCase()}</span>`;
+ const fotoHTML = profissional.foto
+  ? `<img src="${profissional.foto}" alt="${profissional.nome}" class="clickable-avatar">`
+  : `<span>${profissional.nome.charAt(0).toUpperCase()}</span>`;
 
   const whatsappLink = profissional.telefone
     ? `https://wa.me/55${profissional.telefone.replace(/\D/g, "")}`
@@ -143,4 +143,15 @@ else {
 
     </article>
   `;
+}
+
+// =========================
+// AVATAR CLICK (OPEN IMAGE)
+// =========================
+const avatar = container.querySelector(".clickable-avatar");
+
+if (avatar) {
+  avatar.addEventListener("click", () => {
+    window.open(avatar.src, "_blank");
+  });
 }
