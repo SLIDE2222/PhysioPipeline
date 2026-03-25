@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buscar fisioterapeuta | Physio Pipeline</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+</head>
+<body>
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
+
+      <nav class="nav-links">
+        <a href="index.html">Início</a>
+        <a href="cadastro.html">Cadastro</a>
+      </nav>
+
+      <div id="authArea" style="display:flex; gap:10px;"></div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <section class="page-section">
+      <div class="container narrow">
+        <div class="section-heading left">
+          <p class="eyebrow">Busca</p>
+          <h1>Encontre um fisioterapeuta</h1>
+          <p>Pesquise por especialidade e cidade. O básico que qualquer ser humano esperaria de um marketplace.</p>
+        </div>
+
+        <form class="form-card" id="buscaForm" action="resultados.html" method="GET">
+          <label for="buscarEspecialidade">Especialidade</label>
+          <div class="autocomplete-wrapper">
+            <input
+              type="text"
+              id="buscarEspecialidade"
+              name="especialidade"
+              placeholder="Ex.: ortopédica"
+              autocomplete="off"
+              required
+            />
+            <ul id="buscarSuggestions" class="suggestions-list"></ul>
+          </div>
+
+          <label for="buscarCidade">Cidade</label>
+          <div class="autocomplete-wrapper">
+            <input
+              type="text"
+              id="buscarCidade"
+              name="cidade"
+              placeholder="Ex.: São Paulo"
+              autocomplete="off"
+              required
+            />
+            <ul id="cidadeSuggestions" class="suggestions-list"></ul>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">
+            Pesquisar agora
+          </button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

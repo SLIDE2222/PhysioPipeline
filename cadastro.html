@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cadastrar perfil | Physio Pipeline</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+</head>
+<body>
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
+      <nav class="nav-links">
+        <a href="index.html">Início</a>
+        <a href="buscar.html">Buscar</a>
+      </nav>
+      <a href="buscar.html" class="btn btn-outline">Buscar</a>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <section class="page-section">
+      <div class="container narrow">
+        <div class="section-heading left">
+          <p class="eyebrow">Cadastro profissional</p>
+          <h1>Cadastre seu perfil</h1>
+          <p>Uma versão inicial funcional. Nada glamouroso, mas faz o trabalho.</p>
+        </div>
+
+        <form class="form-card" id="cadastroForm">
+          <label for="nome">Nome completo</label>
+          <input type="text" id="nome" name="nome" placeholder="Seu nome" required />
+
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" placeholder="seuemail@email.com" required />
+
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" name="senha" placeholder="Crie uma senha" required />
+
+          <label for="confirmarSenha">Confirmar senha</label>
+          <input
+            type="password"
+            id="confirmarSenha"
+            name="confirmarSenha"
+            placeholder="Repita a senha"
+            required
+          />
+          <p id="senhaErro" style="color:#b91c1c; font-size:0.9rem; margin-bottom: 12px;"></p>
+
+          <label for="telefone">Telefone</label>
+          <input type="text" id="telefone" name="telefone" placeholder="(11) 99999-9999" required />
+
+          <label for="foto">Foto do perfil</label>
+          <input type="file" id="foto" name="foto" accept="image/*" />
+
+          <div class="image-preview-wrapper">
+            <img id="fotoPreview" class="image-preview" alt="Prévia da foto" />
+          </div>
+
+          <label for="especialidadeCadastro">Especialidade</label>
+          <select id="especialidadeCadastro" name="especialidade" required>
+            <option value="" disabled selected>Selecione uma especialidade</option>
+            <option value="Fisioterapia Ortopédica">Fisioterapia Ortopédica</option>
+            <option value="Fisioterapia Esportiva">Fisioterapia Esportiva</option>
+            <option value="Fisioterapia Neurológica">Fisioterapia Neurológica</option>
+            <option value="Fisioterapia Geriátrica">Fisioterapia Geriátrica</option>
+            <option value="Fisioterapia Respiratória">Fisioterapia Respiratória</option>
+            <option value="Pós-operatório">Pós-operatório</option>
+          </select>
+
+          <label for="cidadeCadastro">Cidade</label>
+          <select id="cidadeCadastro" name="cidade" required>
+            <option value="" disabled selected>Selecione uma cidade</option>
+            <option value="São Paulo">São Paulo</option>
+            <option value="Sorocaba">Sorocaba</option>
+            <option value="Itapetininga">Itapetininga</option>
+          </select>
+
+          <label for="atendimento">Tipo de atendimento</label>
+          <select id="atendimento" name="atendimento" required>
+            <option value="" disabled selected>Selecione uma opção</option>
+            <option value="Clínica">Clínica</option>
+            <option value="Domiciliar">Domiciliar</option>
+            <option value="Clínica e domiciliar">Clínica e domiciliar</option>
+            <option value="Online">Online</option>
+          </select>
+
+          <label for="instagram">Instagram</label>
+          <input
+            type="url"
+            id="instagram"
+            name="instagram"
+            placeholder="https://instagram.com/seuperfil"
+          />
+
+          <label for="linkedin">LinkedIn</label>
+          <input
+            type="url"
+            id="linkedin"
+            name="linkedin"
+            placeholder="https://linkedin.com/in/seuperfil"
+          />
+
+          <label for="descricao">Descrição profissional</label>
+          <textarea
+            id="descricao"
+            name="descricao"
+            rows="5"
+            placeholder="Fale brevemente sobre sua atuação..."
+            required
+          ></textarea>
+
+          <button type="submit" class="btn btn-primary btn-block">
+            Criar conta e perfil
+          </button>
+
+          <p id="cadastroMensagem" class="success-message"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

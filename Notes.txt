@@ -1,0 +1,9 @@
+Dev Log — Physio Pipeline
+
+📅 Day 3/25/2026 — 1:11 AM
+
+Search page working (UI + form)
+Autocomplete structure added
+Auth system connected (login + profile flow)
+Profile system functional (view + edit + WhatsApp link)
+

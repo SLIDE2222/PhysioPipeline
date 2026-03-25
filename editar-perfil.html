@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editar perfil | PhysioPipeline</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+</head>
+<body>
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
+      <nav class="nav-links">
+        <a href="index.html">Início</a>
+        <a href="buscar.html">Buscar</a>
+      </nav>
+      <div id="authArea" style="display:flex; gap:10px;"></div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <section class="page-section">
+      <div class="container narrow">
+        <div class="section-heading left">
+          <p class="eyebrow">Editar perfil</p>
+          <h1>Atualize seu perfil</h1>
+          <p>Altere foto, contato e descrição sem ter que recriar tudo.</p>
+        </div>
+
+        <form class="form-card" id="editarPerfilForm">
+          <label for="telefone">Telefone</label>
+          <input type="text" id="telefone" name="telefone" placeholder="(11) 99999-9999" />
+
+          <label for="instagram">Instagram</label>
+          <input type="url" id="instagram" name="instagram" placeholder="https://instagram.com/seuperfil" />
+
+          <label for="linkedin">LinkedIn</label>
+          <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/seuperfil" />
+
+          <label for="foto">Foto do perfil</label>
+<input type="file" id="foto" name="foto" accept="image/*" />
+
+<div class="image-preview-wrapper">
+  <img id="fotoPreview" class="image-preview" alt="Prévia da foto" />
+</div>
+
+          <label for="descricao">Sobre você</label>
+          <textarea id="descricao" name="descricao" rows="5" placeholder="Fale brevemente sobre sua atuação..."></textarea>
+
+          <button type="submit" class="btn btn-primary btn-block">
+            Salvar alterações
+          </button>
+
+          <p id="editarMensagem" class="success-message"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+  <script src="editar-perfil.js"></script>
+</body>
+</html>
