@@ -91,6 +91,7 @@
 
 <input
   type="text"
+  id="buscarBairroIndex"
   name="bairro"
   placeholder="Bairro (opcional)"
   autocomplete="off"
@@ -305,6 +306,12 @@
     </div>
   </footer>
 
-  <script src="script.js"></script>
+<script src="script.js"></script>
+
+<script async
+  src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY&libraries=places&callback=initGoogle">
+</script>
+
+
 </body>
 </html>

@@ -697,42 +697,41 @@ updateCTAProfileButton();
 setupMobileHeaderBehavior();
 
 function setupGoogleBairroAutocomplete() {
-  const input = document.getElementById("buscarBairro");
-  const cidadeInput = document.getElementById("buscarCidade");
+  const inputs = [
+    document.getElementById("buscarBairro"),
+    document.getElementById("buscarBairroIndex")
+  ];
 
-  if (!input || typeof google === "undefined") return;
+  inputs.forEach((input) => {
+    if (!input) return;
 
-  const autocomplete = new google.maps.places.Autocomplete(input, {
-    types: ["(regions)"],
-    componentRestrictions: { country: "br" }
-  });
-
-  autocomplete.addListener("place_changed", () => {
-    const place = autocomplete.getPlace();
-
-    if (!place || !place.address_components) return;
-
-    let bairro = "";
-    let cidade = "";
-
-    place.address_components.forEach(component => {
-      if (component.types.includes("sublocality") || component.types.includes("neighborhood")) {
-        bairro = component.long_name;
-      }
-
-      if (component.types.includes("administrative_area_level_2")) {
-        cidade = component.long_name;
-      }
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+      types: ["(regions)"],
+      componentRestrictions: { country: "br" }
     });
 
-    // fill bairro
-    if (bairro) {
-      input.value = bairro;
-    }
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
 
-    // auto-fill city if empty (optional but sexy)
-    if (cidade && cidadeInput && !cidadeInput.value) {
-      cidadeInput.value = cidade;
-    }
+      if (!place || !place.address_components) return;
+
+      let bairro = "";
+
+      place.address_components.forEach(component => {
+        if (
+          component.types.includes("sublocality") ||
+          component.types.includes("neighborhood")
+        ) {
+          bairro = component.long_name;
+        }
+      });
+
+      if (bairro) input.value = bairro;
+    });
   });
+}
+
+function initGoogle() {
+  if (typeof google === "undefined") return;
+  setupGoogleBairroAutocomplete();
 }
