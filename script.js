@@ -10,6 +10,12 @@ const especialidades = [
   "Pós-operatório"
 ];
 
+const bairrosPorCidade = {
+  "são paulo": ["Moema", "Tatuapé", "Centro"],
+  "sorocaba": ["Campolim", "Centro", "Jardim Europa", "Vila Haro"],
+  "itapetininga": ["Centro", "Vila Barth", "Jardim Itália"]
+};
+
 const cidades = [
   "São Paulo",
   "Sorocaba",
@@ -689,3 +695,44 @@ renderizarResultados();
 renderAuthArea();
 updateCTAProfileButton();
 setupMobileHeaderBehavior();
+
+function setupGoogleBairroAutocomplete() {
+  const input = document.getElementById("buscarBairro");
+  const cidadeInput = document.getElementById("buscarCidade");
+
+  if (!input || typeof google === "undefined") return;
+
+  const autocomplete = new google.maps.places.Autocomplete(input, {
+    types: ["(regions)"],
+    componentRestrictions: { country: "br" }
+  });
+
+  autocomplete.addListener("place_changed", () => {
+    const place = autocomplete.getPlace();
+
+    if (!place || !place.address_components) return;
+
+    let bairro = "";
+    let cidade = "";
+
+    place.address_components.forEach(component => {
+      if (component.types.includes("sublocality") || component.types.includes("neighborhood")) {
+        bairro = component.long_name;
+      }
+
+      if (component.types.includes("administrative_area_level_2")) {
+        cidade = component.long_name;
+      }
+    });
+
+    // fill bairro
+    if (bairro) {
+      input.value = bairro;
+    }
+
+    // auto-fill city if empty (optional but sexy)
+    if (cidade && cidadeInput && !cidadeInput.value) {
+      cidadeInput.value = cidade;
+    }
+  });
+}
