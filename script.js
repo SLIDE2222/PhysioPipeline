@@ -732,6 +732,12 @@ function setupGoogleBairroAutocomplete() {
 }
 
 function initGoogle() {
-  if (typeof google === "undefined") return;
+  if (typeof google === "undefined") {
+    console.error("Google not loaded");
+    return;
+  }
+
+  console.log("Google loaded ✅");
+
   setupGoogleBairroAutocomplete();
 }
