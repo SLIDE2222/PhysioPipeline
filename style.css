@@ -1401,3 +1401,9 @@ textarea {
 
   border-radius: 28px; /* 🔥 rounded like you wanted */
 }
+
+.result-highlight {
+  margin-top: 0.75rem;
+  color: var(--primary);
+  font-weight: 700;
+}

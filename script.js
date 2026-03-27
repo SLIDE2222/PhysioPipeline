@@ -16,6 +16,14 @@ const cidades = [
   "Itapetininga"
 ];
 
+const bairros = [
+  "Tatuapé",
+  "Moema",
+  "Centro",
+  "Campolim",
+  "Vila Barth"
+];
+
 const profissionais = [
   {
     nome: "Dra. Mariana Alves",
@@ -277,6 +285,7 @@ function setupCadastroForm() {
       telefone: formData.get("telefone")?.trim() || "",
       especialidade: formData.get("especialidade")?.trim() || "",
       cidade: formData.get("cidade")?.trim() || "",
+      bairro: formData.get("bairro")?.trim() || "",
       atendimento: formData.get("atendimento")?.trim() || "",
       instagram: formData.get("instagram")?.trim() || "",
       linkedin: formData.get("linkedin")?.trim() || "",
@@ -334,6 +343,7 @@ function renderizarResultados() {
   const params = new URLSearchParams(window.location.search);
   const especialidade = (params.get("especialidade") || "").trim().toLowerCase();
   const cidade = (params.get("cidade") || "").trim().toLowerCase();
+  const bairro = (params.get("bairro") || "").trim().toLowerCase();
 
   const perfisSalvos =
     JSON.parse(localStorage.getItem("physioProfiles")) || [];
@@ -344,6 +354,7 @@ function renderizarResultados() {
       nome: "Dra. Mariana Alves",
       especialidade: "Fisioterapia Ortopédica",
       cidade: "São Paulo",
+      bairro: "Tatuapé",
       atendimento: "Clínica e domiciliar",
       telefone: "11999991111",
       email: "mariana@example.com",
@@ -354,6 +365,7 @@ function renderizarResultados() {
       nome: "Dr. Lucas Ferreira",
       especialidade: "Fisioterapia Esportiva",
       cidade: "Sorocaba",
+      bairro: "Campolim",
       atendimento: "Clínica",
       telefone: "11999992222",
       email: "lucas@example.com",
@@ -364,6 +376,7 @@ function renderizarResultados() {
       nome: "Dra. Renata Moura",
       especialidade: "Fisioterapia Neurológica",
       cidade: "Sorocaba",
+      bairro: "Centro",
       atendimento: "Domiciliar",
       telefone: "11999993333",
       email: "renata@example.com",
@@ -374,6 +387,7 @@ function renderizarResultados() {
       nome: "Dra. Patrícia Lima",
       especialidade: "Fisioterapia Respiratória",
       cidade: "Itapetininga",
+      bairro: "Centro",
       atendimento: "Clínica e domiciliar",
       telefone: "11999994444",
       email: "patricia@example.com",
@@ -384,6 +398,7 @@ function renderizarResultados() {
       nome: "Dr. André Souza",
       especialidade: "Fisioterapia Geriátrica",
       cidade: "São Paulo",
+      bairro: "Moema",
       atendimento: "Domiciliar",
       telefone: "11999995555",
       email: "andre@example.com",
@@ -394,6 +409,7 @@ function renderizarResultados() {
       nome: "Dra. Camila Rocha",
       especialidade: "Pós-operatório",
       cidade: "Itapetininga",
+      bairro: "Vila Barth",
       atendimento: "Clínica",
       telefone: "11999996666",
       email: "camila@example.com",
@@ -406,10 +422,12 @@ function renderizarResultados() {
   const resultadosFiltrados = todosProfissionais.filter((p) => {
     const esp = (p.especialidade || "").trim().toLowerCase();
     const cid = (p.cidade || "").trim().toLowerCase();
+    const bai = (p.bairro || "").trim().toLowerCase();
 
     return (
       (!especialidade || esp === especialidade) &&
-      (!cidade || cid === cidade)
+      (!cidade || cid === cidade) &&
+      (!bairro || bai.includes(bairro))
     );
   });
 
@@ -431,7 +449,15 @@ function renderizarResultados() {
     return;
   }
 
-  resultadoResumo.textContent = `${resultadosFiltrados.length} profissional(is) encontrado(s).`;
+  const filtrosAplicados = [
+    especialidade && `especialidade: ${params.get("especialidade")}`,
+    cidade && `cidade: ${params.get("cidade")}`,
+    bairro && `bairro: ${params.get("bairro")}`
+  ].filter(Boolean);
+
+  resultadoResumo.textContent = filtrosAplicados.length
+    ? `${resultadosFiltrados.length} profissional(is) encontrado(s) para ${filtrosAplicados.join(" • ")}.`
+    : `${resultadosFiltrados.length} profissional(is) encontrado(s).`;
 
   resultadosFiltrados.forEach((profissional) => {
     const card = document.createElement("article");
@@ -445,6 +471,7 @@ function renderizarResultados() {
       <h3>${profissional.nome}</h3>
       <p><strong>Especialidade:</strong> ${profissional.especialidade || "-"}</p>
       <p><strong>Cidade:</strong> ${profissional.cidade || "-"}</p>
+      <p><strong>Bairro:</strong> ${profissional.bairro || "-"}</p>
       <p><strong>Atendimento:</strong> ${profissional.atendimento || "-"}</p>
 
       <div class="card-actions">
@@ -543,6 +570,7 @@ function setupMobileHeaderBehavior() {
 setupAutocomplete("specialtyInput", "suggestionsList", especialidades);
 setupAutocomplete("buscarEspecialidade", "buscarSuggestions", especialidades);
 setupAutocomplete("buscarCidade", "cidadeSuggestions", cidades);
+setupAutocomplete("buscarBairro", "bairroSuggestions", bairros);
 
 setupCadastroForm();
 renderizarResultados();

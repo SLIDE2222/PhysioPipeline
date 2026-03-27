@@ -56,7 +56,7 @@ else {
         <div class="profile-head-info">
           <h1>${profissional.nome}</h1>
           <p class="profile-specialty">${profissional.especialidade}</p>
-          <p class="profile-city">${profissional.cidade}</p>
+          <p class="profile-city">${[profissional.cidade, profissional.bairro].filter(Boolean).join(" • ") || "Localização não informada"}</p>
         </div>
       </div>
 
@@ -70,6 +70,11 @@ else {
         ${
           profissional.cidade
             ? `<span class="profile-badge">${profissional.cidade}</span>`
+            : ""
+        }
+        ${
+          profissional.bairro
+            ? `<span class="profile-badge">${profissional.bairro}</span>`
             : ""
         }
       </div>
@@ -93,6 +98,7 @@ else {
         <div class="profile-contact-list">
           <p><strong>E-mail:</strong> ${profissional.email || "-"}</p>
           <p><strong>Telefone:</strong> ${profissional.telefone || "-"}</p>
+          <p><strong>Bairro:</strong> ${profissional.bairro || "-"}</p>
         </div>
 
         <div class="profile-actions">
