@@ -16,14 +16,6 @@ const cidades = [
   "Itapetininga"
 ];
 
-const bairros = [
-  "Tatuapé",
-  "Moema",
-  "Centro",
-  "Campolim",
-  "Vila Barth"
-];
-
 const profissionais = [
   {
     nome: "Dra. Mariana Alves",
@@ -127,6 +119,127 @@ function updateCTAProfileButton() {
     btn.href = "cadastro.html";
   }
 }
+
+// =======================
+// MAP HELPERS
+// =======================
+function toNumber(value) {
+  if (typeof value === "number") return value;
+  if (typeof value !== "string") return null;
+
+  const normalized = value.replace(",", ".").trim();
+  if (!normalized) return null;
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getCoordsForProfile(profile) {
+  const explicitLat = toNumber(profile?.lat);
+  const explicitLng = toNumber(profile?.lng);
+
+  if (explicitLat !== null && explicitLng !== null) {
+    return { lat: explicitLat, lng: explicitLng };
+  }
+
+  const cityKey = (profile?.cidade || "").trim().toLowerCase();
+  const base = cityCoordinates[cityKey];
+  if (!base) return null;
+
+  const bairro = (profile?.bairro || "").trim();
+  if (!bairro) return base;
+
+  let hash = 0;
+  for (let i = 0; i < bairro.length; i += 1) {
+    hash += bairro.charCodeAt(i) * (i + 1);
+  }
+
+  const latOffset = ((hash % 17) - 8) * 0.003;
+  const lngOffset = (((Math.floor(hash / 17)) % 17) - 8) * 0.003;
+
+  return {
+    lat: base.lat + latOffset,
+    lng: base.lng + lngOffset
+  };
+}
+
+function buildWhatsAppLink(phone) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (!digits) return "#";
+  const fullNumber = digits.startsWith("55") ? digits : `55${digits}`;
+  return `https://wa.me/${fullNumber}`;
+}
+
+function clearMapMarkers() {
+  resultsMarkers.forEach((marker) => marker.setMap(null));
+  resultsMarkers = [];
+}
+
+function renderPhysiosOnMap(filteredPhysios = null) {
+  if (!resultsMap || typeof google === "undefined") return;
+
+  clearMapMarkers();
+
+  const physios = Array.isArray(filteredPhysios) ? filteredPhysios : currentFilteredResults;
+  const bounds = new google.maps.LatLngBounds();
+  let hasMarkers = false;
+
+  physios.forEach((physio) => {
+    const coords = getCoordsForProfile(physio);
+    if (!coords) return;
+
+    const marker = new google.maps.Marker({
+      position: coords,
+      map: resultsMap,
+      title: physio.nome || "Fisioterapeuta"
+    });
+
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="max-width:220px; line-height:1.45;">
+          <strong>${physio.nome || "Fisioterapeuta"}</strong><br>
+          <span>${physio.especialidade || ""}</span><br>
+          <span>${physio.cidade || ""}${physio.bairro ? " - " + physio.bairro : ""}</span>
+        </div>
+      `
+    });
+
+    marker.addListener("click", () => {
+      infoWindow.open(resultsMap, marker);
+    });
+
+    resultsMarkers.push(marker);
+    bounds.extend(marker.getPosition());
+    hasMarkers = true;
+  });
+
+  if (hasMarkers) {
+    resultsMap.fitBounds(bounds);
+    if (physios.length === 1) {
+      resultsMap.setZoom(13);
+    }
+    return;
+  }
+
+  resultsMap.setCenter(cityCoordinates["campinas"]);
+  resultsMap.setZoom(7);
+}
+
+function initMap() {
+  const mapElement = document.getElementById("map");
+  if (!mapElement || typeof google === "undefined") return;
+
+  resultsMap = new google.maps.Map(mapElement, {
+    center: cityCoordinates["campinas"],
+    zoom: 7,
+    mapTypeControl: false,
+    streetViewControl: false
+  });
+
+  renderPhysiosOnMap(currentFilteredResults);
+}
+
+window.initMap = initMap;
 
 // =======================
 // AUTOCOMPLETE
@@ -287,6 +400,8 @@ function setupCadastroForm() {
       cidade: formData.get("cidade")?.trim() || "",
       bairro: formData.get("bairro")?.trim() || "",
       atendimento: formData.get("atendimento")?.trim() || "",
+      lat: toNumber(formData.get("lat")),
+      lng: toNumber(formData.get("lng")),
       instagram: formData.get("instagram")?.trim() || "",
       linkedin: formData.get("linkedin")?.trim() || "",
       foto: fotoBase64,
@@ -354,7 +469,7 @@ function renderizarResultados() {
       nome: "Dra. Mariana Alves",
       especialidade: "Fisioterapia Ortopédica",
       cidade: "São Paulo",
-      bairro: "Tatuapé",
+      bairro: "Moema",
       atendimento: "Clínica e domiciliar",
       telefone: "11999991111",
       email: "mariana@example.com",
@@ -398,7 +513,7 @@ function renderizarResultados() {
       nome: "Dr. André Souza",
       especialidade: "Fisioterapia Geriátrica",
       cidade: "São Paulo",
-      bairro: "Moema",
+      bairro: "Tatuapé",
       atendimento: "Domiciliar",
       telefone: "11999995555",
       email: "andre@example.com",
@@ -427,51 +542,47 @@ function renderizarResultados() {
     return (
       (!especialidade || esp === especialidade) &&
       (!cidade || cid === cidade) &&
-      (!bairro || bai.includes(bairro))
+      (!bairro || bai === bairro)
     );
   });
 
+  currentFilteredResults = resultadosFiltrados;
   resultsGrid.innerHTML = "";
 
   if (resultadosFiltrados.length === 0) {
     resultadoResumo.textContent = "Nenhum profissional encontrado para essa busca.";
+    clearMapMarkers();
 
     resultsGrid.innerHTML = `
       <article class="result-card">
         <h3>Nenhum resultado</h3>
-        <p>Tente buscar outra especialidade ou cidade.</p>
+        <p>Tente buscar outra especialidade, cidade ou bairro.</p>
         <div class="card-actions">
           <a href="buscar.html" class="btn btn-primary">Nova busca</a>
           <a href="cadastro.html" class="btn btn-secondary">Cadastrar perfil</a>
         </div>
       </article>
     `;
+
+    if (resultsMap) {
+      resultsMap.setCenter(cityCoordinates["campinas"]);
+      resultsMap.setZoom(7);
+    }
     return;
   }
 
-  const filtrosAplicados = [
-    especialidade && `especialidade: ${params.get("especialidade")}`,
-    cidade && `cidade: ${params.get("cidade")}`,
-    bairro && `bairro: ${params.get("bairro")}`
-  ].filter(Boolean);
-
-  resultadoResumo.textContent = filtrosAplicados.length
-    ? `${resultadosFiltrados.length} profissional(is) encontrado(s) para ${filtrosAplicados.join(" • ")}.`
-    : `${resultadosFiltrados.length} profissional(is) encontrado(s).`;
+  resultadoResumo.textContent = `${resultadosFiltrados.length} profissional(is) encontrado(s).`;
 
   resultadosFiltrados.forEach((profissional) => {
     const card = document.createElement("article");
     card.className = "result-card";
 
-    const whatsappLink = profissional.telefone
-      ? `https://wa.me/55${profissional.telefone.replace(/\D/g, "")}`
-      : "#";
+    const whatsappLink = buildWhatsAppLink(profissional.telefone);
 
     card.innerHTML = `
       <h3>${profissional.nome}</h3>
       <p><strong>Especialidade:</strong> ${profissional.especialidade || "-"}</p>
-      <p><strong>Cidade:</strong> ${profissional.cidade || "-"}</p>
-      <p><strong>Bairro:</strong> ${profissional.bairro || "-"}</p>
+      <p><strong>Cidade:</strong> ${profissional.cidade || "-"}${profissional.bairro ? " - " + profissional.bairro : ""}</p>
       <p><strong>Atendimento:</strong> ${profissional.atendimento || "-"}</p>
 
       <div class="card-actions">
@@ -490,6 +601,8 @@ function renderizarResultados() {
 
     resultsGrid.appendChild(card);
   });
+
+  renderPhysiosOnMap(resultadosFiltrados);
 }
 
 // =======================
@@ -570,7 +683,6 @@ function setupMobileHeaderBehavior() {
 setupAutocomplete("specialtyInput", "suggestionsList", especialidades);
 setupAutocomplete("buscarEspecialidade", "buscarSuggestions", especialidades);
 setupAutocomplete("buscarCidade", "cidadeSuggestions", cidades);
-setupAutocomplete("buscarBairro", "bairroSuggestions", bairros);
 
 setupCadastroForm();
 renderizarResultados();
