@@ -83,13 +83,17 @@
           </select>
 
           <label for="bairro">Bairro</label>
-          <input
-            type="text"
-            id="bairro"
-            name="bairro"
-            placeholder="Ex.: Tatuapé, Centro, Campolim"
-            required
-          />
+          <div class="autocomplete-wrapper">
+            <input
+              type="text"
+              id="bairro"
+              name="bairro"
+              placeholder="Ex.: Tatuapé, Centro, Campolim"
+              autocomplete="off"
+              required
+            />
+            <ul id="bairroCadastroSuggestions" class="suggestions-list"></ul>
+          </div>
 
           <label for="atendimento">Tipo de atendimento</label>
           <select id="atendimento" name="atendimento" required>

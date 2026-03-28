@@ -82,13 +82,14 @@
   <option value="Pós-operatório">Pós-operatório</option>
 </select>
 
-<select name="cidade" required>
+<select id="cityIndexSelect" name="cidade" required>
   <option value="" disabled selected>Selecione uma cidade</option>
   <option value="São Paulo">São Paulo</option>
   <option value="Sorocaba">Sorocaba</option>
   <option value="Itapetininga">Itapetininga</option>
 </select>
 
+<div class="autocomplete-wrapper">
 <input
   type="text"
   id="buscarBairroIndex"
@@ -96,6 +97,8 @@
   placeholder="Bairro (opcional)"
   autocomplete="off"
 />
+<ul id="bairroIndexSuggestions" class="suggestions-list"></ul>
+</div>
 
             <button type="submit" class="btn btn-primary btn-block">
               Pesquisar agora
@@ -308,9 +311,6 @@
 
 <script src="script.js"></script>
 
-<script async
- src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAxL4qiwfrDPgbYjQ_LhNnI0N7Esxqil_I&libraries=places&callback=initGoogle">
-</script>
 
 
 </body>

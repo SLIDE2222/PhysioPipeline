@@ -17,6 +17,7 @@ let fotoBase64 = perfil.foto || "";
 
 // preload existing values
 document.getElementById("telefone").value = perfil.telefone || "";
+document.getElementById("bairro").value = perfil.bairro || "";
 document.getElementById("instagram").value = perfil.instagram || "";
 document.getElementById("linkedin").value = perfil.linkedin || "";
 document.getElementById("descricao").value = perfil.descricao || "";
@@ -56,6 +57,7 @@ editarForm.addEventListener("submit", (event) => {
   perfis[perfilIndex] = {
     ...perfis[perfilIndex],
     telefone: document.getElementById("telefone").value.trim(),
+    bairro: document.getElementById("bairro").value.trim(),
     instagram: document.getElementById("instagram").value.trim(),
     linkedin: document.getElementById("linkedin").value.trim(),
     foto: fotoBase64,
