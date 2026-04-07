@@ -1,24 +1,10 @@
 const resetForm = document.getElementById('resetForm');
 const resetMensagem = document.getElementById('resetMensagem');
 
-async function fallbackRequestPasswordReset(email) {
-  const apiBase = window.PHYSIO_API_BASE || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3000' : 'https://physiopipeline-2.onrender.com');
-  const response = await fetch(`${apiBase}/auth/forgot-password`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email }),
-  });
-
-  const contentType = response.headers.get('content-type') || '';
-  const data = contentType.includes('application/json') ? await response.json() : {};
-
-  if (!response.ok) {
-    throw new Error(data.message || 'Não foi possível enviar o link de recuperação.');
-  }
-
-  return data;
+function setResetMessage(text, color) {
+  if (!resetMensagem) return;
+  resetMensagem.textContent = text;
+  resetMensagem.style.color = color;
 }
 
 if (resetForm) {
@@ -29,23 +15,22 @@ if (resetForm) {
     const submitBtn = resetForm.querySelector('button[type="submit"]');
 
     if (submitBtn) submitBtn.disabled = true;
-    resetMensagem.textContent = 'Enviando link...';
-    resetMensagem.style.color = '#2563eb';
+    setResetMessage('Enviando link...', '#2563eb');
 
     try {
-      const api = window.physioApi;
-      if (api && typeof api.requestPasswordReset === 'function') {
-        await api.requestPasswordReset(email);
-      } else {
-        await fallbackRequestPasswordReset(email);
+      if (!window.physioApi || typeof window.physioApi.requestPasswordReset !== 'function') {
+        throw new Error('API de recuperação não está disponível.');
       }
 
-      resetMensagem.textContent = 'Link de recuperação enviado com sucesso.';
-      resetMensagem.style.color = '#166534';
+      await window.physioApi.requestPasswordReset(email);
+
+      setResetMessage('Se o e-mail existir, o link de recuperação foi enviado.', '#166534');
       resetForm.reset();
     } catch (error) {
-      resetMensagem.textContent = error.message || 'Não foi possível enviar o link de recuperação.';
-      resetMensagem.style.color = '#b91c1c';
+      setResetMessage(
+        error.message || 'Não foi possível enviar o link de recuperação.',
+        '#b91c1c'
+      );
     } finally {
       if (submitBtn) submitBtn.disabled = false;
     }
