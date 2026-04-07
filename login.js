@@ -11,7 +11,7 @@ function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function confirmSession(retries = 4, delay = 250) {
+async function confirmSession(retries = 2, delay = 300) {
   let lastError = null;
 
   for (let attempt = 0; attempt < retries; attempt += 1) {
@@ -25,7 +25,7 @@ async function confirmSession(retries = 4, delay = 250) {
     }
   }
 
-  throw lastError || new Error('Não foi possível confirmar a sessão.');
+  return null;
 }
 
 if (loginForm) {
@@ -41,6 +41,8 @@ if (loginForm) {
 
     try {
       await window.physioApi.login(email, senha);
+
+      // Try to confirm the session, but do not block the user forever if /auth/me is slow.
       await confirmSession();
 
       setLoginMessage('Login realizado com sucesso!', '#166534');
@@ -50,14 +52,7 @@ if (loginForm) {
       }, 500);
     } catch (error) {
       const message = error?.message || 'Erro ao fazer login.';
-      const isSessionIssue = message.toLowerCase().includes('authentication required');
-
-      setLoginMessage(
-        isSessionIssue
-          ? 'A senha foi aceita, mas a sessão não foi confirmada. Tente novamente em alguns segundos.'
-          : message,
-        '#b91c1c'
-      );
+      setLoginMessage(message, '#b91c1c');
     } finally {
       if (submitBtn) submitBtn.disabled = false;
     }

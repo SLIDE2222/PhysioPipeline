@@ -1,37 +1,46 @@
 (function () {
-  const isLocalHost =
-    window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1';
-
-  const API_BASE =
-    window.PHYSIO_API_BASE ||
-    (isLocalHost ? 'http://localhost:3000' : 'https://physiopipeline.onrender.com');
+  const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const API_BASE = window.PHYSIO_API_BASE || (isLocalHost ? 'http://localhost:3000' : 'https://physiopipeline.onrender.com');
+  const REQUEST_TIMEOUT_MS = 12000;
 
   async function request(path, options = {}) {
-    const response = await fetch(`${API_BASE}${path}`, {
-      method: options.method || 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options.headers || {}),
-      },
-      credentials: 'include',
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), options.timeoutMs || REQUEST_TIMEOUT_MS);
 
-    if (response.status === 204) {
-      return {};
-    }
+    try {
+      const response = await fetch(`${API_BASE}${path}`, {
+        method: options.method || 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {}),
+        },
+        credentials: 'include',
+        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+        signal: controller.signal,
+      });
 
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const error = new Error(data.message || 'Request failed.');
-      error.status = response.status;
-      error.code = data.code;
-      error.data = data;
+      if (response.status === 204) {
+        return {};
+      }
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(data.message || 'Request failed.');
+        error.status = response.status;
+        error.code = data.code;
+        error.data = data;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('A requisição demorou demais. Tente novamente em alguns segundos.');
+      }
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    return data;
   }
 
   function normalizeProfile(profile) {
@@ -77,7 +86,7 @@
       return request('/auth/logout', { method: 'POST' });
     },
     me() {
-      return request('/auth/me');
+      return request('/auth/me', { timeoutMs: 5000 });
     },
     fetchMyProfile() {
       return request('/profiles/me').then((data) => normalizeProfile(data.profile));
