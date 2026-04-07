@@ -2,7 +2,8 @@ const resetForm = document.getElementById('resetForm');
 const resetMensagem = document.getElementById('resetMensagem');
 
 async function fallbackRequestPasswordReset(email) {
-  const response = await fetch('http://localhost:3000/auth/forgot-password', {
+  const apiBase = window.PHYSIO_API_BASE || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3000' : 'https://physiopipeline.onrender.com');
+  const response = await fetch(`${apiBase}/auth/forgot-password`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

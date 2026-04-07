@@ -5,7 +5,7 @@ const router = express.Router();
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-const publicAppUrl = process.env.PUBLIC_APP_URL || 'http://127.0.0.1:5500';
+const publicAppUrl = process.env.PUBLIC_APP_URL || 'https://physio-pipeline.vercel.app';
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
@@ -33,7 +33,7 @@ router.post('/forgot-password', async (req, res) => {
 
 router.post('/update-password', async (req, res) => {
   try {
-    const accessToken = String(req.body?.accessToken || '').trim();
+    const accessToken = String(req.body?.accessToken || req.body?.token || '').trim();
     const password = String(req.body?.password || '');
 
     if (!accessToken || !password) {

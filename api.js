@@ -1,5 +1,11 @@
 (function () {
-  const API_BASE = window.PHYSIO_API_BASE || 'http://localhost:3000';
+  const isLocalHost =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1';
+
+  const API_BASE =
+    window.PHYSIO_API_BASE ||
+    (isLocalHost ? 'http://localhost:3000' : 'https://physiopipeline.onrender.com');
 
   async function request(path, options = {}) {
     const response = await fetch(`${API_BASE}${path}`, {
@@ -79,12 +85,18 @@
     fetchProfile(id) {
       return request(`/profiles/${id}`).then((data) => normalizeProfile(data.profile || data));
     },
+    requestPasswordReset(email) {
+      return request('/auth/forgot-password', {
+        method: 'POST',
+        body: { email },
+      });
+    },
     normalizeProfile,
     clearStoredAuth,
     updatePassword({ token, password }) {
       return request('/auth/update-password', {
         method: 'POST',
-        body: { token, password },
+        body: { accessToken: token, token, password },
       });
     },
   };
