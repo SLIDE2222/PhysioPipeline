@@ -1,174 +1,148 @@
-const container = document.getElementById("profileContainer");
+const profileContainer = document.getElementById('profileContainer');
 
-// GET ID FROM URL
-const params = new URLSearchParams(window.location.search);
-const profileId = params.get("id");
-
-// GET DATA
-const perfisSalvos = JSON.parse(localStorage.getItem("physioProfiles")) || [];
-const loggedPhysioId = localStorage.getItem("loggedPhysioId");
-
-// FIND PROFILE
-const profissional = perfisSalvos.find((perfil) => perfil.id === profileId);
-
-// =========================
-// NOT FOUND
-// =========================
-if (!container) {
-  console.error("Elemento #profileContainer não encontrado.");
-} else if (!profissional) {
-  container.innerHTML = `
-    <article class="profile-card-full">
-      <h2>Perfil não encontrado</h2>
-      <p>Esse perfil não existe ou ainda não foi criado.</p>
-
-      <div class="profile-actions">
-        <a href="cadastro.html" class="btn btn-primary">Cadastrar perfil</a>
-        <a href="buscar.html" class="btn btn-secondary">Voltar para busca</a>
-      </div>
-    </article>
-  `;
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
-// =========================
-// PROFILE FOUND
-// =========================
-else {
-  const isOwner = loggedPhysioId === profissional.id;
+function buildWhatsAppLink(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return '#';
+  return `https://wa.me/55${digits}`;
+}
 
- const fotoHTML = profissional.foto
-  ? `<img src="${profissional.foto}" alt="${profissional.nome}" class="clickable-avatar">`
-  : `<span>${profissional.nome.charAt(0).toUpperCase()}</span>`;
+function getNeighborhoodBadge(profissional) {
+  return [profissional.cidade, profissional.bairro]
+    .filter(Boolean)
+    .join(' • ') || 'Localização não informada';
+}
 
-  const whatsappLink = profissional.telefone
-    ? `https://wa.me/55${profissional.telefone.replace(/\D/g, "")}`
-    : "#";
+async function renderProfilePage() {
+  if (!profileContainer) return;
 
-  container.innerHTML = `
+  const params = new URLSearchParams(window.location.search);
+  const profileId = params.get('id');
+
+  if (!profileId) {
+    profileContainer.innerHTML = `
+      <article class="profile-card-full">
+        <h2>Perfil não encontrado</h2>
+        <p>Nenhum id de perfil foi informado.</p>
+      </article>
+    `;
+    return;
+  }
+
+  profileContainer.innerHTML = `
     <article class="profile-card-full">
+      <p>Carregando perfil...</p>
+    </article>
+  `;
 
-      <!-- HEADER -->
-      <div class="profile-header">
-        <div class="profile-avatar-big">
-          ${fotoHTML}
+  try {
+    const profissional = await window.physioApi.fetchProfile(profileId);
+
+    if (!profissional) {
+      throw new Error('Esse perfil não existe ou não pôde ser carregado.');
+    }
+
+    const loggedUser = await (window.getLoggedUser
+      ? window.getLoggedUser()
+      : Promise.resolve(null));
+
+    const linkedProfileId = loggedUser?.profile?.id || null;
+    const isOwner = linkedProfileId === profissional.id;
+
+    const fotoHTML = profissional.foto
+      ? `<img src="${escapeHtml(profissional.foto)}" alt="${escapeHtml(profissional.nome)}" class="clickable-avatar">`
+      : `<span>${escapeHtml((profissional.nome || '?').charAt(0).toUpperCase())}</span>`;
+
+    const whatsappLink = buildWhatsAppLink(profissional.telefone);
+
+    const showClaimButton =
+      !isOwner &&
+      !profissional.isClaimed &&
+      !profissional.ownerUserId;
+
+    profileContainer.innerHTML = `
+      <article class="profile-card-full">
+        <div class="profile-header">
+          <div class="profile-avatar-big">${fotoHTML}</div>
+          <div class="profile-head-info">
+            <h1>${escapeHtml(profissional.nome)}</h1>
+            <p class="profile-specialty">${escapeHtml(profissional.especialidade || '-')}</p>
+            <p class="profile-city">${escapeHtml(getNeighborhoodBadge(profissional))}</p>
+          </div>
         </div>
 
-        <div class="profile-head-info">
-          <h1>${profissional.nome}</h1>
-          <p class="profile-specialty">${profissional.especialidade}</p>
-          <p class="profile-city">${[profissional.cidade, profissional.bairro].filter(Boolean).join(" • ") || "Localização não informada"}</p>
-        </div>
-      </div>
-
-      <!-- BADGES -->
-      <div class="profile-badges">
-        ${
-          profissional.atendimento
-            ? `<span class="profile-badge">${profissional.atendimento}</span>`
-            : ""
-        }
-        ${
-          profissional.cidade
-            ? `<span class="profile-badge">${profissional.cidade}</span>`
-            : ""
-        }
-        ${
-          profissional.bairro
-            ? `<span class="profile-badge">${profissional.bairro}</span>`
-            : ""
-        }
-      </div>
-
-      <!-- ABOUT -->
-      <section class="profile-section">
-        <h3>Sobre</h3>
-        <p>
-          ${
-            profissional.descricao
-              ? profissional.descricao
-              : "Esse profissional ainda não adicionou uma descrição."
-          }
-        </p>
-      </section>
-
-      <!-- CONTACT -->
-      <section class="profile-section">
-        <h3>Contato</h3>
-
-        <div class="profile-contact-list">
-          <p><strong>E-mail:</strong> ${profissional.email || "-"}</p>
-          <p><strong>Telefone:</strong> ${profissional.telefone || "-"}</p>
-          <p><strong>Bairro:</strong> ${profissional.bairro || "-"}</p>
+        <div class="profile-badges">
+          ${profissional.atendimento ? `<span class="profile-badge">${escapeHtml(profissional.atendimento)}</span>` : ''}
+          ${profissional.cidade ? `<span class="profile-badge">${escapeHtml(profissional.cidade)}</span>` : ''}
+          ${profissional.bairro ? `<span class="profile-badge">${escapeHtml(profissional.bairro)}</span>` : ''}
+          ${profissional.isClaimed ? '<span class="profile-badge">Perfil reivindicado</span>' : '<span class="profile-badge">Perfil público</span>'}
         </div>
 
+        <section class="profile-section">
+          <h3>Sobre</h3>
+          <p>${escapeHtml(profissional.descricao || 'Esse profissional ainda não adicionou uma descrição.')}</p>
+        </section>
+
+        <section class="profile-section">
+          <h3>Contato</h3>
+          <div class="profile-contact-list">
+            <p><strong>E-mail:</strong> ${escapeHtml(profissional.email || '-')}</p>
+            <p><strong>Telefone:</strong> ${escapeHtml(profissional.telefone || '-')}</p>
+            <p><strong>Bairro:</strong> ${escapeHtml(profissional.bairro || '-')}</p>
+          </div>
+
+          <div class="profile-actions">
+            ${profissional.telefone ? `<a href="${whatsappLink}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Falar no WhatsApp</a>` : ''}
+            ${profissional.instagram ? `<a href="${escapeHtml(profissional.instagram)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">📸 Instagram</a>` : ''}
+            ${profissional.linkedin ? `<a href="${escapeHtml(profissional.linkedin)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">💼 LinkedIn</a>` : ''}
+            ${isOwner ? `<a href="editar-perfil.html" class="btn btn-secondary">Editar perfil</a>` : ''}
+            ${showClaimButton ? `<a href="claim-profile.html?id=${encodeURIComponent(profissional.id)}" class="btn btn-secondary">Claim this profile</a>` : ''}
+            <a href="buscar.html" class="btn btn-secondary">Voltar</a>
+          </div>
+        </section>
+      </article>
+    `;
+
+    setupImageModal();
+  } catch (error) {
+    profileContainer.innerHTML = `
+      <article class="profile-card-full">
+        <h2>Perfil não encontrado</h2>
+        <p>${escapeHtml(error.message || 'Esse perfil não existe ou não pôde ser carregado.')}</p>
         <div class="profile-actions">
-
-          <!-- WHATSAPP -->
-          ${
-            profissional.telefone
-              ? `<a href="${whatsappLink}" target="_blank" class="btn btn-primary">
-                  Falar no WhatsApp
-                </a>`
-              : ""
-          }
-
-          <!-- INSTAGRAM -->
-          ${
-            profissional.instagram
-              ? `<a href="${profissional.instagram}" target="_blank" class="btn btn-outline">
-                  📸 Instagram
-                </a>`
-              : ""
-          }
-
-          <!-- LINKEDIN -->
-          ${
-            profissional.linkedin
-              ? `<a href="${profissional.linkedin}" target="_blank" class="btn btn-outline">
-                  💼 LinkedIn
-                </a>`
-              : ""
-          }
-
-          <!-- EDIT (ONLY OWNER) -->
-          ${
-            isOwner
-              ? `<a href="editar-perfil.html" class="btn btn-secondary">
-                  ✏️ Editar perfil
-                </a>`
-              : ""
-          }
-
-          <!-- BACK -->
-          <a href="buscar.html" class="btn btn-secondary">
-            Voltar
-          </a>
-
+          <a href="buscar.html" class="btn btn-secondary">Voltar para busca</a>
         </div>
-      </section>
-
-    </article>
-  `;
+      </article>
+    `;
+  }
 }
 
-// =========================
-// AVATAR CLICK (OPEN IMAGE)
-// =========================
-const avatar = document.querySelector(".clickable-avatar");
-const modal = document.getElementById("imgModal");
-const modalImg = document.getElementById("imgModalContent");
+function setupImageModal() {
+  const modal = document.getElementById('imgModal');
+  const modalContent = document.getElementById('imgModalContent');
+  const clickableAvatar = document.querySelector('.clickable-avatar');
 
-if (avatar && modal && modalImg) {
-  avatar.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  if (!modal || !modalContent || !clickableAvatar) return;
 
-    modalImg.src = avatar.src;
-    modal.classList.add("show");
+  clickableAvatar.style.cursor = 'zoom-in';
+
+  clickableAvatar.addEventListener('click', () => {
+    modalContent.src = clickableAvatar.src;
+    modal.style.display = 'flex';
   });
 
-  modal.addEventListener("click", () => {
-    modal.classList.remove("show");
-    modalImg.src = "";
+  modal.addEventListener('click', () => {
+    modal.style.display = 'none';
+    modalContent.src = '';
   });
 }
+
+renderProfilePage();

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Perfil | PhysioPipeline</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=fullprofile1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -22,7 +22,7 @@
         <a href="buscar.html">Buscar</a>
       </nav>
 
-      <a href="buscar.html" class="btn btn-outline">Buscar</a>
+      <div id="authArea" style="display:flex; gap:10px; align-items:center;"></div>
     </div>
   </header>
 
@@ -32,10 +32,12 @@
     </div>
   </main>
 
-  <div id="imgModal" class="img-modal">
+  <div id="imgModal" class="img-modal" style="display:none;">
     <img id="imgModalContent" alt="Foto ampliada">
   </div>
 
-  <script src="profile.js"></script>
+  <script src="api.js?v=fullprofile2"></script>
+  <script src="script.js?v=fullprofile2"></script>
+  <script src="profile.js?v=fullprofile2"></script>
 </body>
 </html>

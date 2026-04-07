@@ -1,0 +1,31 @@
+Stack:
+
+Node.js
+Express
+PostgreSQL or Supabase Postgres
+Prisma ORM
+bcrypt for password hashing
+JWT or session cookies for auth
+Nodemailer or Resend for email
+
+
+
+---------------------------------------------------------------
+
+**Dev Log — 2:23 PM** 3/28/2026
+
+* Set up Node.js backend (Express)
+* Connected to Supabase (PostgreSQL)
+* Configured Prisma ORM + database sync
+* Fixed environment variables (.env)
+* Solved CORS issues between frontend and backend
+* Set up frontend server (Python HTTP)
+* Connected frontend to backend API (fetch)
+* Implemented auth (register/login flow)
+* Fixed request size limit for image upload (10mb)
+* Verified data is being stored in Supabase
+
+**Status:** Full stack app running locally (frontend + backend + database connected)
+
+
+--------------------------------------------------------------------------

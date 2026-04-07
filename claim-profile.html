@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claim profile | PhysioPipeline</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+</head>
+<body>
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
+      <nav class="nav-links">
+        <a href="index.html">Início</a>
+        <a href="buscar.html">Buscar</a>
+      </nav>
+      <a href="buscar.html" class="btn btn-outline">Buscar</a>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <section class="page-section">
+      <div class="container narrow">
+        <div class="section-heading left">
+          <p class="eyebrow">Claim profile</p>
+          <h1>Reivindique este perfil</h1>
+          <p id="claimIntro">Envie seu e-mail, adicione seu diploma e autorize o contato para pedir a posse deste perfil.</p>
+        </div>
+
+        <article id="claimProfilePreview" class="claim-profile-preview"></article>
+
+        <form class="form-card" id="claimForm">
+          <label for="claimEmail">E-mail</label>
+          <input type="email" id="claimEmail" name="email" placeholder="voce@email.com" required />
+
+          <label for="claimDegreeFile">Adicione seu diploma</label>
+          <input type="file" id="claimDegreeFile" name="degreeFile" accept="application/pdf" required />
+          <p class="form-hint">Envie o diploma em PDF. O pedido será mandado para physiopipelinefisio@gmail.com.</p>
+
+          <div class="claim-consent">
+            <input type="checkbox" id="claimConsentContact" name="consentContact" required />
+            <label for="claimConsentContact">Autorizo receber contato por e-mail sobre esta reivindicação.</label>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">
+            Enviar claim
+          </button>
+
+          <p id="claimMensagem" class="success-message"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+ <script src="api.js?v=nostorage1"></script>
+  <script src="script.js?v=loginfix9"></script>
+  <script src="claim-profile.js"></script>
+</body>
+</html>

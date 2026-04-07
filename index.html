@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Physio Pipeline | Encontre o fisioterapeuta ideal</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=myprofilefix5" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -24,7 +24,7 @@
         <a href="#especialidades">Especialidades</a>
       </nav>
 
- <div id="authArea" style="display:flex; gap:10px;"></div>
+      <div id="authArea" style="display:flex; gap:10px; align-items:center;"></div>
     </div>
   </header>
 
@@ -40,13 +40,8 @@
           </p>
 
           <div class="hero-actions">
-          <a href="buscar.html" class="btn btn-primary btn-hero">
-  Buscar fisioterapeuta
-</a>
-
-<a href="cadastro.html" class="btn btn-secondary btn-hero">
-  Cadastrar meu perfil
-</a>
+            <a href="buscar.html" class="btn btn-primary btn-hero">Buscar fisioterapeuta</a>
+            <a href="cadastro.html" id="heroProfileBtn" class="btn btn-secondary btn-hero">Cadastrar meu perfil</a>
           </div>
 
           <div class="hero-stats">
@@ -72,200 +67,46 @@
               Digite a área que você procura e veja sugestões automaticamente.
             </p>
 
-        <select id="specialtyInput" name="especialidade" required>
-  <option value="" disabled selected>Selecione uma especialidade</option>
-  <option value="Fisioterapia Ortopédica">Fisioterapia Ortopédica</option>
-  <option value="Fisioterapia Esportiva">Fisioterapia Esportiva</option>
-  <option value="Fisioterapia Neurológica">Fisioterapia Neurológica</option>
-  <option value="Fisioterapia Geriátrica">Fisioterapia Geriátrica</option>
-  <option value="Fisioterapia Respiratória">Fisioterapia Respiratória</option>
-  <option value="Pós-operatório">Pós-operatório</option>
-</select>
+            <div class="autocomplete-wrapper">
+              <input
+                type="text"
+                id="specialtyInput"
+                name="especialidade"
+                placeholder="Digite uma especialidade"
+                autocomplete="off"
+                required
+              />
+              <ul id="specialtySuggestions" class="suggestions-list"></ul>
+            </div>
 
-<select id="cityIndexSelect" name="cidade" required>
-  <option value="" disabled selected>Selecione uma cidade</option>
-  <option value="São Paulo">São Paulo</option>
-  <option value="Sorocaba">Sorocaba</option>
-  <option value="Itapetininga">Itapetininga</option>
-</select>
+            <div class="autocomplete-wrapper">
+              <input
+                type="text"
+                id="cityIndexSelect"
+                name="cidade"
+                placeholder="Digite uma cidade"
+                autocomplete="off"
+                required
+              />
+              <ul id="cityIndexSuggestions" class="suggestions-list"></ul>
+            </div>
 
-<div class="autocomplete-wrapper">
-<input
-  type="text"
-  id="buscarBairroIndex"
-  name="bairro"
-  placeholder="Bairro (opcional)"
-  autocomplete="off"
-/>
-<ul id="bairroIndexSuggestions" class="suggestions-list"></ul>
-</div>
+            <div class="autocomplete-wrapper">
+              <input
+                type="text"
+                id="buscarBairroIndex"
+                name="bairro"
+                placeholder="Selecione ou digite uma cidade primeiro"
+                autocomplete="off"
+                disabled
+              />
+              <ul id="bairroIndexSuggestions" class="suggestions-list"></ul>
+            </div>
 
             <button type="submit" class="btn btn-primary btn-block">
               Pesquisar agora
             </button>
           </form>
-        </div>
-      </div>
-    </section>
-
-    <section class="brands">
-      <div class="container brands-row">
-        <span>Feito para pacientes, profissionais e clínicas</span>
-        <div class="brand-list">
-          <div class="brand-pill">Ortopedia</div>
-          <div class="brand-pill">Neurologia</div>
-          <div class="brand-pill">Esportiva</div>
-          <div class="brand-pill">Reabilitação</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="como-funciona">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow">Como funciona</p>
-          <h2>Um processo simples do começo ao fim</h2>
-          <p>
-            Sem precisar caçar profissional em perfil perdido de rede social ou confiar no acaso.
-          </p>
-        </div>
-
-        <div class="steps">
-          <div class="step-card">
-            <span class="step-number">01</span>
-            <h3>Pesquise</h3>
-            <p>Digite a especialidade e a sua cidade para encontrar opções relevantes.</p>
-          </div>
-
-          <div class="step-card">
-            <span class="step-number">02</span>
-            <h3>Compare</h3>
-            <p>Veja especialidades, experiência, avaliações e tipo de atendimento.</p>
-          </div>
-
-          <div class="step-card">
-            <span class="step-number">03</span>
-            <h3>Entre em contato</h3>
-            <p>Fale diretamente com o profissional e siga para o próximo passo do seu tratamento.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section alt-bg" id="clientes">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow">Para pacientes</p>
-          <h2>Mais segurança e clareza na hora de escolher</h2>
-          <p>
-            Encontre o fisioterapeuta ideal sem perder horas procurando em lugares aleatórios.
-          </p>
-        </div>
-
-        <div class="audience-grid">
-          <article class="audience-card">
-            <div class="icon">🔎</div>
-            <h3>Busca inteligente</h3>
-            <p>Pesquise por especialidade, cidade e necessidade específica.</p>
-          </article>
-
-          <article class="audience-card">
-            <div class="icon">⭐</div>
-            <h3>Avaliações reais</h3>
-            <p>Veja opiniões de outros pacientes antes de escolher.</p>
-          </article>
-
-          <article class="audience-card">
-            <div class="icon">📍</div>
-            <h3>Profissionais perto de você</h3>
-            <p>Compare opções locais sem depender de indicação informal.</p>
-          </article>
-
-          <article class="audience-card">
-            <div class="icon">💬</div>
-            <h3>Contato rápido</h3>
-            <p>Fale diretamente com o profissional ou clínica de forma simples.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="fisioterapeutas">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow">Para fisioterapeutas</p>
-          <h2>Mais visibilidade para quem quer crescer</h2>
-          <p>
-            Um espaço para mostrar sua especialidade, atrair pacientes e fortalecer sua presença profissional.
-          </p>
-        </div>
-
-        <div class="audience-grid">
-          <article class="audience-card">
-            <div class="icon">👨‍⚕️</div>
-            <h3>Perfil profissional completo</h3>
-            <p>Apresente sua formação, áreas de atuação, experiência e diferenciais.</p>
-          </article>
-
-          <article class="audience-card">
-            <div class="icon">📈</div>
-            <h3>Mais alcance</h3>
-            <p>Seja encontrado por pessoas que realmente estão buscando seu tipo de atendimento.</p>
-          </article>
-
-          <article class="audience-card">
-            <div class="icon">🗂️</div>
-            <h3>Organização da presença online</h3>
-            <p>Concentre suas informações em um único lugar profissional e confiável.</p>
-          </article>
-
-          <article class="audience-card">
-            <div class="icon">🤝</div>
-            <h3>Novos contatos</h3>
-            <p>Receba oportunidades de atendimento e aumente sua rede de pacientes.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section alt-bg" id="especialidades">
-      <div class="container">
-        <div class="section-heading">
-          <p class="eyebrow">Especialidades</p>
-          <h2>Áreas mais buscadas</h2>
-          <p>Explore diferentes tipos de atendimento em fisioterapia.</p>
-        </div>
-
-        <div class="category-grid">
-          <div class="category-card">
-            <h3>Fisioterapia Ortopédica</h3>
-            <p>Lesões, dores musculoesqueléticas, postura e reabilitação funcional.</p>
-          </div>
-
-          <div class="category-card">
-            <h3>Fisioterapia Esportiva</h3>
-            <p>Prevenção, recuperação e retorno ao desempenho físico.</p>
-          </div>
-
-          <div class="category-card">
-            <h3>Fisioterapia Neurológica</h3>
-            <p>Reabilitação motora e funcional em condições neurológicas.</p>
-          </div>
-
-          <div class="category-card">
-            <h3>Fisioterapia Geriátrica</h3>
-            <p>Mobilidade, equilíbrio, força e autonomia para idosos.</p>
-          </div>
-
-          <div class="category-card">
-            <h3>Fisioterapia Respiratória</h3>
-            <p>Suporte para condições respiratórias e melhora da função pulmonar.</p>
-          </div>
-
-          <div class="category-card">
-            <h3>Pós-operatório</h3>
-            <p>Recuperação estruturada após cirurgias ortopédicas e outras intervenções.</p>
-          </div>
         </div>
       </div>
     </section>
@@ -282,36 +123,14 @@
         </div>
 
         <div class="cta-actions">
-  <a href="buscar.html" class="btn btn-primary">Começar agora</a>
-  <a href="cadastro.html" id="ctaProfileBtn" class="btn btn-secondary">
-    Criar perfil
-  </a>
-</div>
+          <a href="buscar.html" class="btn btn-primary">Começar agora</a>
+          <a href="cadastro.html" id="ctaProfileBtn" class="btn btn-secondary">Criar perfil</a>
+        </div>
       </div>
     </section>
   </main>
 
-  <footer class="footer">
-    <div class="container footer-content">
-      <div>
-        <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
-        <p class="footer-text">
-          Um marketplace para aproximar pacientes e fisioterapeutas com mais clareza, confiança e menos bagunça.
-        </p>
-      </div>
-
-      <div class="footer-links">
-        <a href="index.html">Início</a>
-        <a href="buscar.html">Buscar</a>
-        <a href="cadastro.html">Cadastro</a>
-        <a href="resultados.html">Resultados</a>
-      </div>
-    </div>
-  </footer>
-
-<script src="script.js"></script>
-
-
-
+  <script src="api.js?v=nostorage2"></script>
+  <script src="script.js?v=autocomplete2"></script>
 </body>
 </html>

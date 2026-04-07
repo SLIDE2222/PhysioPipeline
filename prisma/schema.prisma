@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  passwordHash   String
+  emailVerified  Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  profiles       Profile[]
+  claimRequests  ClaimRequest[]
+}
+
+model Profile {
+  id            String         @id @default(cuid())
+  name          String
+  specialty     String
+  city          String
+  neighborhood  String?
+  phone         String?
+  bio           String?
+  instagram     String?
+  linkedin      String?
+  photoUrl      String?
+  publicEmail   String?
+  attendance    String?
+  isClaimed     Boolean        @default(false)
+  ownerUserId   String?
+  ownerUser     User?          @relation(fields: [ownerUserId], references: [id])
+  claimRequests ClaimRequest[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model ClaimRequest {
+  id           String      @id @default(cuid())
+  profileId    String
+  userId       String
+  requestEmail String
+  token        String      @unique
+  status       ClaimStatus @default(PENDING)
+  expiresAt    DateTime
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  profile      Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, status])
+  @@index([userId, status])
+}

@@ -196,14 +196,14 @@ textarea {
   max-width: 620px;
   font-size: 1.08rem;
   color: var(--muted);
-  margin-bottom: 1.8rem;
+ margin-bottom: 1.2rem;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 2rem;
+  margin-bottom: 1.2rem;
 }
 
 .hero-actions .btn,
@@ -215,7 +215,7 @@ textarea {
 .hero-stats {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .stat {
@@ -521,7 +521,7 @@ textarea {
   }
 
   .hero {
-    padding-top: 3rem;
+      padding: 3rem 0 2.5rem;
   }
 
   .hero-text h1 {
@@ -623,7 +623,7 @@ textarea {
 .autocomplete-wrapper {
   position: relative;
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 
@@ -916,7 +916,7 @@ textarea {
 
   .hero-content {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+     gap: 1.25rem;
   }
 
   .hero-text h1,
@@ -976,7 +976,7 @@ textarea {
   .profile-card-full,
   .result-card,
   .cta-box {
-    padding: 1.2rem;
+    padding: 1.4rem;
     border-radius: 18px;
   }
 
@@ -1452,4 +1452,83 @@ textarea {
   border: 1px solid #cfe0ff;
   font-weight: 700;
   font-size: 0.92rem;
+}
+
+
+.notice-card,
+.claim-help-box,
+.profile-origin-box,
+.profile-lead-box {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 1.1rem 1.2rem;
+  box-shadow: var(--shadow);
+}
+
+.notice-card {
+  margin-bottom: 1.25rem;
+}
+
+.notice-card h3,
+.claim-help-box h3,
+.profile-origin-box h3,
+.profile-lead-box h3 {
+  color: var(--dark);
+  margin-bottom: 0.45rem;
+  font-size: 1.05rem;
+}
+
+.notice-card p,
+.claim-help-box p,
+.profile-origin-box p,
+.profile-lead-box p,
+.claim-consent label {
+  color: var(--muted);
+}
+
+.claim-profile-preview {
+  margin-bottom: 1.25rem;
+}
+
+.claim-help-box,
+.profile-origin-box,
+.profile-lead-box {
+  margin-bottom: 1rem;
+}
+
+.claim-consent {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.claim-consent input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 0.18rem;
+  flex: 0 0 auto;
+}
+
+.claim-consent label {
+  margin-bottom: 0;
+  font-weight: 500;
+}
+
+.form-card input[type="file"] {
+  background: transparent;
+  padding-inline: 0;
+}
+
+.form-hint {
+  color: var(--muted);
+  font-size: 0.92rem;
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+}
+
+.profile-meta-note {
+  color: var(--muted);
+  font-size: 0.95rem;
 }
