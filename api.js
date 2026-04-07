@@ -9,14 +9,12 @@
       ? 'http://localhost:3000'
       : 'https://physiopipeline-2.onrender.com');
 
-  const REQUEST_TIMEOUT_MS = 65000;
+  const REQUEST_TIMEOUT_MS = 15000;
 
   async function request(path, options = {}) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(
-      () => controller.abort(),
-      options.timeoutMs || REQUEST_TIMEOUT_MS
-    );
+    const timeoutMs = Number(options.timeoutMs || REQUEST_TIMEOUT_MS);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetch(`${API_BASE}${path}`, {
@@ -48,8 +46,13 @@
       return data;
     } catch (error) {
       if (error.name === 'AbortError') {
-        throw new Error('A requisição demorou demais. Tente novamente em alguns segundos.');
+        throw new Error('A requisição demorou demais. Verifique se o backend está online e tente novamente.');
       }
+
+      if (error instanceof TypeError) {
+        throw new Error('Não foi possível conectar ao servidor. Confira a URL da API, CORS e se o backend está no ar.');
+      }
+
       throw error;
     } finally {
       clearTimeout(timeoutId);
@@ -113,7 +116,7 @@
       return request('/auth/forgot-password', {
         method: 'POST',
         body: { email },
-        timeoutMs: 65000,
+        timeoutMs: 12000,
       });
     },
     normalizeProfile,

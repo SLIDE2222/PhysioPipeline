@@ -1,0 +1,29 @@
+FILES INCLUDED
+- api.js
+- reset-password.js
+- auth.controller.forgot-password.js
+
+HOW TO APPLY
+1) Frontend
+   - Replace your current api.js with the included api.js.
+   - Replace your current reset-password.js with the included reset-password.js.
+
+2) Backend
+   - Open your real backend controller file.
+   - Replace ONLY the forgotPassword function with the one from auth.controller.forgot-password.js.
+   - Do not overwrite the whole auth.controller.js unless your existing file already contains the other exports
+     (login, register, me, logout, updatePassword). The uploaded auth.controller.js was incomplete.
+
+3) Render environment variables
+   - Make sure CLIENT_URL points to your deployed frontend domain, without a trailing slash if possible.
+   - Make sure SUPABASE_URL and SUPABASE_ANON_KEY are present.
+
+4) Supabase Auth
+   - Add this exact redirect URL to allowed redirects:
+     https://YOUR-FRONTEND-DOMAIN/update-password.html
+
+WHY THIS FIX HELPS
+- prevents the UI from spinning forever
+- fails faster when backend or Supabase is down
+- exposes clearer backend errors for CLIENT_URL and Supabase env problems
+- logs the redirect URL being used in production
