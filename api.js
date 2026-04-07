@@ -1,6 +1,6 @@
 (function () {
   const isLocalHost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const API_BASE = window.PHYSIO_API_BASE || (isLocalHost ? 'http://localhost:3000' : 'https://physiopipeline.onrender.com');
+  const API_BASE = window.PHYSIO_API_BASE || (isLocalHost ? 'http://localhost:3000' : 'https://physiopipeline-2.onrender.com');
   const REQUEST_TIMEOUT_MS = 12000;
 
   async function request(path, options = {}) {
