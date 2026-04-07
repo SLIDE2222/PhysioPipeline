@@ -1,0 +1,14 @@
+Replace your current src/server.js with the included server.js.
+
+What was fixed:
+- Removed the broken import: ./routes/password.routes.js
+- Removed the duplicate app.use("/auth", passwordRoutes)
+- Kept auth routes mounted only from auth.routes.js, which already contains:
+  - POST /auth/forgot-password
+  - POST /auth/update-password
+
+After replacing:
+1. Commit and push
+2. Redeploy PhysioPipeline-2 on Render
+3. Test /health first
+4. Test forgot-password again

@@ -4,7 +4,6 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
-import passwordRoutes from "./routes/password.routes.js";
 
 dotenv.config();
 
@@ -39,7 +38,6 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/auth", authRoutes);
-app.use("/auth", passwordRoutes);
 app.use("/profiles", profileRoutes);
 
 app.use((err, _req, res, _next) => {
