@@ -1,0 +1,19 @@
+Files included:
+- mail.js  -> replace your existing src/lib/mail.js with this version
+- SMTP_FIX_NOTES.txt
+
+What changed:
+1. SMTP verify no longer crashes the backend on startup.
+2. Mail transporter is only created when SMTP env vars exist.
+3. SMTP timeouts were added so Nodemailer fails faster.
+4. Startup verification now logs failures instead of killing Node.
+
+After replacing the file:
+1. Commit and push.
+2. Redeploy PhysioPipeline-2 on Render.
+3. Test forgot-password again.
+
+Important:
+- This fix keeps the backend alive even if SMTP is broken.
+- Claim/contact email routes may still fail until SMTP credentials or provider access are fixed.
+- Supabase password reset should be testable again once the backend stops crashing.

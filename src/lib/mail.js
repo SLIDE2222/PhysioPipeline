@@ -25,21 +25,29 @@ export const isMailConfigured = Boolean(
   mailConfig.host && mailConfig.user && mailConfig.pass && mailConfig.from
 );
 
-export const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "smtp.gmail.com",
-  port: Number(process.env.SMTP_PORT || 465),
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: (process.env.SMTP_PASS || "").replace(/\s+/g, "")
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
+export const transporter = isMailConfigured
+  ? nodemailer.createTransport({
+      host: mailConfig.host,
+      port: mailConfig.port,
+      secure: mailConfig.secure,
+      auth: {
+        user: mailConfig.user,
+        pass: mailConfig.pass,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+    })
+  : null;
+
+let verifyStarted = false;
+let verifyPromise = null;
 
 export async function verifyTransporter() {
-  if (!isMailConfigured) {
+  if (!isMailConfigured || !transporter) {
     const missing = [];
     if (!mailConfig.user) missing.push("SMTP_USER");
     if (!mailConfig.pass) missing.push("SMTP_PASS");
@@ -56,9 +64,30 @@ export async function verifyTransporter() {
     await transporter.verify();
     return { ok: true };
   } catch (error) {
-    console.error("SMTP verify failed:", error);
+    console.error("SMTP verify failed:", error.message || error);
     return { ok: false, reason: "verify_failed", error };
   }
+}
+
+export async function warmupMailTransport() {
+  if (!transporter || verifyStarted) return verifyPromise;
+  verifyStarted = true;
+
+  verifyPromise = verifyTransporter()
+    .then((result) => {
+      if (result?.ok) {
+        console.log("SMTP transporter verified successfully.");
+      } else {
+        console.error("SMTP warmup skipped/failed:", result?.error?.message || result?.reason || "unknown");
+      }
+      return result;
+    })
+    .catch((error) => {
+      console.error("SMTP warmup crashed:", error.message || error);
+      return { ok: false, reason: "warmup_crash", error };
+    });
+
+  return verifyPromise;
 }
 
 export async function sendMailOrThrow(mailOptions) {
@@ -109,3 +138,5 @@ export async function sendClaimVerificationEmail({ to, token, profileName }) {
     messageId: info.messageId || null,
   };
 }
+
+void warmupMailTransport();
