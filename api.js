@@ -139,6 +139,13 @@
     fetchMyProfile() {
       return request('/profiles/me').then((data) => normalizeProfile(data.profile));
     },
+    updateMyProfile(payload) {
+      return request('/profiles/me', {
+        method: 'PUT',
+        body: payload,
+        timeoutMs: 20000,
+      }).then((data) => normalizeProfile(data.profile || data));
+    },
     fetchProfile(id) {
       return request(`/profiles/${id}`).then((data) =>
         normalizeProfile(data.profile || data)
