@@ -66,12 +66,6 @@
       id: profile.id,
       nome: profile.name ?? profile.nome ?? '',
       especialidade: profile.specialty ?? profile.especialidade ?? '',
-      especialidadeSecundaria:
-        profile.secondarySpecialty ??
-        profile.especialidadeSecundaria ??
-        profile.specialty2 ??
-        profile.extraSpecialty ??
-        '',
       cidade: profile.city ?? profile.cidade ?? '',
       bairro: profile.neighborhood ?? profile.bairro ?? '',
       telefone: profile.phone ?? profile.telefone ?? '',
@@ -112,25 +106,6 @@
     },
     fetchMyProfile() {
       return request('/profiles/me').then((data) => normalizeProfile(data.profile));
-    },
-    updateMyProfile(payload) {
-      return request('/profiles/me', {
-        method: 'PUT',
-        body: payload,
-        timeoutMs: 15000,
-      }).then((data) => normalizeProfile(data.profile || data));
-    },
-    getStoredAuth() {
-      // Kept for older pages that still check this.
-      // New auth uses cookies, so there may be no token in storage.
-      try {
-        return (
-          JSON.parse(localStorage.getItem('physioAuth') || 'null') ||
-          JSON.parse(sessionStorage.getItem('physioAuth') || 'null')
-        );
-      } catch (_) {
-        return null;
-      }
     },
     fetchProfile(id) {
       return request(`/profiles/${id}`).then((data) =>
