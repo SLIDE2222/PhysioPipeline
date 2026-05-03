@@ -272,6 +272,7 @@ async function getLoggedUser(force = false) {
 
   try {
     const auth = window.physioApi.getStoredAuth?.();
+    console.log('Stored auth:', auth);
 
     if (!auth?.token) {
       cachedMyProfile = null;
@@ -283,8 +284,8 @@ async function getLoggedUser(force = false) {
     try {
       const meData = await window.physioApi.me();
       rawUser = meData?.user ?? meData ?? rawUser;
-    } catch (_) {
-      // fallback to stored user if /me fails (iPhone Safari case)
+    } catch (error) {
+      console.warn('Using stored auth fallback because /auth/me failed:', error);
     }
 
     let profile = null;
@@ -304,7 +305,8 @@ async function getLoggedUser(force = false) {
     };
 
     return cachedMyProfile;
-  } catch (_) {
+  } catch (error) {
+    console.warn('Auth UI init failed:', error);
     cachedMyProfile = null;
     return null;
   }
