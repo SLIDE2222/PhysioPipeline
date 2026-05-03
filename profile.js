@@ -1,5 +1,14 @@
 const profileContainer = document.getElementById('profileContainer');
 
+const SPECIALTY_OPTIONS = [
+  'Fisioterapia Ortopédica',
+  'Fisioterapia Esportiva',
+  'Fisioterapia Neurológica',
+  'Fisioterapia Geriátrica',
+  'Fisioterapia Respiratória',
+  'Pós-operatório'
+];
+
 function escapeHtml(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -19,6 +28,25 @@ function getNeighborhoodBadge(profissional) {
   return [profissional.cidade, profissional.bairro]
     .filter(Boolean)
     .join(' • ') || 'Localização não informada';
+}
+
+function getProfileSpecialties(profissional) {
+  const mainSpecialty =
+    profissional.especialidade ||
+    profissional.specialty ||
+    profissional.specialization ||
+    '';
+
+  const secondSpecialty =
+    profissional.especialidadeSecundaria ||
+    profissional.secondarySpecialty ||
+    profissional.specialty2 ||
+    profissional.extraSpecialty ||
+    '';
+
+  return [mainSpecialty, secondSpecialty]
+    .filter(Boolean)
+    .filter((specialty, index, arr) => arr.indexOf(specialty) === index);
 }
 
 async function renderProfilePage() {
@@ -57,6 +85,9 @@ async function renderProfilePage() {
     const linkedProfileId = loggedUser?.profile?.id || null;
     const isOwner = linkedProfileId === profissional.id;
 
+    const specialties = getProfileSpecialties(profissional);
+    const specialtiesText = specialties.length ? specialties.join(' • ') : '-';
+
     const fotoHTML = profissional.foto
       ? `<img src="${escapeHtml(profissional.foto)}" alt="${escapeHtml(profissional.nome)}" class="clickable-avatar">`
       : `<span>${escapeHtml((profissional.nome || '?').charAt(0).toUpperCase())}</span>`;
@@ -74,7 +105,7 @@ async function renderProfilePage() {
           <div class="profile-avatar-big">${fotoHTML}</div>
           <div class="profile-head-info">
             <h1>${escapeHtml(profissional.nome)}</h1>
-            <p class="profile-specialty">${escapeHtml(profissional.especialidade || '-')}</p>
+            <p class="profile-specialty">${escapeHtml(specialtiesText)}</p>
             <p class="profile-city">${escapeHtml(getNeighborhoodBadge(profissional))}</p>
           </div>
         </div>
@@ -83,6 +114,7 @@ async function renderProfilePage() {
           ${profissional.atendimento ? `<span class="profile-badge">${escapeHtml(profissional.atendimento)}</span>` : ''}
           ${profissional.cidade ? `<span class="profile-badge">${escapeHtml(profissional.cidade)}</span>` : ''}
           ${profissional.bairro ? `<span class="profile-badge">${escapeHtml(profissional.bairro)}</span>` : ''}
+          ${specialties.map((specialty) => `<span class="profile-badge">${escapeHtml(specialty)}</span>`).join('')}
           ${profissional.isClaimed ? '<span class="profile-badge">Perfil reivindicado</span>' : '<span class="profile-badge">Perfil público</span>'}
         </div>
 

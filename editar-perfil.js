@@ -14,6 +14,21 @@ function fileToBase64(file) {
   });
 }
 
+function setSelectValue(selectId, value) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const optionExists = Array.from(select.options).some((option) => option.value === value);
+  select.value = optionExists ? value : '';
+}
+
+function getProfileField(profile, ...fields) {
+  for (const field of fields) {
+    if (profile?.[field]) return profile[field];
+  }
+  return '';
+}
+
 async function loadMyProfile() {
   const auth = window.physioApi.getStoredAuth();
   if (!auth?.token) {
@@ -30,12 +45,23 @@ async function loadMyProfile() {
       return null;
     }
 
-    document.getElementById('telefone').value = profile.phone || '';
-    document.getElementById('bairro').value = profile.neighborhood || '';
+    document.getElementById('telefone').value = profile.phone || profile.telefone || '';
+    document.getElementById('bairro').value = profile.neighborhood || profile.bairro || '';
+
+    setSelectValue(
+      'especialidade',
+      getProfileField(profile, 'specialty', 'especialidade', 'specialization')
+    );
+
+    setSelectValue(
+      'especialidadeSecundaria',
+      getProfileField(profile, 'secondarySpecialty', 'especialidadeSecundaria', 'specialty2', 'extraSpecialty')
+    );
+
     document.getElementById('instagram').value = profile.instagram || '';
     document.getElementById('linkedin').value = profile.linkedin || '';
-    document.getElementById('descricao').value = profile.bio || '';
-    fotoBase64 = profile.photoUrl || '';
+    document.getElementById('descricao').value = profile.bio || profile.descricao || '';
+    fotoBase64 = profile.photoUrl || profile.foto || '';
 
     if (fotoBase64) {
       fotoPreview.src = fotoBase64;
@@ -74,6 +100,16 @@ if (editarForm) {
 
   editarForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+
+    const especialidade = document.getElementById('especialidade').value.trim();
+    const especialidadeSecundaria = document.getElementById('especialidadeSecundaria').value.trim();
+
+    if (especialidade && especialidadeSecundaria && especialidade === especialidadeSecundaria) {
+      editarMensagem.textContent = 'Escolha uma especialização adicional diferente da principal.';
+      editarMensagem.style.color = '#b91c1c';
+      return;
+    }
+
     const submitBtn = editarForm.querySelector('button[type="submit"]');
     if (submitBtn) submitBtn.disabled = true;
 
@@ -81,6 +117,8 @@ if (editarForm) {
       const profile = await window.physioApi.updateMyProfile({
         phone: document.getElementById('telefone').value.trim() || null,
         neighborhood: document.getElementById('bairro').value.trim() || null,
+        specialty: especialidade || null,
+        secondarySpecialty: especialidadeSecundaria || null,
         instagram: document.getElementById('instagram').value.trim() || null,
         linkedin: document.getElementById('linkedin').value.trim() || null,
         photoUrl: fotoBase64 || null,
