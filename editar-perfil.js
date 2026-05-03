@@ -30,38 +30,32 @@ function getProfileField(profile, ...fields) {
 }
 
 async function loadMyProfile() {
-  const auth = window.physioApi.getStoredAuth();
-  if (!auth?.token) {
-    window.location.href = 'login.html';
-    return null;
-  }
-
   try {
-    const data = await window.physioApi.me();
-    const profile = data.user?.profiles?.[0];
+    const profile = await window.physioApi.fetchMyProfile();
+
     if (!profile) {
       editarMensagem.textContent = 'Nenhum perfil está vinculado à sua conta.';
       editarMensagem.style.color = '#b91c1c';
       return null;
     }
 
-    document.getElementById('telefone').value = profile.phone || profile.telefone || '';
-    document.getElementById('bairro').value = profile.neighborhood || profile.bairro || '';
+    document.getElementById('telefone').value = profile.telefone || profile.phone || '';
+    document.getElementById('bairro').value = profile.bairro || profile.neighborhood || '';
 
     setSelectValue(
       'especialidade',
-      getProfileField(profile, 'specialty', 'especialidade', 'specialization')
+      getProfileField(profile, 'especialidade', 'specialty', 'specialization')
     );
 
     setSelectValue(
       'especialidadeSecundaria',
-      getProfileField(profile, 'secondarySpecialty', 'especialidadeSecundaria', 'specialty2', 'extraSpecialty')
+      getProfileField(profile, 'especialidadeSecundaria', 'secondarySpecialty', 'specialty2', 'extraSpecialty')
     );
 
     document.getElementById('instagram').value = profile.instagram || '';
     document.getElementById('linkedin').value = profile.linkedin || '';
-    document.getElementById('descricao').value = profile.bio || profile.descricao || '';
-    fotoBase64 = profile.photoUrl || profile.foto || '';
+    document.getElementById('descricao').value = profile.descricao || profile.bio || '';
+    fotoBase64 = profile.foto || profile.photoUrl || '';
 
     if (fotoBase64) {
       fotoPreview.src = fotoBase64;
@@ -83,12 +77,14 @@ if (fotoInput) {
   fotoInput.addEventListener('change', async () => {
     const file = fotoInput.files[0];
     if (!file) return;
+
     if (!file.type.startsWith('image/')) {
       editarMensagem.textContent = 'Escolha um arquivo de imagem válido.';
       editarMensagem.style.color = '#b91c1c';
       fotoInput.value = '';
       return;
     }
+
     fotoBase64 = await fileToBase64(file);
     fotoPreview.src = fotoBase64;
     fotoPreview.style.display = 'block';
@@ -127,6 +123,7 @@ if (editarForm) {
 
       editarMensagem.textContent = 'Perfil atualizado com sucesso!';
       editarMensagem.style.color = '#166534';
+
       setTimeout(() => {
         window.location.href = `profile.html?id=${encodeURIComponent(profile.id)}`;
       }, 700);
