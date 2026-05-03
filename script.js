@@ -271,8 +271,21 @@ async function getLoggedUser(force = false) {
   if (!force && cachedMyProfile) return cachedMyProfile;
 
   try {
-    const meData = await window.physioApi.me();
-    const rawUser = meData?.user ?? meData ?? {};
+    const auth = window.physioApi.getStoredAuth?.();
+
+    if (!auth?.token) {
+      cachedMyProfile = null;
+      return null;
+    }
+
+    let rawUser = auth.user || {};
+
+    try {
+      const meData = await window.physioApi.me();
+      rawUser = meData?.user ?? meData ?? rawUser;
+    } catch (_) {
+      // fallback to stored user if /me fails (iPhone Safari case)
+    }
 
     let profile = null;
     if (window.physioApi.fetchMyProfile) {
