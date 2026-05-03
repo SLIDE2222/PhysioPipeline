@@ -109,6 +109,7 @@ export async function register(req, res) {
 
     return res.status(201).json({
       user: sanitizeUser(user),
+      token,
     });
   } catch (error) {
     console.error("Register error:", error);
@@ -147,6 +148,7 @@ export async function login(req, res) {
 
     return res.json({
       user: sanitizeUser(user),
+      token,
     });
   } catch (error) {
     console.error("Login error:", error);

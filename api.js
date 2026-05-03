@@ -11,16 +11,40 @@
 
   const REQUEST_TIMEOUT_MS = 15000;
 
+  function getStoredAuth() {
+    try {
+      return (
+        JSON.parse(localStorage.getItem('physioAuth') || 'null') ||
+        JSON.parse(sessionStorage.getItem('physioAuth') || 'null')
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function setStoredAuth(auth, remember = true) {
+    try {
+      const storage = remember ? localStorage : sessionStorage;
+      storage.setItem('physioAuth', JSON.stringify(auth));
+    } catch (_) {
+      // ignore storage access issues
+    }
+  }
+
   async function request(path, options = {}) {
     const controller = new AbortController();
     const timeoutMs = Number(options.timeoutMs || REQUEST_TIMEOUT_MS);
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
+      const auth = getStoredAuth();
+      const token = auth?.token;
+
       const response = await fetch(`${API_BASE}${path}`, {
         method: options.method || 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...(options.headers || {}),
         },
         credentials: 'include',
@@ -91,11 +115,19 @@
 
   window.physioApi = {
     request,
-    register(payload) {
-      return request('/auth/register', { method: 'POST', body: payload });
+    async register(payload) {
+      const data = await request('/auth/register', { method: 'POST', body: payload });
+      if (data?.token) {
+        setStoredAuth({ token: data.token, user: data.user }, true);
+      }
+      return data;
     },
-    login(email, password) {
-      return request('/auth/login', { method: 'POST', body: { email, password } });
+    async login(email, password) {
+      const data = await request('/auth/login', { method: 'POST', body: { email, password } });
+      if (data?.token) {
+        setStoredAuth({ token: data.token, user: data.user }, true);
+      }
+      return data;
     },
     logout() {
       clearStoredAuth();
@@ -120,6 +152,8 @@
       });
     },
     normalizeProfile,
+    getStoredAuth,
+    setStoredAuth,
     clearStoredAuth,
     updatePassword({ token, password }) {
       return request('/auth/update-password', {
