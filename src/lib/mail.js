@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const rawPort = Number(process.env.SMTP_PORT || 465);
+const rawPort = Number(process.env.SMTP_PORT || 587);
 const rawPass = String(process.env.SMTP_PASS || "");
 const normalizedPass = rawPass.replace(/\s+/g, "").trim();
 const normalizedUser = String(process.env.SMTP_USER || "").trim();
@@ -11,14 +11,29 @@ const normalizedHost = String(process.env.SMTP_HOST || "smtp.gmail.com").trim();
 const normalizedFrom = String(process.env.MAIL_FROM || normalizedUser).trim();
 const normalizedClientUrl = String(process.env.CLIENT_URL || "http://localhost:5500").trim();
 
+function parseBoolean(value, fallback) {
+  if (value === undefined || value === null || value === "") return fallback;
+  return String(value).trim().toLowerCase() === "true";
+}
+
+function withTimeout(promise, timeoutMs, label = "SMTP timeout") {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(label)), timeoutMs);
+    }),
+  ]);
+}
+
 export const mailConfig = {
   host: normalizedHost,
   port: rawPort,
-  secure: rawPort === 465,
+  secure: parseBoolean(process.env.SMTP_SECURE, rawPort === 465),
   user: normalizedUser,
   pass: normalizedPass,
   from: normalizedFrom,
   clientUrl: normalizedClientUrl,
+  timeoutMs: Number(process.env.SMTP_TIMEOUT_MS || 8000),
 };
 
 export const isMailConfigured = Boolean(
@@ -30,6 +45,7 @@ export const transporter = isMailConfigured
       host: mailConfig.host,
       port: mailConfig.port,
       secure: mailConfig.secure,
+      requireTLS: mailConfig.port === 587,
       auth: {
         user: mailConfig.user,
         pass: mailConfig.pass,
@@ -37,9 +53,9 @@ export const transporter = isMailConfigured
       tls: {
         rejectUnauthorized: false,
       },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 15000,
+      connectionTimeout: mailConfig.timeoutMs,
+      greetingTimeout: mailConfig.timeoutMs,
+      socketTimeout: mailConfig.timeoutMs,
     })
   : null;
 
@@ -61,7 +77,7 @@ export async function verifyTransporter() {
   }
 
   try {
-    await transporter.verify();
+    await withTimeout(transporter.verify(), mailConfig.timeoutMs, "SMTP verify timeout");
     return { ok: true };
   } catch (error) {
     console.error("SMTP verify failed:", error.message || error);
@@ -97,9 +113,13 @@ export async function sendMailOrThrow(mailOptions) {
   }
 
   try {
-    return await transporter.sendMail(mailOptions);
+    return await withTimeout(
+      transporter.sendMail(mailOptions),
+      mailConfig.timeoutMs,
+      "SMTP send timeout"
+    );
   } catch (error) {
-    console.error("SMTP sendMail failed:", error);
+    console.error("SMTP sendMail failed:", error.message || error);
     throw error;
   }
 }
@@ -108,7 +128,7 @@ export async function sendClaimVerificationEmail({ to, token, profileName }) {
   const verifyUrl = `${mailConfig.clientUrl}/claim-profile.html?token=${encodeURIComponent(token)}`;
 
   const info = await sendMailOrThrow({
-    from: mailConfig.user,
+    from: mailConfig.from || mailConfig.user,
     sender: mailConfig.user,
     to,
     replyTo: mailConfig.user,
