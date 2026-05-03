@@ -52,6 +52,11 @@ async function loadMyProfile() {
       getProfileField(profile, 'especialidadeSecundaria', 'secondarySpecialty', 'specialty2', 'extraSpecialty')
     );
 
+    setSelectValue(
+      'atendimento',
+      getProfileField(profile, 'atendimento', 'attendance')
+    );
+
     document.getElementById('instagram').value = profile.instagram || '';
     document.getElementById('linkedin').value = profile.linkedin || '';
     document.getElementById('descricao').value = profile.descricao || profile.bio || '';
@@ -115,6 +120,7 @@ if (editarForm) {
         neighborhood: document.getElementById('bairro').value.trim() || null,
         specialty: especialidade || null,
         secondarySpecialty: especialidadeSecundaria || null,
+        attendance: document.getElementById('atendimento').value.trim() || null,
         instagram: document.getElementById('instagram').value.trim() || null,
         linkedin: document.getElementById('linkedin').value.trim() || null,
         photoUrl: fotoBase64 || null,
