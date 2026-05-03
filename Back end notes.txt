@@ -29,3 +29,21 @@ Nodemailer or Resend for email
 
 
 --------------------------------------------------------------------------
+
+
+
+📅 Dev Log — May 3, 2026 | 17:06
+Deployed backend (Render) & frontend (Vercel)
+Fixed bcryptjs, exports, Prisma (generate)
+Connected Supabase (DB working)
+Set up Brevo SMTP → password reset working
+Built auth + forgot password flow
+Fixed iPhone login bug (cache + localStorage)
+Created core pages (como funciona, etc.)
+✅ Status
+
+Backend ✔ | DB ✔ | Email ✔ | Auth ✔ | iPhone ✔
+
+🔥 Next
+
+Search + profiles + real data
