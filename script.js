@@ -306,6 +306,25 @@ async function logout() {
 window.logout = logout;
 window.getLoggedUser = getLoggedUser;
 
+
+function updateProfileButtons(user) {
+  const heroBtn = document.getElementById('heroProfileBtn');
+  const ctaBtn = document.getElementById('ctaProfileBtn');
+
+  const profileHref = user.profile?.id
+    ? `profile.html?id=${encodeURIComponent(user.profile.id)}`
+    : 'cadastro.html';
+
+  const text = user.profile ? 'Meu perfil' : 'Criar perfil';
+
+  [heroBtn, ctaBtn].forEach((btn) => {
+    if (!btn) return;
+    btn.textContent = text;
+    btn.href = profileHref;
+  });
+}
+
+
 async function renderAuthArea() {
   const authArea = document.getElementById('authArea');
   if (!authArea) return;
@@ -319,6 +338,8 @@ async function renderAuthArea() {
     `;
     return;
   }
+
+  updateProfileButtons(user);
 
   const firstName = (user.profile?.nome || user.email || 'Profissional').split(' ')[0];
   const profileHref = user.profile?.id

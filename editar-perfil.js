@@ -14,28 +14,53 @@ function fileToBase64(file) {
   });
 }
 
-async function loadMyProfile() {
-  const auth = window.physioApi.getStoredAuth();
-  if (!auth?.token) {
-    window.location.href = 'login.html';
-    return null;
-  }
+function setSelectValue(selectId, value) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
 
+  const optionExists = Array.from(select.options).some((option) => option.value === value);
+  select.value = optionExists ? value : '';
+}
+
+function getProfileField(profile, ...fields) {
+  for (const field of fields) {
+    if (profile?.[field]) return profile[field];
+  }
+  return '';
+}
+
+async function loadMyProfile() {
   try {
-    const data = await window.physioApi.me();
-    const profile = data.user?.profiles?.[0];
+    const profile = await window.physioApi.fetchMyProfile();
+
     if (!profile) {
       editarMensagem.textContent = 'Nenhum perfil está vinculado à sua conta.';
       editarMensagem.style.color = '#b91c1c';
       return null;
     }
 
-    document.getElementById('telefone').value = profile.phone || '';
-    document.getElementById('bairro').value = profile.neighborhood || '';
+    document.getElementById('telefone').value = profile.telefone || profile.phone || '';
+    document.getElementById('bairro').value = profile.bairro || profile.neighborhood || '';
+
+    setSelectValue(
+      'especialidade',
+      getProfileField(profile, 'especialidade', 'specialty', 'specialization')
+    );
+
+    setSelectValue(
+      'especialidadeSecundaria',
+      getProfileField(profile, 'especialidadeSecundaria', 'secondarySpecialty', 'specialty2', 'extraSpecialty')
+    );
+
+    setSelectValue(
+      'atendimento',
+      getProfileField(profile, 'atendimento', 'attendance')
+    );
+
     document.getElementById('instagram').value = profile.instagram || '';
     document.getElementById('linkedin').value = profile.linkedin || '';
-    document.getElementById('descricao').value = profile.bio || '';
-    fotoBase64 = profile.photoUrl || '';
+    document.getElementById('descricao').value = profile.descricao || profile.bio || '';
+    fotoBase64 = profile.foto || profile.photoUrl || '';
 
     if (fotoBase64) {
       fotoPreview.src = fotoBase64;
@@ -57,12 +82,14 @@ if (fotoInput) {
   fotoInput.addEventListener('change', async () => {
     const file = fotoInput.files[0];
     if (!file) return;
+
     if (!file.type.startsWith('image/')) {
       editarMensagem.textContent = 'Escolha um arquivo de imagem válido.';
       editarMensagem.style.color = '#b91c1c';
       fotoInput.value = '';
       return;
     }
+
     fotoBase64 = await fileToBase64(file);
     fotoPreview.src = fotoBase64;
     fotoPreview.style.display = 'block';
@@ -74,6 +101,16 @@ if (editarForm) {
 
   editarForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+
+    const especialidade = document.getElementById('especialidade').value.trim();
+    const especialidadeSecundaria = document.getElementById('especialidadeSecundaria').value.trim();
+
+    if (especialidade && especialidadeSecundaria && especialidade === especialidadeSecundaria) {
+      editarMensagem.textContent = 'Escolha uma especialização adicional diferente da principal.';
+      editarMensagem.style.color = '#b91c1c';
+      return;
+    }
+
     const submitBtn = editarForm.querySelector('button[type="submit"]');
     if (submitBtn) submitBtn.disabled = true;
 
@@ -81,6 +118,9 @@ if (editarForm) {
       const profile = await window.physioApi.updateMyProfile({
         phone: document.getElementById('telefone').value.trim() || null,
         neighborhood: document.getElementById('bairro').value.trim() || null,
+        specialty: especialidade || null,
+        secondarySpecialty: especialidadeSecundaria || null,
+        attendance: document.getElementById('atendimento').value.trim() || null,
         instagram: document.getElementById('instagram').value.trim() || null,
         linkedin: document.getElementById('linkedin').value.trim() || null,
         photoUrl: fotoBase64 || null,
@@ -89,6 +129,7 @@ if (editarForm) {
 
       editarMensagem.textContent = 'Perfil atualizado com sucesso!';
       editarMensagem.style.color = '#166534';
+
       setTimeout(() => {
         window.location.href = `profile.html?id=${encodeURIComponent(profile.id)}`;
       }, 700);
