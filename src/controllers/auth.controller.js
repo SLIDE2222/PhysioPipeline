@@ -1,8 +1,14 @@
-
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
 import { mailConfig, sendMailOrThrow } from "../lib/mail.js";
+
+const COOKIE_NAME = "token";
+
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
 
 function normalizeBaseUrl(value) {
   return String(value || "").trim().replace(/\/+$/, "");
@@ -31,11 +37,154 @@ function buildClientUrl(req) {
   return "http://localhost:5500";
 }
 
-function normalizeEmail(value) {
-  return String(value || "").trim().toLowerCase();
+function createToken(user) {
+  return jwt.sign(
+    {
+      userId: user.id,
+      email: user.email,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+  );
 }
 
+function getCookieOptions() {
+  const isProduction = process.env.NODE_ENV === "production";
 
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+    path: "/",
+  };
+}
+
+function sanitizeUser(user) {
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    emailVerified: Boolean(user.emailVerified),
+    profiles: user.profiles || [],
+  };
+}
+
+export async function register(req, res) {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const password = String(req.body?.password || "");
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required." });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must have at least 6 characters." });
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ message: "This email is already registered." });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+      },
+      include: {
+        profiles: true,
+      },
+    });
+
+    const token = createToken(user);
+    res.cookie(COOKIE_NAME, token, getCookieOptions());
+
+    return res.status(201).json({
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error("Register error:", error);
+    return res.status(500).json({ message: error.message || "Could not create account." });
+  }
+}
+
+export async function login(req, res) {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const password = String(req.body?.password || "");
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required." });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        profiles: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    const passwordIsValid = await bcrypt.compare(password, user.passwordHash);
+
+    if (!passwordIsValid) {
+      return res.status(401).json({ message: "Invalid email or password." });
+    }
+
+    const token = createToken(user);
+    res.cookie(COOKIE_NAME, token, getCookieOptions());
+
+    return res.json({
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({ message: error.message || "Could not login." });
+  }
+}
+
+export async function logout(_req, res) {
+  res.clearCookie(COOKIE_NAME, {
+    path: "/",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  return res.json({ message: "Logged out." });
+}
+
+export async function me(req, res) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      include: {
+        profiles: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    return res.json({
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error("Me error:", error);
+    return res.status(500).json({ message: error.message || "Could not load user." });
+  }
+}
 
 export async function forgotPassword(req, res) {
   try {
@@ -50,7 +199,7 @@ export async function forgotPassword(req, res) {
       select: { id: true, email: true },
     });
 
-    // Always return a generic success message to avoid exposing whether an account exists.
+    // Generic response so people cannot check which emails exist.
     if (!user) {
       return res.json({
         message: "Se o e-mail existir, o link de recuperação foi enviado.",
@@ -62,7 +211,7 @@ export async function forgotPassword(req, res) {
     });
 
     const token = crypto.randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
     const clientUrl = buildClientUrl(req);
     const resetLink = `${clientUrl}/update-password.html?token=${encodeURIComponent(token)}`;
 
@@ -107,15 +256,13 @@ export async function forgotPassword(req, res) {
     return res.json({
       message: "Se o e-mail existir, o link de recuperação foi enviado.",
     });
-  } catch (err) {
-    console.error("Forgot password error:", err);
+  } catch (error) {
+    console.error("Forgot password error:", error);
     return res.status(500).json({
-      message: err.message || "Não foi possível enviar o link de recuperação.",
+      message: error.message || "Não foi possível enviar o link de recuperação.",
     });
   }
 }
-
-
 
 export async function updatePassword(req, res) {
   try {
@@ -166,10 +313,10 @@ export async function updatePassword(req, res) {
     ]);
 
     return res.json({ message: "Senha atualizada com sucesso." });
-  } catch (err) {
-    console.error("Update password error:", err);
+  } catch (error) {
+    console.error("Update password error:", error);
     return res.status(500).json({
-      message: err.message || "Não foi possível atualizar a senha.",
+      message: error.message || "Não foi possível atualizar a senha.",
     });
   }
 }
