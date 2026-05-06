@@ -69,7 +69,7 @@ router.post("/request", async (req, res) => {
     const base64Body = String(fileContentBase64 || "").replace(/^data:.*;base64,/, "").trim();
 
     await sendMailOrThrow({
-      from: mailConfig.user,
+      from: mailConfig.from || mailConfig.user,
       sender: mailConfig.user,
       to: CLAIM_REVIEW_EMAIL,
       replyTo: claimantEmail,
