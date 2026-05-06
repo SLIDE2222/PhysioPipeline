@@ -388,3 +388,108 @@ document.addEventListener('DOMContentLoaded', async () => {
     'bairroSuggestions'
   );
 });
+
+// ===============================
+// RESULTADOS DA BUSCA
+// ===============================
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const resultsGrid = document.getElementById('resultsGrid');
+
+  // Só executa em resultados.html
+  if (!resultsGrid) return;
+
+  const resumo = document.getElementById('resultadoResumo');
+
+  const params = new URLSearchParams(window.location.search);
+
+  const especialidade = normalizeText(
+    params.get('especialidade') || ''
+  );
+
+  const cidade = normalizeText(
+    params.get('cidade') || ''
+  );
+
+  const bairro = normalizeText(
+    params.get('bairro') || ''
+  );
+
+  try {
+    resumo.textContent = 'Buscando profissionais...';
+
+    const profiles = await window.physioApi.fetchProfiles();
+
+    const filtered = profiles.filter((profile) => {
+      const pEspecialidade = normalizeText(profile.especialidade);
+      const pCidade = normalizeText(profile.cidade);
+      const pBairro = normalizeText(profile.bairro);
+
+      const specialtyMatch =
+        !especialidade || pEspecialidade.includes(especialidade);
+
+      const cityMatch =
+        !cidade || pCidade.includes(cidade);
+
+      const neighborhoodMatch =
+        !bairro || pBairro.includes(bairro);
+
+      return specialtyMatch && cityMatch && neighborhoodMatch;
+    });
+
+    resumo.textContent = `${filtered.length} profissional(is) encontrado(s)`;
+
+    if (filtered.length === 0) {
+      resultsGrid.innerHTML = `
+        <div class="empty-results">
+          <h3>Nenhum profissional encontrado.</h3>
+          <p>Tente pesquisar outra especialidade ou cidade.</p>
+        </div>
+      `;
+      return;
+    }
+
+    resultsGrid.innerHTML = filtered.map((profile) => `
+      <article class="result-card">
+        <h3>${escapeHtml(profile.nome || 'Fisioterapeuta')}</h3>
+
+        <p>
+          <strong>Especialidade:</strong>
+          ${escapeHtml(profile.especialidade || 'Não informado')}
+        </p>
+
+        <p>
+          <strong>Cidade:</strong>
+          ${escapeHtml(profile.cidade || 'Não informado')}
+        </p>
+
+        <p>
+          <strong>Bairro:</strong>
+          ${escapeHtml(profile.bairro || 'Não informado')}
+        </p>
+
+        <p class="bio">
+          ${escapeHtml(profile.bio || 'Sem descrição.')}
+        </p>
+
+        <a
+          href="profile.html?id=${encodeURIComponent(profile.id)}"
+          class="btn btn-primary"
+        >
+          Ver perfil
+        </a>
+      </article>
+    `).join('');
+
+  } catch (error) {
+    console.error(error);
+
+    resumo.textContent = 'Erro ao carregar resultados.';
+
+    resultsGrid.innerHTML = `
+      <div class="empty-results">
+        <h3>Erro ao buscar profissionais.</h3>
+      </div>
+    `;
+  }
+});
