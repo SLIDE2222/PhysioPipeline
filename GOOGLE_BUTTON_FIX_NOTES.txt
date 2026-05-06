@@ -1,0 +1,11 @@
+FIXED:
+- cadastro.html now loads Google's Identity script.
+- cadastro.html now loads google-auth.js.
+- google-auth.js waits for Google's script before rendering the button.
+- api.js includes loginWithGoogle if it was missing.
+
+IMPORTANT:
+Your backend still needs:
+GOOGLE_CLIENT_ID=197182747757-6tm1e8vhu44fkpf89pvvsbooodl48t3o.apps.googleusercontent.com
+
+Your backend also needs POST /auth/google from the previous Google auth backend package.

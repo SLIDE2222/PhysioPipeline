@@ -164,19 +164,6 @@
         normalizeProfile(data.profile || data)
       );
     },
-    fetchProfiles() {
-      return request('/profiles').then((data) => {
-        if (Array.isArray(data)) {
-          return data.map(normalizeProfile);
-        }
-
-        if (Array.isArray(data.profiles)) {
-          return data.profiles.map(normalizeProfile);
-        }
-
-        return [];
-      });
-    },
     requestPasswordReset(email) {
       return request('/auth/forgot-password', {
         method: 'POST',

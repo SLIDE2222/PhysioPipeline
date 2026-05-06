@@ -8,17 +8,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector('meta[name="google-client-id"]')?.content ||
     "";
 
-  const hasRealClientId =
-    clientId &&
-    clientId !== "YOUR_GOOGLE_CLIENT_ID_HERE" &&
-    clientId.includes(".apps.googleusercontent.com");
-
-  if (!hasRealClientId) {
-    console.warn("Google Client ID missing. Replace YOUR_GOOGLE_CLIENT_ID_HERE in cadastro.html.");
+  if (!clientId || !clientId.includes(".apps.googleusercontent.com")) {
+    console.warn("Google Client ID missing or invalid.");
     googleButtons.forEach((button) => {
       button.innerHTML = `
         <button type="button" class="btn btn-outline btn-block" disabled>
-          Google login precisa do Client ID
+          Google login sem Client ID
         </button>
       `;
     });
@@ -27,18 +22,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const waitForGoogle = () =>
     new Promise((resolve, reject) => {
-      let tries = 0;
+      let attempts = 0;
 
-      const timer = setInterval(() => {
-        tries += 1;
+      const interval = setInterval(() => {
+        attempts += 1;
 
         if (window.google?.accounts?.id) {
-          clearInterval(timer);
+          clearInterval(interval);
           resolve();
         }
 
-        if (tries > 40) {
-          clearInterval(timer);
+        if (attempts > 60) {
+          clearInterval(interval);
           reject(new Error("Google Identity script did not load."));
         }
       }, 100);
@@ -54,18 +49,24 @@ document.addEventListener("DOMContentLoaded", () => {
               throw new Error("Google did not return a credential.");
             }
 
+            if (!window.physioApi?.loginWithGoogle) {
+              throw new Error("Google login helper is missing in api.js.");
+            }
+
             const data = await window.physioApi.loginWithGoogle(response.credential);
 
             if (data?.user) {
               window.location.href = "index.html";
             }
           } catch (error) {
+            console.error("Google auth failed:", error);
             alert(error.message || "Não foi possível entrar com Google.");
           }
         },
       });
 
       googleButtons.forEach((button) => {
+        button.innerHTML = "";
         window.google.accounts.id.renderButton(button, {
           theme: "outline",
           size: "large",
