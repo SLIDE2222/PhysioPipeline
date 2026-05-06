@@ -40,6 +40,14 @@ async function loadMyProfile() {
     }
 
     document.getElementById('telefone').value = profile.telefone || profile.phone || '';
+
+    const cidadeInput = document.getElementById('editarCidade');
+    if (cidadeInput) {
+      cidadeInput.value = profile.cidade || profile.city || '';
+      cidadeInput.dispatchEvent(new Event('input', { bubbles: true }));
+      cidadeInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
     document.getElementById('bairro').value = profile.bairro || profile.neighborhood || '';
 
     setSelectValue(
@@ -97,6 +105,15 @@ if (fotoInput) {
 }
 
 if (editarForm) {
+  if (typeof setupCityNeighborhoodAutocomplete === 'function') {
+    setupCityNeighborhoodAutocomplete(
+      'editarCidade',
+      'editarCidadeSuggestions',
+      'bairro',
+      'editarBairroSuggestions'
+    );
+  }
+
   loadMyProfile();
 
   editarForm.addEventListener('submit', async (event) => {
@@ -117,6 +134,7 @@ if (editarForm) {
     try {
       const profile = await window.physioApi.updateMyProfile({
         phone: document.getElementById('telefone').value.trim() || null,
+        city: document.getElementById('editarCidade')?.value.trim() || null,
         neighborhood: document.getElementById('bairro').value.trim() || null,
         specialty: especialidade || null,
         secondarySpecialty: especialidadeSecundaria || null,
