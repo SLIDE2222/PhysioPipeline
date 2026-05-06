@@ -2,7 +2,6 @@ const claimForm = document.getElementById("claimForm");
 const claimMensagem = document.getElementById("claimMensagem");
 const claimProfilePreview = document.getElementById("claimProfilePreview");
 const claimIntro = document.getElementById("claimIntro");
-const CLAIM_API_URL = "http://localhost:3000/claims/request";
 
 const params = new URLSearchParams(window.location.search);
 const profileId = params.get("id");
@@ -17,30 +16,17 @@ function renderClaimPreview(profile) {
   if (!claimProfilePreview || !profile) return;
 
   claimProfilePreview.innerHTML = `
-  <div class="result-card">
-    <h3>${escapeHtml(profile.nome)}</h3>
-
-    <p>
-      <strong>Especialidade:</strong>
-      ${escapeHtml(profile.especialidade || "-")}
-    </p>
-
-    <p>
-      <strong>Local:</strong>
-      ${escapeHtml(profile.cidade || "-")}
-      ${profile.bairro ? `• ${escapeHtml(profile.bairro)}` : ""}
-    </p>
-
-    <p>
-      <strong>Status:</strong>
-      ${
+    <div class="result-card">
+      <h3>${escapeHtml(profile.nome)}</h3>
+      <p><strong>Especialidade:</strong> ${escapeHtml(profile.especialidade || "-")}</p>
+      <p><strong>Local:</strong> ${escapeHtml(getNeighborhoodBadge(profile))}</p>
+      <p><strong>Status:</strong> ${
         profile.isClaimed
           ? "Perfil já reivindicado"
           : "Perfil público disponível para claim"
-      }
-    </p>
-  </div>
-`;
+      }</p>
+    </div>
+  `;
 }
 
 async function loadClaimPage() {
@@ -111,27 +97,18 @@ async function submitClaim(event) {
 
     const fileContentBase64 = await fileToBase64(degreeFile);
 
-    const response = await fetch(CLAIM_API_URL, {
+    const data = await window.physioApi.request("/claims/request", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
+      body: {
         profileId: String(profileId),
         email,
         consentContact: true,
         fileName: degreeFile.name,
         fileMime: degreeFile.type || "application/pdf",
         fileContentBase64
-      })
+      },
+      timeoutMs: 30000
     });
-
-    const contentType = response.headers.get("content-type") || "";
-    const data = contentType.includes("application/json") ? await response.json() : {};
-
-    if (!response.ok) {
-      throw new Error(data.error || data.message || "Não foi possível enviar a reivindicação.");
-    }
 
     setClaimMessage(data.message || "Pedido enviado com sucesso.", "#166534");
     claimForm.reset();
