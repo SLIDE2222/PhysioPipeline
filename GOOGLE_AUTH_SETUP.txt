@@ -1,0 +1,40 @@
+GOOGLE LOGIN SETUP
+
+1) Google Cloud Console
+Create OAuth Client ID:
+- Application type: Web application
+- Authorized JavaScript origins:
+  http://localhost:5500
+  https://physio-pipeline.vercel.app
+
+No redirect URI is needed for this Google Identity Services button flow.
+
+2) Render backend env var
+Add:
+GOOGLE_CLIENT_ID=your_client_id_here
+
+3) Frontend
+In login.html and cadastro.html, add:
+<meta name="google-client-id" content="your_client_id_here">
+
+Add the button:
+<div data-google-auth data-width="320"></div>
+
+Add scripts after api.js:
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="google-auth.js?v=googleauth1"></script>
+
+4) Backend
+Replace:
+src/controllers/auth.controller.js
+src/routes/auth.routes.js
+
+5) Frontend
+Replace:
+api.js
+Add:
+google-auth.js
+
+IMPORTANT:
+Google login only creates/logs in the user. It does NOT claim profiles.
+Manual claim approval still controls profile ownership.

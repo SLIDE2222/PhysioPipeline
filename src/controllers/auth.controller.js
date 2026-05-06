@@ -71,6 +71,112 @@ function sanitizeUser(user) {
   };
 }
 
+async function verifyGoogleCredential(credential) {
+  const googleClientId = String(process.env.GOOGLE_CLIENT_ID || "").trim();
+
+  if (!googleClientId) {
+    const error = new Error("Google login is not configured.");
+    error.status = 500;
+    throw error;
+  }
+
+  const response = await fetch(
+    `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`
+  );
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const error = new Error(payload.error_description || "Invalid Google credential.");
+    error.status = 401;
+    throw error;
+  }
+
+  if (payload.aud !== googleClientId) {
+    const error = new Error("Google credential was issued for a different app.");
+    error.status = 401;
+    throw error;
+  }
+
+  if (String(payload.email_verified) !== "true") {
+    const error = new Error("Google email is not verified.");
+    error.status = 401;
+    throw error;
+  }
+
+  const email = normalizeEmail(payload.email);
+
+  if (!email) {
+    const error = new Error("Google account did not return an email.");
+    error.status = 401;
+    throw error;
+  }
+
+  return {
+    email,
+    name: payload.name || "",
+    picture: payload.picture || "",
+    googleSub: payload.sub || "",
+  };
+}
+
+export async function googleLogin(req, res) {
+  try {
+    const credential = String(req.body?.credential || "").trim();
+
+    if (!credential) {
+      return res.status(400).json({ message: "Google credential is required." });
+    }
+
+    const googleUser = await verifyGoogleCredential(credential);
+
+    let user = await prisma.user.findUnique({
+      where: { email: googleUser.email },
+      include: {
+        profiles: true,
+      },
+    });
+
+    if (!user) {
+      const randomPassword = crypto.randomBytes(32).toString("hex");
+      const passwordHash = await bcrypt.hash(randomPassword, 10);
+
+      user = await prisma.user.create({
+        data: {
+          email: googleUser.email,
+          passwordHash,
+          emailVerified: true,
+        },
+        include: {
+          profiles: true,
+        },
+      });
+    } else if (!user.emailVerified) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { emailVerified: true },
+        include: {
+          profiles: true,
+        },
+      });
+    }
+
+    const token = createToken(user);
+    res.cookie(COOKIE_NAME, token, getCookieOptions());
+
+    return res.json({
+      user: sanitizeUser(user),
+      token,
+    });
+  } catch (error) {
+    console.error("Google login error:", error);
+    return res.status(error.status || 500).json({
+      message: error.message || "Could not login with Google.",
+    });
+  }
+}
+
+
 export async function register(req, res) {
   try {
     const email = normalizeEmail(req.body?.email);

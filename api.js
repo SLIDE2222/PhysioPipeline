@@ -129,6 +129,19 @@
       }
       return data;
     },
+    async loginWithGoogle(credential) {
+      const data = await request('/auth/google', {
+        method: 'POST',
+        body: { credential },
+        timeoutMs: 15000,
+      });
+
+      if (data?.token) {
+        setStoredAuth({ token: data.token, user: data.user }, true);
+      }
+
+      return data;
+    },
     logout() {
       clearStoredAuth();
       return request('/auth/logout', { method: 'POST' });
@@ -146,25 +159,24 @@
         timeoutMs: 20000,
       }).then((data) => normalizeProfile(data.profile || data));
     },
-   fetchProfile(id) {
-  return request(`/profiles/${id}`).then((data) =>
-    normalizeProfile(data.profile || data)
-  );
-},
+    fetchProfile(id) {
+      return request(`/profiles/${id}`).then((data) =>
+        normalizeProfile(data.profile || data)
+      );
+    },
+    fetchProfiles() {
+      return request('/profiles').then((data) => {
+        if (Array.isArray(data)) {
+          return data.map(normalizeProfile);
+        }
 
-fetchProfiles() {
-  return request('/profiles').then((data) => {
-    if (Array.isArray(data)) {
-      return data.map(normalizeProfile);
-    }
+        if (Array.isArray(data.profiles)) {
+          return data.profiles.map(normalizeProfile);
+        }
 
-    if (Array.isArray(data.profiles)) {
-      return data.profiles.map(normalizeProfile);
-    }
-
-    return [];
-  });
-},
+        return [];
+      });
+    },
     requestPasswordReset(email) {
       return request('/auth/forgot-password', {
         method: 'POST',
