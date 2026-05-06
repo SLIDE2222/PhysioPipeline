@@ -17,17 +17,30 @@ function renderClaimPreview(profile) {
   if (!claimProfilePreview || !profile) return;
 
   claimProfilePreview.innerHTML = `
-    <div class="result-card">
-      <h3>${escapeHtml(profile.nome)}</h3>
-      <p><strong>Especialidade:</strong> ${escapeHtml(profile.especialidade || "-")}</p>
-      <p><strong>Local:</strong> ${escapeHtml(getNeighborhoodBadge(profile))}</p>
-      <p><strong>Status:</strong> ${
+  <div class="result-card">
+    <h3>${escapeHtml(profile.nome)}</h3>
+
+    <p>
+      <strong>Especialidade:</strong>
+      ${escapeHtml(profile.especialidade || "-")}
+    </p>
+
+    <p>
+      <strong>Local:</strong>
+      ${escapeHtml(profile.cidade || "-")}
+      ${profile.bairro ? `• ${escapeHtml(profile.bairro)}` : ""}
+    </p>
+
+    <p>
+      <strong>Status:</strong>
+      ${
         profile.isClaimed
           ? "Perfil já reivindicado"
           : "Perfil público disponível para claim"
-      }</p>
-    </div>
-  `;
+      }
+    </p>
+  </div>
+`;
 }
 
 async function loadClaimPage() {
