@@ -9,6 +9,34 @@ const SPECIALTY_OPTIONS = [
   'Pós-operatório'
 ];
 
+const CITY_OPTIONS = [
+  'São Paulo',
+  'Campinas',
+  'Sorocaba',
+  'Itapetininga',
+  'Rio de Janeiro',
+  'Belo Horizonte'
+];
+
+const NEIGHBORHOOD_OPTIONS = {
+  'São Paulo': [
+    'Moema',
+    'Tatuapé',
+    'Bela Vista',
+    'Centro'
+  ],
+
+  'Sorocaba': [
+    'Campolim',
+    'Centro'
+  ],
+
+  'Itapetininga': [
+    'Centro',
+    'Vila Barth'
+  ]
+};
+
 function escapeHtml(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
