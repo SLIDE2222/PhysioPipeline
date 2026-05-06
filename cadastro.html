@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cadastrar perfil | Physio Pipeline</title>
   <link rel="stylesheet" href="style.css" />
+  <meta name="google-client-id" content="YOUR_GOOGLE_CLIENT_ID_HERE" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -34,6 +35,14 @@
         </div>
 
         <form class="form-card" id="cadastroForm">
+        <div class="google-auth-card">
+          <p class="form-hint">Ou continue com Google</p>
+          <div data-google-auth data-width="320"></div>
+        </div>
+
+        <div class="form-divider">
+          <span>ou preencha manualmente</span>
+        </div>
           <label for="nome">Nome completo</label>
           <input type="text" id="nome" name="nome" placeholder="Seu nome" required />
 

@@ -1,0 +1,28 @@
+GOOGLE BUTTON NOT SHOWING FIX
+
+Files included:
+- cadastro.html
+- google-auth.js
+- api.js
+- src/controllers/auth.controller.js
+- src/routes/auth.routes.js
+
+IMPORTANT:
+1. In cadastro.html replace:
+   YOUR_GOOGLE_CLIENT_ID_HERE
+
+   with your real Google OAuth Client ID:
+   something.apps.googleusercontent.com
+
+2. In Render backend environment variables, add:
+   GOOGLE_CLIENT_ID=same_client_id_here
+
+3. In Google Cloud Console, OAuth Client:
+   Authorized JavaScript origins:
+   http://localhost:5500
+   https://physio-pipeline.vercel.app
+
+4. Redeploy frontend and backend.
+
+5. The Google button will NOT fully render with the placeholder Client ID.
+   The disabled fallback button will show until you set the real client ID.
