@@ -6,17 +6,6 @@ const claimIntro = document.getElementById("claimIntro");
 const params = new URLSearchParams(window.location.search);
 const profileId = params.get("id");
 
-function safeEscapeHtml(value) {
-  if (typeof escapeHtml === "function") return safeEscapeHtml(value);
-
-  return String(value || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
 function setClaimMessage(message, color = "#b91c1c") {
   if (!claimMensagem) return;
   claimMensagem.textContent = message;
@@ -28,12 +17,12 @@ function renderClaimPreview(profile) {
 
   claimProfilePreview.innerHTML = `
     <div class="result-card">
-      <h3>${safeEscapeHtml(profile.nome)}</h3>
-      <p><strong>Especialidade:</strong> ${safeEscapeHtml(profile.especialidade || "-")}</p>
+      <h3>${escapeHtml(profile.nome)}</h3>
+      <p><strong>Especialidade:</strong> ${escapeHtml(profile.especialidade || "-")}</p>
       <p>
         <strong>Local:</strong>
-        ${safeEscapeHtml(profile.cidade || "-")}
-        ${profile.bairro ? ` • ${safeEscapeHtml(profile.bairro)}` : ""}
+        ${escapeHtml(profile.cidade || "-")}
+        ${profile.bairro ? ` • ${escapeHtml(profile.bairro)}` : ""}
       </p>
       <p><strong>Status:</strong> ${
         profile.isClaimed
