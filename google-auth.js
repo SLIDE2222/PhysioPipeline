@@ -22,10 +22,14 @@
         return;
       }
 
-      await window.physioApi.loginWithGoogle(response.credential);
+      const data = await window.physioApi.loginWithGoogle(response.credential);
       showMessage('Login com Google realizado com sucesso.', '#166534');
+
+      const profileId = data?.user?.profiles?.[0]?.id;
       setTimeout(() => {
-        window.location.href = 'cadastro.html';
+        window.location.href = profileId
+          ? `profile.html?id=${encodeURIComponent(profileId)}`
+          : 'cadastro.html?completeProfile=true';
       }, 600);
     } catch (error) {
       showMessage(error.message || 'Não foi possível entrar com Google.');

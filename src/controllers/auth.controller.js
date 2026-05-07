@@ -66,6 +66,8 @@ function sanitizeUser(user) {
   return {
     id: user.id,
     email: user.email,
+    name: user.name || null,
+    phone: user.phone || null,
     emailVerified: Boolean(user.emailVerified),
     profiles: user.profiles || [],
   };
@@ -129,6 +131,9 @@ export async function googleLogin(req, res) {
     }
 
     const googleUser = await verifyGoogleCredential(credential);
+    const fallbackName = googleUser.email.split("@")[0] || "Profissional";
+    const fullName = String(googleUser.name || fallbackName).trim() || "Profissional";
+    const firstName = fullName.split(/\s+/)[0] || "Profissional";
 
     let user = await prisma.user.findUnique({
       where: { email: googleUser.email },
@@ -143,23 +148,54 @@ export async function googleLogin(req, res) {
 
       user = await prisma.user.create({
         data: {
-  email: googleUser.email,
-  passwordHash,
-  emailVerified: true,
-  name: googleUser.name?.split(" ")[0] || "Profissional",
-},
+          email: googleUser.email,
+          passwordHash,
+          emailVerified: true,
+          name: firstName,
+          googleSub: googleUser.googleSub || null,
+        },
         include: {
           profiles: true,
         },
       });
-    } else if (!user.emailVerified) {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: { emailVerified: true },
-        include: {
-          profiles: true,
+    } else {
+      const userUpdateData = {};
+
+      if (!user.emailVerified) userUpdateData.emailVerified = true;
+      if (!user.name) userUpdateData.name = firstName;
+      if (!user.googleSub && googleUser.googleSub) userUpdateData.googleSub = googleUser.googleSub;
+
+      if (Object.keys(userUpdateData).length) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: userUpdateData,
+          include: {
+            profiles: true,
+          },
+        });
+      }
+    }
+
+    if (!user.profiles?.length) {
+      const profile = await prisma.profile.create({
+        data: {
+          name: firstName,
+          specialty: "Não informado",
+          city: "Não informado",
+          neighborhood: null,
+          phone: user.phone || null,
+          bio: "Perfil criado com Google. Complete seus dados profissionais para aparecer melhor nas buscas.",
+          photoUrl: googleUser.picture || null,
+          publicEmail: googleUser.email,
+          ownerUserId: user.id,
+          isClaimed: true,
         },
       });
+
+      user = {
+        ...user,
+        profiles: [profile],
+      };
     }
 
     const token = createToken(user);

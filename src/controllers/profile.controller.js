@@ -115,6 +115,13 @@ export async function createProfile(req, res) {
     },
   });
 
+  if (parsed.data.phone !== undefined) {
+    await prisma.user.update({
+      where: { id: req.user.userId },
+      data: { phone: clean(parsed.data.phone) },
+    });
+  }
+
   return res.status(201).json({ profile });
 }
 
@@ -157,6 +164,13 @@ export async function updateMyProfile(req, res) {
       isClaimed: true,
     },
   });
+
+  if (parsed.data.phone !== undefined) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { phone: clean(parsed.data.phone) },
+    });
+  }
 
   return res.json({ profile: updated });
 }
