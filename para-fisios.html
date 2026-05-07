@@ -61,7 +61,7 @@
 
           <div class="profile-actions">
             <a href="cadastro.html" id="pageProfileBtn" class="btn btn-primary">Criar meu perfil</a>
-            <a href="login.html" class="btn btn-secondary">Já tenho conta</a>
+            <a href="login.html" id="pageLoginBtn" class="btn btn-secondary">Já tenho conta</a>
           </div>
         </div>
       </div>
@@ -70,5 +70,34 @@
 
   <script src="api.js?v=info-pages1"></script>
   <script src="script.js?v=info-pages1"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const pageProfileBtn = document.getElementById('pageProfileBtn');
+      const pageLoginBtn = document.getElementById('pageLoginBtn');
+
+      if (!pageProfileBtn || typeof window.getLoggedUser !== 'function') return;
+
+      try {
+        const user = await window.getLoggedUser();
+
+        if (user?.profile?.id) {
+          pageProfileBtn.textContent = 'Meu perfil';
+          pageProfileBtn.href = `profile.html?id=${encodeURIComponent(user.profile.id)}`;
+          if (pageLoginBtn) pageLoginBtn.style.display = 'none';
+          return;
+        }
+
+        if (user) {
+          pageProfileBtn.textContent = 'Criar perfil';
+          pageProfileBtn.href = 'cadastro.html';
+          if (pageLoginBtn) pageLoginBtn.style.display = 'none';
+        }
+      } catch (_) {
+        pageProfileBtn.textContent = 'Criar meu perfil';
+        pageProfileBtn.href = 'cadastro.html';
+        if (pageLoginBtn) pageLoginBtn.style.display = '';
+      }
+    });
+  </script>
 </body>
 </html>
