@@ -74,5 +74,29 @@
 
   <script src="api.js?v=info-pages1"></script>
   <script src="script.js?v=info-pages1"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const pageProfileBtn = document.getElementById('pageProfileBtn');
+      if (!pageProfileBtn || typeof window.getLoggedUser !== 'function') return;
+
+      try {
+        const user = await window.getLoggedUser();
+
+        if (user?.profile?.id) {
+          pageProfileBtn.textContent = 'Meu perfil';
+          pageProfileBtn.href = `profile.html?id=${encodeURIComponent(user.profile.id)}`;
+          return;
+        }
+
+        if (user) {
+          pageProfileBtn.textContent = 'Criar perfil';
+          pageProfileBtn.href = 'cadastro.html';
+        }
+      } catch (_) {
+        pageProfileBtn.textContent = 'Cadastrar perfil';
+        pageProfileBtn.href = 'cadastro.html';
+      }
+    });
+  </script>
 </body>
 </html>
