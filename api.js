@@ -168,7 +168,7 @@
       return request('/auth/forgot-password', {
         method: 'POST',
         body: { email },
-        timeoutMs: 12000,
+        timeoutMs: 45000,
       });
     },
     normalizeProfile,
