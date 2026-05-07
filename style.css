@@ -1570,17 +1570,18 @@ body:has(#cadastroForm) .form-card {
   padding: 2.4rem;
 }
 
-
 /* Google auth button fix */
 .google-auth-card {
   width: 100%;
+  max-width: 400px;
   margin-bottom: 1.25rem;
 }
 
 .google-auth-card [data-google-auth],
+.google-auth-card .google-auth-slot,
 .google-auth-card .g_id_signin {
-  width: min(100%, 400px) !important;
-  max-width: 400px !important;
+  width: 400px !important;
+  max-width: 100% !important;
 }
 
 .google-auth-card iframe {
@@ -1589,7 +1590,12 @@ body:has(#cadastroForm) .form-card {
 }
 
 @media (max-width: 480px) {
+  .google-auth-card {
+    max-width: 100%;
+  }
+
   .google-auth-card [data-google-auth],
+  .google-auth-card .google-auth-slot,
   .google-auth-card .g_id_signin,
   .google-auth-card iframe {
     width: 100% !important;
