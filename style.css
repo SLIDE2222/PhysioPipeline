@@ -46,7 +46,7 @@ textarea {
 }
 
 .narrow {
-  max-width: 760px;
+  max-width: 980px;
 }
 
 .section {
@@ -1559,4 +1559,13 @@ textarea {
   border-radius: 20px;
   padding: 40px;
   text-align: center;
+}
+
+/* Wider registration page */
+body:has(#cadastroForm) .narrow {
+  max-width: 980px;
+}
+
+body:has(#cadastroForm) .form-card {
+  padding: 2.4rem;
 }
