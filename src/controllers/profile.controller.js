@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 
 const createProfileSchema = z.object({
+  name: z.string().min(2).optional(),
   name: z.string().min(2),
   specialty: z.string().min(2),
   city: z.string().min(2),

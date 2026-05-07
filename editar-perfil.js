@@ -41,6 +41,11 @@ async function loadMyProfile() {
 
     document.getElementById('telefone').value = profile.telefone || profile.phone || '';
 
+    document.getElementById('nomeCompleto').value =
+      profile.nome ||
+      profile.name ||
+      '';
+
     const cidadeInput = document.getElementById('editarCidade');
     if (cidadeInput) {
       cidadeInput.value = profile.cidade || profile.city || '';
@@ -133,6 +138,7 @@ if (editarForm) {
 
     try {
       const profile = await window.physioApi.updateMyProfile({
+        name: document.getElementById('nomeCompleto').value.trim() || null,
         phone: document.getElementById('telefone').value.trim() || null,
         city: document.getElementById('editarCidade')?.value.trim() || null,
         neighborhood: document.getElementById('bairro').value.trim() || null,
