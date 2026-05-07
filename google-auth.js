@@ -32,8 +32,18 @@
           : 'cadastro.html?completeProfile=true';
       }, 600);
     } catch (error) {
-      showMessage(error.message || 'Não foi possível entrar com Google.');
-    }
+  console.error('GOOGLE LOGIN ERROR:', error);
+
+  alert(
+    JSON.stringify({
+      message: error.message,
+      status: error.status,
+      data: error.data
+    }, null, 2)
+  );
+
+  showMessage(error.message || 'Não foi possível entrar com Google.');
+}
   }
 
   function initGoogleAuth() {
