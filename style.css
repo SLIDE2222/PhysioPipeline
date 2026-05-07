@@ -1577,7 +1577,7 @@ body:has(#cadastroForm) .form-card {
   margin-bottom: 1.25rem;
 }
 
-.google-full-button {
+.google-full-btn {
   width: 100%;
   min-height: 58px;
   display: flex;
@@ -1595,13 +1595,13 @@ body:has(#cadastroForm) .form-card {
   margin-bottom: 1.25rem;
 }
 
-.google-full-button:hover {
+.google-full-btn:hover {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
   transform: translateY(-1px);
 }
 
-.google-full-button__icon {
+.google-full-btn__icon {
   width: 24px;
   height: 24px;
   border-radius: 50%;
