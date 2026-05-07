@@ -152,6 +152,11 @@
     fetchMyProfile() {
       return request('/profiles/me').then((data) => normalizeProfile(data.profile));
     },
+    fetchProfiles() {
+  return request('/profiles').then((data) =>
+    (data.profiles || data || []).map(normalizeProfile)
+  );
+},
     updateMyProfile(payload) {
       return request('/profiles/me', {
         method: 'PUT',
