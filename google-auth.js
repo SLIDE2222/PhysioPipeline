@@ -1,90 +1,75 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const googleButtons = Array.from(document.querySelectorAll("[data-google-auth]"));
-
-  if (!googleButtons.length) return;
-
-  const clientId =
-    window.GOOGLE_CLIENT_ID ||
-    document.querySelector('meta[name="google-client-id"]')?.content ||
-    "";
-
-  if (!clientId || !clientId.includes(".apps.googleusercontent.com")) {
-    console.warn("Google Client ID missing or invalid.");
-    googleButtons.forEach((button) => {
-      button.innerHTML = `
-        <button type="button" class="btn btn-outline btn-block" disabled>
-          Google login sem Client ID
-        </button>
-      `;
-    });
-    return;
+(function () {
+  function getClientId() {
+    return document.querySelector('meta[name="google-client-id"]')?.content?.trim() || '';
   }
 
-  const waitForGoogle = () =>
-    new Promise((resolve, reject) => {
-      let attempts = 0;
+  function showMessage(text, color = '#b91c1c') {
+    const targets = [
+      document.getElementById('cadastroMensagem'),
+      document.getElementById('loginMensagem'),
+    ].filter(Boolean);
 
-      const interval = setInterval(() => {
-        attempts += 1;
+    targets.forEach((el) => {
+      el.textContent = text;
+      el.style.color = color;
+    });
+  }
 
-        if (window.google?.accounts?.id) {
-          clearInterval(interval);
-          resolve();
-        }
+  async function handleCredentialResponse(response) {
+    try {
+      if (!response?.credential) {
+        showMessage('Não foi possível receber a credencial do Google.');
+        return;
+      }
 
-        if (attempts > 60) {
-          clearInterval(interval);
-          reject(new Error("Google Identity script did not load."));
-        }
-      }, 100);
+      await window.physioApi.loginWithGoogle(response.credential);
+      showMessage('Login com Google realizado com sucesso.', '#166534');
+      setTimeout(() => {
+        window.location.href = 'cadastro.html';
+      }, 600);
+    } catch (error) {
+      showMessage(error.message || 'Não foi possível entrar com Google.');
+    }
+  }
+
+  function initGoogleAuth() {
+    const clientId = getClientId();
+    if (!clientId || !window.google?.accounts?.id) return;
+
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true,
     });
 
-  waitForGoogle()
-    .then(() => {
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response) => {
-          try {
-            if (!response?.credential) {
-              throw new Error("Google did not return a credential.");
-            }
-
-            if (!window.physioApi?.loginWithGoogle) {
-              throw new Error("Google login helper is missing in api.js.");
-            }
-
-            const data = await window.physioApi.loginWithGoogle(response.credential);
-
-            if (data?.user) {
-              window.location.href = "index.html";
-            }
-          } catch (error) {
-            console.error("Google auth failed:", error);
-            alert(error.message || "Não foi possível entrar com Google.");
-          }
-        },
+    document.querySelectorAll('[data-google-auth]').forEach((container) => {
+      if (container.classList.contains('google-hidden-render')) return;
+      const width = Number(container.dataset.width || 400);
+      window.google.accounts.id.renderButton(container, {
+        theme: 'outline',
+        size: 'large',
+        type: 'standard',
+        shape: 'pill',
+        text: 'continue_with',
+        logo_alignment: 'left',
+        width: Math.min(Math.max(width, 240), 400),
       });
+    });
 
-      googleButtons.forEach((button) => {
-        button.innerHTML = "";
-        window.google.accounts.id.renderButton(button, {
-          theme: "outline",
-          size: "large",
-          type: "standard",
-          shape: "pill",
-          text: "continue_with",
-          width: button.dataset.width ? Number(button.dataset.width) : 320,
+    const customButton = document.getElementById('googleSignupButton');
+    if (customButton) {
+      customButton.addEventListener('click', () => {
+        window.google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
+            const hiddenHost = document.querySelector('[data-google-auth]:not(.google-hidden-render)');
+            const iframe = hiddenHost?.querySelector('iframe');
+            if (iframe) iframe.focus();
+          }
         });
       });
-    })
-    .catch((error) => {
-      console.warn(error);
-      googleButtons.forEach((button) => {
-        button.innerHTML = `
-          <button type="button" class="btn btn-outline btn-block" disabled>
-            Google indisponível
-          </button>
-        `;
-      });
-    });
-});
+    }
+  }
+
+  window.addEventListener('load', initGoogleAuth);
+})();
