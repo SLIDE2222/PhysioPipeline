@@ -20,6 +20,12 @@ model User {
   email          String    @unique
   passwordHash   String
   emailVerified  Boolean   @default(false)
+
+  // Basic account data for Google/manual signup
+  name           String?
+  phone          String?
+  googleSub      String?   @unique
+
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   profiles       Profile[]

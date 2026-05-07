@@ -143,10 +143,11 @@ export async function googleLogin(req, res) {
 
       user = await prisma.user.create({
         data: {
-          email: googleUser.email,
-          passwordHash,
-          emailVerified: true,
-        },
+  email: googleUser.email,
+  passwordHash,
+  emailVerified: true,
+  name: googleUser.name?.split(" ")[0] || "Profissional",
+},
         include: {
           profiles: true,
         },
