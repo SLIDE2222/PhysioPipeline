@@ -1783,3 +1783,49 @@ body:has(#cadastroForm) .form-card {
   text-transform: uppercase;
   border: 1px solid rgba(37, 99, 235, 0.18);
 }
+
+@media (max-width: 640px) {
+  .tech-signature-footer {
+    padding: 1.4rem 0;
+  }
+
+  .tech-signature-footer__content {
+    gap: 1rem;
+  }
+
+  .tech-signature {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+    gap: 6px;
+
+    padding: 14px 12px;
+    border-radius: 18px;
+  }
+
+  .tech-signature__label {
+    font-size: 0.68rem;
+  }
+
+  .tech-signature__name {
+    font-size: 1rem;
+    line-height: 1.1;
+  }
+
+  .tech-signature__tag {
+    font-size: 0.68rem;
+    padding: 4px 9px;
+  }
+
+  .tech-signature__pulse {
+    width: 8px;
+    height: 8px;
+    margin-top: 3px;
+  }
+
+  .tech-signature::before {
+    animation-duration: 5.5s;
+  }
+}
