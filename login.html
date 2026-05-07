@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Entrar | PhysioPipeline</title>
   <link rel="stylesheet" href="style.css?v=loginrealfix2" />
+  <meta name="google-client-id" content="197182747757-6tm1e8vhu44fkpf89pvvsbooodl48t3o.apps.googleusercontent.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -36,6 +37,21 @@
         </div>
 
         <form class="form-card" id="loginForm">
+          <div class="google-auth-card">
+            <p class="form-hint">Ou continue com Google</p>
+
+            <button type="button" class="google-full-btn" id="googleSignupButton">
+              <span class="google-full-btn__icon">G</span>
+              <span>Continuar com o Google</span>
+            </button>
+
+            <div data-google-auth data-width="400" class="google-hidden-render" aria-hidden="true"></div>
+          </div>
+
+          <div class="form-divider">
+            <span>ou entre manualmente</span>
+          </div>
+
           <label for="loginEmail">E-mail</label>
           <input
             type="email"
@@ -71,6 +87,8 @@
   </main>
 
  <script src="api.js?v=prodfix2"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="google-auth.js?v=login-google1"></script>
 <script src="login.js?v=prodfix2"></script>
 </body>
 </html>
