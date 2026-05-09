@@ -342,17 +342,23 @@ function updateProfileButtons(user) {
 
 async function renderAuthArea() {
   const authArea = document.getElementById('authArea');
+  const cadastroLink = document.getElementById('cadastroLink');
+
   if (!authArea) return;
 
   const user = await getLoggedUser(true);
 
   if (!user) {
+    if (cadastroLink) cadastroLink.style.display = '';
+
     authArea.innerHTML = `
       <a href="login.html" class="btn btn-outline">Entrar</a>
       <a href="cadastro.html" class="btn btn-primary">Cadastrar</a>
     `;
     return;
   }
+
+  if (cadastroLink) cadastroLink.remove();
 
   updateProfileButtons(user);
 
