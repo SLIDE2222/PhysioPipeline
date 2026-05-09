@@ -1830,13 +1830,26 @@ body:has(#cadastroForm) .form-card {
   }
 }
 
+.results-search-inline {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin: 32px 0 48px;
+  flex-wrap: nowrap;
+}
+
+.results-search-inline .autocomplete-wrapper {
+  flex: 1;
+  min-width: 220px;
+}
+
 .results-search-inline input {
   width: 100%;
   height: 58px;
   padding: 0 18px;
   border: 1px solid #d7dfeb;
   border-radius: 18px;
-  background: #ffffff;
+  background: #fff;
   font-size: 15px;
   transition: all 0.2s ease;
 }
@@ -1852,19 +1865,14 @@ body:has(#cadastroForm) .form-card {
   padding: 0 30px;
   border-radius: 18px;
   font-weight: 600;
-}
-
-.results-search-inline button {
-  height: 56px;
-  padding: 0 28px;
   white-space: nowrap;
 }
 
 @media (max-width: 768px) {
   .results-search-inline {
     flex-direction: column;
-    gap: 12px;
-    margin: 24px 0 36px;
+    align-items: stretch;
+    flex-wrap: wrap;
   }
 
   .results-search-inline .autocomplete-wrapper {
@@ -1872,16 +1880,8 @@ body:has(#cadastroForm) .form-card {
     min-width: 0;
   }
 
-  .results-search-inline input {
-    width: 100%;
-    height: 54px;
-    font-size: 15px;
-  }
-
   .results-search-inline button {
     width: 100%;
-    height: 54px;
-    padding: 0 20px;
   }
 }
 
