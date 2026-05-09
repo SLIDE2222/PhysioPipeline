@@ -1902,13 +1902,29 @@ body:has(#cadastroForm) .form-card {
 }
 
 .claim-profile-box {
+  width: 100%;
+  margin-top: -2px;
+
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 6px;
 }
 
-.claim-profile-text {
+.claim-profile-warning {
+  margin: 2px 0 0;
   font-size: 14px;
-  color: #64748b;
-  margin: 0;
+  font-weight: 800;
+  color: #dc2626;
+}
+
+.claim-profile-link {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2563eb;
+  text-decoration: none;
+}
+
+.claim-profile-link:hover {
+  text-decoration: underline;
 }
