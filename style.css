@@ -1830,22 +1830,28 @@ body:has(#cadastroForm) .form-card {
   }
 }
 
-.results-search-inline {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  margin: 32px 0 48px;
-  flex-wrap: wrap;
-}
-
-.results-search-inline .autocomplete-wrapper {
-  flex: 1;
-  min-width: 220px;
-}
-
 .results-search-inline input {
   width: 100%;
-  height: 56px;
+  height: 58px;
+  padding: 0 18px;
+  border: 1px solid #d7dfeb;
+  border-radius: 18px;
+  background: #ffffff;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.results-search-inline input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  outline: none;
+}
+
+.results-search-inline button {
+  height: 58px;
+  padding: 0 30px;
+  border-radius: 18px;
+  font-weight: 600;
 }
 
 .results-search-inline button {
