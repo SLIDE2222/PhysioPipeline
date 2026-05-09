@@ -1829,3 +1829,68 @@ body:has(#cadastroForm) .form-card {
     animation-duration: 5.5s;
   }
 }
+
+.results-search-inline {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin: 32px 0 48px;
+  flex-wrap: wrap;
+}
+
+.results-search-inline .autocomplete-wrapper {
+  flex: 1;
+  min-width: 220px;
+}
+
+.results-search-inline input {
+  width: 100%;
+  height: 56px;
+}
+
+.results-search-inline button {
+  height: 56px;
+  padding: 0 28px;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .results-search-inline {
+    flex-direction: column;
+    gap: 12px;
+    margin: 24px 0 36px;
+  }
+
+  .results-search-inline .autocomplete-wrapper {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .results-search-inline input {
+    width: 100%;
+    height: 54px;
+    font-size: 15px;
+  }
+
+  .results-search-inline button {
+    width: 100%;
+    height: 54px;
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .results-search-inline {
+    margin: 20px 0 32px;
+  }
+
+  .results-search-inline input {
+    height: 52px;
+    font-size: 14px;
+  }
+
+  .results-search-inline button {
+    height: 52px;
+    font-size: 14px;
+  }
+}

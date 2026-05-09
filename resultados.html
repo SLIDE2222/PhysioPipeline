@@ -33,7 +33,49 @@
           <p id="resultadoResumo">Carregando busca...</p>
         </div>
 
-        <div id="map" class="local-map-panel" aria-live="polite"></div>
+       <form class="results-search-inline" action="resultados.html" method="GET">
+
+  <div class="autocomplete-wrapper">
+    <input
+      type="text"
+      id="specialtyInput"
+      name="especialidade"
+      placeholder="Especialidade"
+      autocomplete="off"
+      required
+    />
+    <ul id="specialtySuggestions" class="suggestions-list"></ul>
+  </div>
+
+  <div class="autocomplete-wrapper">
+    <input
+      type="text"
+      id="cityIndexSelect"
+      name="cidade"
+      placeholder="Cidade"
+      autocomplete="off"
+      required
+    />
+    <ul id="cityIndexSuggestions" class="suggestions-list"></ul>
+  </div>
+
+  <div class="autocomplete-wrapper">
+    <input
+      type="text"
+      id="buscarBairroIndex"
+      name="bairro"
+      placeholder="Bairro"
+      autocomplete="off"
+      disabled
+    />
+    <ul id="bairroIndexSuggestions" class="suggestions-list"></ul>
+  </div>
+
+  <button type="submit" class="btn btn-primary">
+    Pesquisar
+  </button>
+
+</form>
 
         <div class="results-grid" id="resultsGrid"></div>
       </div>
@@ -42,5 +84,20 @@
 
   <script src="api.js?v=prodapi2"></script>
   <script src="script.js?v=loginfix10"></script>
+    <footer class="footer tech-signature-footer">
+    <div class="container footer-content tech-signature-footer__content">
+      <div>
+        <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
+        <p class="footer-text">Conectando pacientes e fisioterapeutas com tecnologia simples, limpa e útil.</p>
+      </div>
+
+      <div class="tech-signature">
+  <span class="tech-signature__label">Developed by</span>
+  <span class="tech-signature__name">Jeffrey Walker</span>
+  <span class="tech-signature__tag">Founder & Creator</span>
+  <span class="tech-signature__pulse" aria-hidden="true"></span>
+</div>
+    </div>
+  </footer>
 </body>
 </html>
