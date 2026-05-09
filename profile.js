@@ -46,10 +46,19 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-function buildWhatsAppLink(phone) {
+function buildWhatsAppLink(phone, professionalName) {
   const digits = String(phone || '').replace(/\D/g, '');
+
   if (!digits) return '#';
-  return `https://wa.me/55${digits}`;
+
+  const firstName = String(professionalName || '')
+    .trim()
+    .split(' ')[0];
+
+  const message =
+    `Olá Dr(a). ${firstName}, encontrei você através do site PhysioPipeline e gostaria de agendar uma consulta.`;
+
+  return `https://wa.me/55${digits}?text=${encodeURIComponent(message)}`;
 }
 
 function getNeighborhoodBadge(profissional) {
@@ -120,7 +129,10 @@ async function renderProfilePage() {
       ? `<img src="${escapeHtml(profissional.foto)}" alt="${escapeHtml(profissional.nome)}" class="clickable-avatar">`
       : `<span>${escapeHtml((profissional.nome || '?').charAt(0).toUpperCase())}</span>`;
 
-    const whatsappLink = buildWhatsAppLink(profissional.telefone);
+   const whatsappLink = buildWhatsAppLink(
+  profissional.telefone,
+  profissional.nome
+);
 
     const showClaimButton =
       !isOwner &&
