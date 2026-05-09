@@ -1900,3 +1900,15 @@ body:has(#cadastroForm) .form-card {
     font-size: 14px;
   }
 }
+
+.claim-profile-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.claim-profile-text {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
