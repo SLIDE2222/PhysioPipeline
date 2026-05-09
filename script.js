@@ -455,7 +455,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    resultsGrid.innerHTML = filtered.map((profile) => `
+    const shuffledProfiles = [...filtered].sort(() => Math.random() - 0.5);
+
+    resultsGrid.innerHTML = shuffledProfiles.map((profile) => `
       <article class="result-card">
         <h3>${escapeHtml(profile.nome || 'Fisioterapeuta')}</h3>
 
