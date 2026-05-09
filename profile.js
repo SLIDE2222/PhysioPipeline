@@ -175,7 +175,12 @@ async function renderProfilePage() {
             ${profissional.telefone ? `<a href="${whatsappLink}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Falar no WhatsApp</a>` : ''}
             ${profissional.instagram ? `<a href="${escapeHtml(profissional.instagram)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">📸 Instagram</a>` : ''}
             ${profissional.linkedin ? `<a href="${escapeHtml(profissional.linkedin)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">💼 LinkedIn</a>` : ''}
-            ${isOwner ? `<a href="editar-perfil.html" class="btn btn-secondary">Editar perfil</a>` : ''}
+            ${isOwner ? `
+  <a href="editar-perfil.html" class="btn btn-secondary">
+    Editar perfil
+  </a>
+` : ''}
+
 ${showClaimButton ? `
   <a
     href="claim-profile.html?id=${encodeURIComponent(profissional.id)}"
@@ -185,17 +190,20 @@ ${showClaimButton ? `
   </a>
 ` : ''}
 
+<a href="buscar.html" class="btn btn-secondary">
+  Voltar
+</a>
+
 ${showClaimButton ? `
   <p class="claim-profile-warning">
     Esse perfil é seu? Então reivindique ele!
   </p>
 ` : ''}
 
-<a href="buscar.html" class="btn btn-secondary">Voltar</a>
-          </div>
-        </section>
-      </article>
-    `;
+</div>
+</section>
+</article>
+`;
 
     setupImageModal();
   } catch (error) {
