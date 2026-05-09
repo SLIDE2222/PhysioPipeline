@@ -185,8 +185,6 @@ ${showClaimButton ? `
   </a>
 ` : ''}
 
-<a href="buscar.html" class="btn btn-secondary">Voltar</a>
-
 ${showClaimButton ? `
   <p class="claim-profile-warning">
     Esse perfil é seu? Então reivindique ele!
