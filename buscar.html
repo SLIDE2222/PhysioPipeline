@@ -88,13 +88,23 @@
   <script>
   document.addEventListener("DOMContentLoaded", () => {
     const cadastroLink = document.getElementById("cadastroLink");
+    const authArea = document.getElementById("authArea");
 
-    const loggedUser =
-      JSON.parse(localStorage.getItem("physioLoggedUser")) ||
-      JSON.parse(sessionStorage.getItem("physioLoggedUser"));
+    const possibleUser =
+      localStorage.getItem("physioLoggedUser") ||
+      sessionStorage.getItem("physioLoggedUser") ||
+      localStorage.getItem("loggedUser") ||
+      sessionStorage.getItem("loggedUser") ||
+      localStorage.getItem("currentUser") ||
+      sessionStorage.getItem("currentUser") ||
+      localStorage.getItem("user") ||
+      sessionStorage.getItem("user");
 
-    if (loggedUser && cadastroLink) {
-      cadastroLink.style.display = "none";
+    const authAreaShowsLoggedIn =
+      authArea && authArea.innerText.toLowerCase().includes("olá");
+
+    if ((possibleUser || authAreaShowsLoggedIn) && cadastroLink) {
+      cadastroLink.remove();
     }
   });
 </script>
