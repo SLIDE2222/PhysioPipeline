@@ -786,9 +786,9 @@ textarea {
 
 .profile-actions {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 12px;
-  margin-top: 18px;
+  flex-wrap: wrap;
 }
 
 .btn-outline {
@@ -1908,7 +1908,9 @@ body:has(#cadastroForm) .form-card {
 }
 
 .claim-profile-warning {
-  margin: 0;
+  width: 100%;
+  margin-top: -2px;
+
   font-size: 14px;
   font-weight: 800;
   color: #dc2626;
