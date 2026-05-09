@@ -428,9 +428,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const profiles = await window.physioApi.fetchProfiles();
 
     const filtered = profiles.filter((profile) => {
-      const pEspecialidade = normalizeText(profile.especialidade);
-      const pCidade = normalizeText(profile.cidade);
-      const pBairro = normalizeText(profile.bairro);
+     const pEspecialidade = normalizeText(profile.especialidade || profile.specialty);
+const pCidade = normalizeText(profile.cidade || profile.city);
+const pBairro = normalizeText(profile.bairro || profile.neighborhood);
 
       const specialtyMatch =
         !especialidade || pEspecialidade.includes(especialidade);
@@ -458,47 +458,49 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const shuffledProfiles = [...filtered].sort(() => Math.random() - 0.5);
 
-    resultsGrid.innerHTML = shuffledProfiles.map((profile) => `
-      <article class="result-card">
-        <h3>${escapeHtml(profile.nome || 'Fisioterapeuta')}</h3>
+   resultsGrid.innerHTML = shuffledProfiles.map((profile) => `
+  <article class="result-card">
+    <h3>
+      ${escapeHtml(profile.nome || profile.name || 'Fisioterapeuta')}
+    </h3>
 
-        <p>
-          <strong>Especialidade:</strong>
-          ${escapeHtml(profile.especialidade || 'Não informado')}
-        </p>
+    <p>
+      <strong>Especialidade:</strong>
+      ${escapeHtml(profile.especialidade || profile.specialty || 'Não informado')}
+    </p>
 
-        <p>
-          <strong>Cidade:</strong>
-          ${escapeHtml(profile.cidade || 'Não informado')}
-        </p>
+    <p>
+      <strong>Cidade:</strong>
+      ${escapeHtml(profile.cidade || profile.city || 'Não informado')}
+    </p>
 
-        <p>
-          <strong>Bairro:</strong>
-          ${escapeHtml(profile.bairro || 'Não informado')}
-        </p>
+    <p>
+      <strong>Bairro:</strong>
+      ${escapeHtml(profile.bairro || profile.neighborhood || 'Não informado')}
+    </p>
 
-        <p class="bio">
-          ${escapeHtml(profile.bio || 'Sem descrição.')}
-        </p>
+    <p class="bio">
+      ${escapeHtml(profile.bio || profile.descricao || 'Sem descrição.')}
+    </p>
 
-        <a
-          href="profile.html?id=${encodeURIComponent(profile.id)}"
-          class="btn btn-primary"
-        >
-          Ver perfil
-        </a>
-      </article>
-    `).join('');
+    <a
+      href="profile.html?id=${encodeURIComponent(profile.id)}"
+      class="btn btn-primary"
+    >
+      Ver perfil
+    </a>
+  </article>
+`).join('');
 
-  } catch (error) {
-    console.error(error);
+} catch (error) {
+  console.error(error);
 
-    resumo.textContent = 'Erro ao carregar resultados.';
+  resumo.textContent = 'Erro ao carregar resultados.';
 
-    resultsGrid.innerHTML = `
-      <div class="empty-results">
-        <h3>Erro ao buscar profissionais.</h3>
-      </div>
-    `;
-  }
+  resultsGrid.innerHTML = `
+    <div class="empty-results">
+      <h3>Erro ao buscar profissionais.</h3>
+    </div>
+  `;
+}
 });
