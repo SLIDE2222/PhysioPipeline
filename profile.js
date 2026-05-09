@@ -176,18 +176,20 @@ async function renderProfilePage() {
             ${profissional.instagram ? `<a href="${escapeHtml(profissional.instagram)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">📸 Instagram</a>` : ''}
             ${profissional.linkedin ? `<a href="${escapeHtml(profissional.linkedin)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">💼 LinkedIn</a>` : ''}
             ${isOwner ? `<a href="editar-perfil.html" class="btn btn-secondary">Editar perfil</a>` : ''}
-        ${showClaimButton ? `
+   ${showClaimButton ? `
   <div class="claim-profile-box">
+
     <p class="claim-profile-warning">
       Esse perfil é seu? Então reivindique ele!
     </p>
 
     <a
       href="claim-profile.html?id=${encodeURIComponent(profissional.id)}"
-      class="claim-profile-link"
+      class="btn btn-outline"
     >
       Clame o perfil
     </a>
+
   </div>
 ` : ''}
             <a href="buscar.html" class="btn btn-secondary">Voltar</a>
