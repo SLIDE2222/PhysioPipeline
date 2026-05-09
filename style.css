@@ -1901,32 +1901,13 @@ body:has(#cadastroForm) .form-card {
   }
 }
 
-.claim-profile-box {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .claim-profile-warning {
   width: 100%;
-
-  margin-top: 2px;
+  margin-top: 4px;
 
   font-size: 14px;
   font-weight: 800 !important;
-
   color: #dc2626 !important;
 
   line-height: 1.3;
-}
-
-.claim-profile-link {
-  font-size: 14px;
-  font-weight: 700;
-  color: #2563eb;
-  text-decoration: none;
-}
-
-.claim-profile-link:hover {
-  text-decoration: underline;
 }
