@@ -23,6 +23,7 @@ const CITY_NEIGHBORHOODS = {
     'Pinheiros',
     'Santana',
     'Santo Amaro',
+    'Campo Belo',
     'Tatuapé',
     'Vila Mariana'
   ],
