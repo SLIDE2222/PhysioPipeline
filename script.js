@@ -8,6 +8,7 @@ const SPECIALTIES = [
   'Fisioterapia Respiratória',
   'Pilates',
   'Domicilar',
+  'Fisioterapia Ocupacional',
   'Quiropraxia',
   'Fisioterapia Pediátrica',
   'Ventosaterapia',
