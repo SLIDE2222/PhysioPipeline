@@ -5,30 +5,6 @@ const fotoPreview = document.getElementById('fotoPreview');
 
 let fotoBase64 = '';
 
-function populateSpecialtySelects() {
-  const specialties = window.SPECIALTY_OPTIONS || [];
-
-  const mainSelect = document.getElementById('especialidade');
-  const secondarySelect = document.getElementById('especialidadeSecundaria');
-
-  if (mainSelect) {
-    mainSelect.innerHTML = '<option value="">Selecione uma especialidade</option>';
-
-    specialties.forEach((specialty) => {
-      mainSelect.innerHTML += `<option value="${specialty}">${specialty}</option>`;
-    });
-  }
-
-  if (secondarySelect) {
-    secondarySelect.innerHTML = '<option value="">Nenhuma especialização adicional</option>';
-
-    specialties.forEach((specialty) => {
-      secondarySelect.innerHTML += `<option value="${specialty}">${specialty}</option>`;
-    });
-  }
-}
-
-
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -38,12 +14,56 @@ function fileToBase64(file) {
   });
 }
 
-function setSelectValue(selectId, value) {
-  const select = document.getElementById(selectId);
-  if (!select) return;
+function setInputValue(inputId, value) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
 
-  const optionExists = Array.from(select.options).some((option) => option.value === value);
-  select.value = optionExists ? value : '';
+  input.value = value || '';
+}
+
+
+const EDITAR_SPECIALTY_OPTIONS = ['Fisioterapia Ortopédica', 'Fisioterapia Esportiva', 'Fisioterapia Neurológica', 'Fisioterapia Geriátrica', 'Fisioterapia Respiratória', 'Fisioterapia Pediátrica', 'Pós-operatório', 'Quiropraxia', 'Pilates', 'Domiciliar'];
+
+function setupSimpleAutocomplete(inputId, suggestionsId, options) {
+  const input = document.getElementById(inputId);
+  const suggestions = document.getElementById(suggestionsId);
+
+  if (!input || !suggestions) return;
+
+  function renderSuggestions() {
+    const term = input.value.trim().toLowerCase();
+
+    const filteredOptions = options.filter((option) =>
+      option.toLowerCase().includes(term)
+    );
+
+    suggestions.innerHTML = '';
+
+    filteredOptions.forEach((option) => {
+      const item = document.createElement('li');
+      item.textContent = option;
+
+      item.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+        input.value = option;
+        suggestions.innerHTML = '';
+      });
+
+      suggestions.appendChild(item);
+    });
+
+    suggestions.style.display = filteredOptions.length ? 'block' : 'none';
+  }
+
+  input.addEventListener('input', renderSuggestions);
+  input.addEventListener('focus', renderSuggestions);
+
+  input.addEventListener('blur', () => {
+    setTimeout(() => {
+      suggestions.innerHTML = '';
+      suggestions.style.display = 'none';
+    }, 120);
+  });
 }
 
 function getProfileField(profile, ...fields) {
@@ -79,12 +99,12 @@ async function loadMyProfile() {
 
     document.getElementById('bairro').value = profile.bairro || profile.neighborhood || '';
 
-    setSelectValue(
+    setInputValue(
       'especialidade',
       getProfileField(profile, 'especialidade', 'specialty', 'specialization')
     );
 
-    setSelectValue(
+    setInputValue(
       'especialidadeSecundaria',
       getProfileField(profile, 'especialidadeSecundaria', 'secondarySpecialty', 'specialty2', 'extraSpecialty')
     );
@@ -134,7 +154,17 @@ if (fotoInput) {
 }
 
 if (editarForm) {
-  populateSpecialtySelects();
+  setupSimpleAutocomplete(
+    'especialidade',
+    'editarEspecialidadeSuggestions',
+    EDITAR_SPECIALTY_OPTIONS
+  );
+
+  setupSimpleAutocomplete(
+    'especialidadeSecundaria',
+    'editarEspecialidadeSecundariaSuggestions',
+    EDITAR_SPECIALTY_OPTIONS
+  );
 
   if (typeof setupCityNeighborhoodAutocomplete === 'function') {
     setupCityNeighborhoodAutocomplete(

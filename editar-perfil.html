@@ -71,14 +71,28 @@
           </div>
 
           <label for="especialidade">Especialidade principal</label>
-          <select id="especialidade" name="especialidade">
-            <option value="">Selecione uma especialidade</option>
-          </select>
+          <div class="autocomplete-wrapper">
+            <input
+              type="text"
+              id="especialidade"
+              name="especialidade"
+              placeholder="Digite uma especialidade"
+              autocomplete="off"
+            />
+            <ul id="editarEspecialidadeSuggestions" class="suggestions-list"></ul>
+          </div>
 
           <label for="especialidadeSecundaria">Especialização adicional <span style="font-weight:400; color:#64748b;">(opcional)</span></label>
-          <select id="especialidadeSecundaria" name="especialidadeSecundaria">
-            <option value="">Nenhuma especialização adicional</option>
-          </select>
+          <div class="autocomplete-wrapper">
+            <input
+              type="text"
+              id="especialidadeSecundaria"
+              name="especialidadeSecundaria"
+              placeholder="Digite uma especialização adicional"
+              autocomplete="off"
+            />
+            <ul id="editarEspecialidadeSecundariaSuggestions" class="suggestions-list"></ul>
+          </div>
 
           <label for="atendimento">Tipo de atendimento</label>
           <select id="atendimento" name="atendimento">
