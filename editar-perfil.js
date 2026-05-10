@@ -22,7 +22,28 @@ function setInputValue(inputId, value) {
 }
 
 
-const EDITAR_SPECIALTY_OPTIONS = ['Fisioterapia Ortopédica', 'Fisioterapia Esportiva', 'Fisioterapia Neurológica', 'Fisioterapia Geriátrica', 'Fisioterapia Respiratória', 'Fisioterapia Pediátrica', 'Pós-operatório', 'Quiropraxia', 'Pilates', 'Domiciliar'];
+const EDITAR_SPECIALTY_OPTIONS = [
+  'Fisioterapia Ortopédica',
+  'Fisioterapia Esportiva',
+  'Fisioterapia Neurológica',
+  'Fisioterapia Geriátrica',
+  'Fisioterapia Respiratória',
+  'Fisioterapia Pediátrica',
+  'Fisioterapia do Trabalho',
+  'Fisioterapia Ocupacional',
+  'Fisioterapia Dermatofuncional',
+  'Fisioterapia Pélvica',
+  'Fisioterapia Cardiovascular',
+  'Fisioterapia Aquática',
+  'Fisioterapia Home Care',
+  'Fisioterapia Domiciliar',
+  'Quiropraxia',
+  'Pilates',
+  'Domiciliar',
+  'Ocupacional',
+  'Ergonomia',
+  'Pós-operatório'
+];
 
 function setupSimpleAutocomplete(inputId, suggestionsId, options) {
   const input = document.getElementById(inputId);
