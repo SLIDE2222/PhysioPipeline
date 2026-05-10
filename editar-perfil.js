@@ -14,6 +14,11 @@ function fileToBase64(file) {
   });
 }
 
+
+function setSelectValue(selectId, value) {
+  setInputValue(selectId, value);
+}
+
 function setInputValue(inputId, value) {
   const input = document.getElementById(inputId);
   if (!input) return;
@@ -130,7 +135,7 @@ async function loadMyProfile() {
       getProfileField(profile, 'especialidadeSecundaria', 'secondarySpecialty', 'specialty2', 'extraSpecialty')
     );
 
-    setSelectValue(
+    setInputValue(
       'atendimento',
       getProfileField(profile, 'atendimento', 'attendance')
     );
