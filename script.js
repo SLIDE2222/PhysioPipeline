@@ -480,9 +480,15 @@ const pBairro = normalizeText(profile.bairro || profile.neighborhood);
       ${escapeHtml(profile.bairro || profile.neighborhood || 'Não informado')}
     </p>
 
-    <p class="bio">
-      ${escapeHtml(profile.bio || profile.descricao || 'Sem descrição.')}
-    </p>
+    <div class="bio-wrapper">
+  <p class="bio collapsed">
+    ${escapeHtml(profile.bio || profile.descricao || 'Sem descrição.')}
+  </p>
+
+  <button class="toggle-bio-btn" type="button">
+    Veja mais
+  </button>
+</div>
 
     <a
       href="profile.html?id=${encodeURIComponent(profile.id)}"
@@ -492,6 +498,20 @@ const pBairro = normalizeText(profile.bairro || profile.neighborhood);
     </a>
   </article>
 `).join('');
+
+document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
+  button.addEventListener('click', () => {
+    const bio = button.previousElementSibling;
+
+    bio.classList.toggle('collapsed');
+
+    if (bio.classList.contains('collapsed')) {
+      button.textContent = 'Veja mais';
+    } else {
+      button.textContent = 'Veja menos';
+    }
+  });
+});
 
 } catch (error) {
   console.error(error);
