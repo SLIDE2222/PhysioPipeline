@@ -128,9 +128,6 @@ async function loadMyProfile() {
   } catch (error) {
     editarMensagem.textContent = error.message || 'Sua sessão expirou.';
     editarMensagem.style.color = '#b91c1c';
-    setTimeout(() => {
-      window.location.href = 'login.html';
-    }, 900);
     return null;
   }
 }
@@ -211,7 +208,7 @@ if (editarForm) {
       editarMensagem.style.color = '#166534';
 
       setTimeout(() => {
-        window.location.href = `profile.html?id=${encodeURIComponent(profile.id)}`;
+        window.location.href = 'editar-perfil.html';
       }, 700);
     } catch (error) {
       editarMensagem.textContent = error.message || 'Não foi possível atualizar o perfil.';
