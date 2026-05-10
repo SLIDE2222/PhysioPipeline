@@ -409,7 +409,7 @@ async function renderAuthArea() {
 document.addEventListener('DOMContentLoaded', async () => {
   await renderAuthArea();
 
-  // mobile navbar auth hash check
+  // mobile navbar base64url auth check
   setTimeout(() => {
     cachedMyProfile = null;
     renderAuthArea();

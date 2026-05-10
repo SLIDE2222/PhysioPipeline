@@ -1,0 +1,22 @@
+PhysioPipeline iPhone auth fix - base64url version
+
+Replace all included files.
+
+Why the previous hash fix could fail:
+The auth hash used normal base64.
+Normal base64 may contain +, /, and =.
+URLSearchParams can mangle + into a space.
+That breaks atob(), so api.js cannot restore the token.
+
+What changed:
+1. Google login now uses base64url-safe encoding.
+2. The hash now avoids + / = characters.
+3. The payload is smaller: token + minimal user/profile id only.
+4. api.js restores auth from #auth, saves it, then removes #auth from the URL.
+5. Cache bust updated to base64url-auth-fix2.
+
+After deploying:
+- Open login page on iPhone.
+- Login with Google.
+- On redirect, you should not see #auth for long because api.js removes it.
+- Navbar should become logged-in after the delayed render.

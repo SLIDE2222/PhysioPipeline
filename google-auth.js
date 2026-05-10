@@ -15,6 +15,21 @@
     });
   }
 
+
+  function encodeBase64Url(value) {
+    const bytes = new TextEncoder().encode(String(value || ''));
+    let binary = '';
+
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+
+    return btoa(binary)
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+  }
+
   async function handleCredentialResponse(response) {
     try {
       if (!response?.credential) {
@@ -29,9 +44,17 @@
         return;
       }
 
+      const profileId = data?.user?.profiles?.[0]?.id || null;
+
       const authPayload = {
         token: data.token,
-        user: data.user || null,
+        user: {
+          id: data?.user?.id || null,
+          email: data?.user?.email || '',
+          name: data?.user?.name || '',
+          emailVerified: Boolean(data?.user?.emailVerified),
+          profiles: profileId ? [{ id: profileId }] : [],
+        },
       };
 
       try {
@@ -44,8 +67,7 @@
 
       showMessage('Login com Google realizado com sucesso.', '#166534');
 
-      const profileId = data?.user?.profiles?.[0]?.id;
-      const packedAuth = btoa(encodeURIComponent(JSON.stringify(authPayload)));
+      const packedAuth = encodeBase64Url(JSON.stringify(authPayload));
 
       setTimeout(() => {
         window.location.href = profileId

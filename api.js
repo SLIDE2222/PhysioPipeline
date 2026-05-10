@@ -33,6 +33,22 @@
   }
 
 
+  function decodeBase64Url(value) {
+    const base64 = String(value || '')
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const paddedBase64 = base64.padEnd(
+      base64.length + ((4 - (base64.length % 4)) % 4),
+      '='
+    );
+
+    const binary = atob(paddedBase64);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+
+    return new TextDecoder().decode(bytes);
+  }
+
   function restoreAuthFromHash() {
     try {
       const hash = window.location.hash || '';
@@ -41,7 +57,7 @@
 
       if (!packedAuth) return;
 
-      const decoded = JSON.parse(decodeURIComponent(atob(packedAuth)));
+      const decoded = JSON.parse(decodeBase64Url(packedAuth));
 
       if (decoded?.token) {
         setStoredAuth(
