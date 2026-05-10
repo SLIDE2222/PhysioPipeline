@@ -58,11 +58,11 @@
       callback: handleCredentialResponse,
       auto_select: false,
       cancel_on_tap_outside: true,
+      use_fedcm_for_prompt: true,
     });
 
     document.querySelectorAll('[data-google-auth]').forEach((container) => {
-      // Render the real Google button. Mobile browsers are less cursed with the official button.
-      container.classList.remove('google-hidden-render');
+      if (container.classList.contains('google-hidden-render')) return;
       const width = Number(container.dataset.width || 400);
       window.google.accounts.id.renderButton(container, {
         theme: 'outline',
@@ -78,11 +78,11 @@
     const customButton = document.getElementById('googleSignupButton');
     if (customButton) {
       customButton.addEventListener('click', () => {
+        showMessage('Abrindo login com Google...', '#2563eb');
+
         window.google.accounts.id.prompt((notification) => {
           if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
-            const hiddenHost = document.querySelector('[data-google-auth]:not(.google-hidden-render)');
-            const iframe = hiddenHost?.querySelector('iframe');
-            if (iframe) iframe.focus();
+            showMessage('Se o Google não abrir no celular, entre com e-mail e senha por enquanto.', '#b45309');
           }
         });
       });

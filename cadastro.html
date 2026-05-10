@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cadastrar perfil | Physio Pipeline</title>
-  <link rel="stylesheet" href="style.css?v=real-google-mobile1" />
+  <link rel="stylesheet" href="style.css?v=stylish-google-mobile2" />
  <meta name="google-client-id" content="197182747757-6tm1e8vhu44fkpf89pvvsbooodl48t3o.apps.googleusercontent.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,9 +36,13 @@
 
         <form class="form-card" id="cadastroForm">
         <div class="google-auth-card">
-            <p class="form-hint">Ou continue com Google</p>
-            <div data-google-auth data-width="320" class="google-real-button"></div>
-          </div>
+          <p class="form-hint">Ou continue com Google</p>
+          <button type="button" class="google-full-btn" id="googleSignupButton">
+            <span class="google-full-btn__icon" aria-hidden="true">G</span>
+            <span>Continuar com o Google</span>
+          </button>
+          <div data-google-auth data-width="400" class="google-hidden-render"></div>
+        </div>
 
         <div class="form-divider">
           <span>ou preencha manualmente</span>
@@ -156,10 +160,10 @@
     </section>
   </main>
 
-  <script src="api.js?v=real-google-mobile1"></script>
+  <script src="api.js?v=stylish-google-mobile2"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="google-auth.js?v=real-google-mobile1"></script>
-  <script src="script.js?v=real-google-mobile1"></script>
+  <script src="google-auth.js?v=stylish-google-mobile2"></script>
+  <script src="script.js?v=stylish-google-mobile2"></script>
 
   <script>
     const CADASTRO_SPECIALTY_OPTIONS = [

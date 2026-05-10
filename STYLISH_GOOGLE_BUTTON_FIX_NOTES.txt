@@ -1,0 +1,18 @@
+PhysioPipeline stylish Google button restoration
+
+Replace:
+- api.js
+- google-auth.js
+- login.html
+- cadastro.html
+- script.js
+
+What changed:
+1. Restored your custom styled Google button.
+2. Kept the mobile token storage fixes.
+3. Kept getStoredAuth/setStoredAuth/clearStoredAuth exposed in api.js.
+4. Added use_fedcm_for_prompt: true for Google Identity Services on mobile.
+5. Google login now explicitly writes token to localStorage and sessionStorage before redirect.
+
+Important:
+The iPhone "Fill Password" popup in the screenshot is from the email field/autofill, not the Google button.
