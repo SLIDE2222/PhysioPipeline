@@ -5,6 +5,30 @@ const fotoPreview = document.getElementById('fotoPreview');
 
 let fotoBase64 = '';
 
+function populateSpecialtySelects() {
+  const specialties = window.SPECIALTY_OPTIONS || [];
+
+  const mainSelect = document.getElementById('especialidade');
+  const secondarySelect = document.getElementById('especialidadeSecundaria');
+
+  if (mainSelect) {
+    mainSelect.innerHTML = '<option value="">Selecione uma especialidade</option>';
+
+    specialties.forEach((specialty) => {
+      mainSelect.innerHTML += `<option value="${specialty}">${specialty}</option>`;
+    });
+  }
+
+  if (secondarySelect) {
+    secondarySelect.innerHTML = '<option value="">Nenhuma especialização adicional</option>';
+
+    specialties.forEach((specialty) => {
+      secondarySelect.innerHTML += `<option value="${specialty}">${specialty}</option>`;
+    });
+  }
+}
+
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -110,6 +134,8 @@ if (fotoInput) {
 }
 
 if (editarForm) {
+  populateSpecialtySelects();
+
   if (typeof setupCityNeighborhoodAutocomplete === 'function') {
     setupCityNeighborhoodAutocomplete(
       'editarCidade',
