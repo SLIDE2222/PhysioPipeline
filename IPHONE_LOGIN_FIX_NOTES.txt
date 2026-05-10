@@ -1,0 +1,29 @@
+PhysioPipeline iPhone login persistence fix
+
+Replace all included files:
+- api.js
+- script.js
+- google-auth.js
+- login.html
+- cadastro.html
+- profile.html
+- index.html
+
+Important:
+The previous fixes did not include profile.html cache busting. If profile.html kept loading old api.js/script.js, the page would show Entrar/Cadastrar even after login.
+
+What changed:
+1. profile.html now loads fresh api.js/script.js with new ?v=iphone-login-fix7.
+2. index/login/cadastro also load fresh auth scripts.
+3. api.js exposes getStoredAuth/setStoredAuth/clearStoredAuth.
+4. api.js saves auth in both localStorage and sessionStorage.
+5. google-auth.js refuses to redirect if backend does not return a token.
+6. script.js waits for stored auth and rerenders navbar after iPhone page restore.
+7. window.debugPhysioAuth() is available in console for debugging.
+
+After deploying:
+- Open the iPhone page.
+- Refresh once.
+- Login.
+- If it still shows Entrar/Cadastrar, open console remotely and run:
+  window.debugPhysioAuth()

@@ -68,6 +68,23 @@ function normalizeText(value) {
     .trim();
 }
 
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForAuthStorage(retries = 10, delay = 150) {
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    const auth = window.physioApi?.getStoredAuth?.();
+
+    if (auth?.token) return auth;
+
+    await wait(delay);
+  }
+
+  return null;
+}
+
 function findExactMatch(options, value) {
   const normalizedValue = normalizeText(value);
   return options.find((option) => normalizeText(option) === normalizedValue) || null;
@@ -278,7 +295,10 @@ async function getLoggedUser(force = false) {
   if (!force && cachedMyProfile) return cachedMyProfile;
 
   try {
-    const auth = window.physioApi.getStoredAuth?.();
+    const auth =
+      window.physioApi.getStoredAuth?.() ||
+      await waitForAuthStorage();
+
     console.log('Stored auth:', auth);
 
     if (!auth?.token) {
@@ -388,6 +408,12 @@ async function renderAuthArea() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await renderAuthArea();
+
+  // mobile navbar auth check
+  setTimeout(() => {
+    cachedMyProfile = null;
+    renderAuthArea();
+  }, 1200);
 
   setupSpecialtyAutocomplete('specialtyInput', 'specialtySuggestions');
   setupSpecialtyAutocomplete('buscarEspecialidade', 'buscarSuggestions');
@@ -534,4 +560,16 @@ document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
     </div>
   `;
 }
+});
+
+window.addEventListener('pageshow', () => {
+  cachedMyProfile = null;
+  renderAuthArea();
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    cachedMyProfile = null;
+    renderAuthArea();
+  }
 });

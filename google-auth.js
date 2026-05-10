@@ -24,16 +24,19 @@
 
       const data = await window.physioApi.loginWithGoogle(response.credential);
 
-      if (data?.token) {
-        const authPayload = { token: data.token, user: data.user };
+      if (!data?.token) {
+        showMessage('Login recebido, mas o token não veio do servidor.', '#b91c1c');
+        return;
+      }
 
-        try {
-          window.physioApi.setStoredAuth?.(authPayload, true);
-          localStorage.setItem('physioAuth', JSON.stringify(authPayload));
-          sessionStorage.setItem('physioAuth', JSON.stringify(authPayload));
-        } catch (_) {
-          // ignore storage write issues
-        }
+      const authPayload = { token: data.token, user: data.user };
+
+      try {
+        window.physioApi.setStoredAuth?.(authPayload, true);
+        localStorage.setItem('physioAuth', JSON.stringify(authPayload));
+        sessionStorage.setItem('physioAuth', JSON.stringify(authPayload));
+      } catch (_) {
+        // ignore storage write issues
       }
 
       showMessage('Login com Google realizado com sucesso.', '#166534');
@@ -78,11 +81,11 @@
     const customButton = document.getElementById('googleSignupButton');
     if (customButton) {
       customButton.addEventListener('click', () => {
-        showMessage('Abrindo login com Google...', '#2563eb');
-
         window.google.accounts.id.prompt((notification) => {
           if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
-            showMessage('Se o Google não abrir no celular, entre com e-mail e senha por enquanto.', '#b45309');
+            const hiddenHost = document.querySelector('[data-google-auth]:not(.google-hidden-render)');
+            const iframe = hiddenHost?.querySelector('iframe');
+            if (iframe) iframe.focus();
           }
         });
       });

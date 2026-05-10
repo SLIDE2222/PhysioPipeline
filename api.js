@@ -26,12 +26,8 @@
     try {
       const serializedAuth = JSON.stringify(auth);
 
-      if (remember) {
-        localStorage.setItem('physioAuth', serializedAuth);
-        sessionStorage.setItem('physioAuth', serializedAuth);
-      } else {
-        sessionStorage.setItem('physioAuth', serializedAuth);
-      }
+      localStorage.setItem('physioAuth', serializedAuth);
+      sessionStorage.setItem('physioAuth', serializedAuth);
     } catch (_) {
       // ignore storage access issues
     }
@@ -198,3 +194,16 @@
     },
   };
 })();
+
+
+window.debugPhysioAuth = function () {
+  try {
+    return {
+      localStorageAuth: localStorage.getItem('physioAuth'),
+      sessionStorageAuth: sessionStorage.getItem('physioAuth'),
+      physioApiAuth: window.physioApi?.getStoredAuth?.() || null,
+    };
+  } catch (error) {
+    return { error: error.message };
+  }
+};
