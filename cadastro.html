@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cadastrar perfil | Physio Pipeline</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=cadastro-autocomplete-match1" />
  <meta name="google-client-id" content="197182747757-6tm1e8vhu44fkpf89pvvsbooodl48t3o.apps.googleusercontent.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -77,23 +77,30 @@
           </div>
 
           <label for="especialidadeCadastro">Especialidade</label>
-          <select id="especialidadeCadastro" name="especialidade" required>
-            <option value="" disabled selected>Selecione uma especialidade</option>
-            <option value="Fisioterapia Ortopédica">Fisioterapia Ortopédica</option>
-            <option value="Fisioterapia Esportiva">Fisioterapia Esportiva</option>
-            <option value="Fisioterapia Neurológica">Fisioterapia Neurológica</option>
-            <option value="Fisioterapia Geriátrica">Fisioterapia Geriátrica</option>
-            <option value="Fisioterapia Respiratória">Fisioterapia Respiratória</option>
-            <option value="Pós-operatório">Pós-operatório</option>
-          </select>
+          <div class="autocomplete-wrapper">
+            <input
+              type="text"
+              id="especialidadeCadastro"
+              name="especialidade"
+              placeholder="Digite uma especialidade"
+              autocomplete="off"
+              required
+            />
+            <ul id="especialidadeCadastroSuggestions" class="suggestions-list"></ul>
+          </div>
 
           <label for="cidadeCadastro">Cidade</label>
-          <select id="cidadeCadastro" name="cidade" required>
-            <option value="" disabled selected>Selecione uma cidade</option>
-            <option value="São Paulo">São Paulo</option>
-            <option value="Sorocaba">Sorocaba</option>
-            <option value="Itapetininga">Itapetininga</option>
-          </select>
+          <div class="autocomplete-wrapper">
+            <input
+              type="text"
+              id="cidadeCadastro"
+              name="cidade"
+              placeholder="Digite uma cidade"
+              autocomplete="off"
+              required
+            />
+            <ul id="cidadeCadastroSuggestions" class="suggestions-list"></ul>
+          </div>
 
           <label for="bairro">Bairro</label>
           <div class="autocomplete-wrapper">
@@ -101,8 +108,9 @@
               type="text"
               id="bairro"
               name="bairro"
-              placeholder="Ex.: Tatuapé, Centro, Campolim"
+              placeholder="Selecione ou digite uma cidade primeiro"
               autocomplete="off"
+              disabled
               required
             />
             <ul id="bairroCadastroSuggestions" class="suggestions-list"></ul>
@@ -152,9 +160,98 @@
     </section>
   </main>
 
-  <script src="api.js?v=googleauth2"></script>
+  <script src="api.js?v=cadastro-autocomplete-match1"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="google-auth.js?v=googleauth2"></script>
-  <script src="script.js?v=signupfix1"></script>
+  <script src="google-auth.js?v=cadastro-autocomplete-match1"></script>
+  <script src="script.js?v=cadastro-autocomplete-match1"></script>
+
+  <script>
+    const CADASTRO_SPECIALTY_OPTIONS = [
+      'Fisioterapia Ortopédica',
+      'Fisioterapia Esportiva',
+      'Fisioterapia Neurológica',
+      'Fisioterapia Geriátrica',
+      'Fisioterapia Respiratória',
+      'Fisioterapia Pediátrica',
+      'Fisioterapia do Trabalho',
+      'Fisioterapia Ocupacional',
+      'Fisioterapia Dermatofuncional',
+      'Fisioterapia Pélvica',
+      'Fisioterapia Cardiovascular',
+      'Fisioterapia Aquática',
+      'Fisioterapia Home Care',
+      'Fisioterapia Domiciliar',
+      'Quiropraxia',
+      'Pilates',
+      'Domiciliar',
+      'Ocupacional',
+      'Ergonomia',
+      'Pós-operatório'
+    ];
+
+    function setupCadastroAutocomplete(inputId, suggestionsId, options) {
+      const input = document.getElementById(inputId);
+      const suggestions = document.getElementById(suggestionsId);
+
+      if (!input || !suggestions) return;
+
+      function renderSuggestions() {
+        const term = input.value.trim().toLowerCase();
+
+        const filteredOptions = options.filter((option) =>
+          option.toLowerCase().includes(term)
+        );
+
+        suggestions.innerHTML = '';
+
+        filteredOptions.forEach((option) => {
+          const item = document.createElement('li');
+          item.textContent = option;
+
+          item.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+            input.value = option;
+            suggestions.innerHTML = '';
+            suggestions.style.display = 'none';
+
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+          });
+
+          suggestions.appendChild(item);
+        });
+
+        suggestions.style.display = filteredOptions.length ? 'block' : 'none';
+      }
+
+      input.addEventListener('input', renderSuggestions);
+      input.addEventListener('focus', renderSuggestions);
+
+      input.addEventListener('blur', () => {
+        setTimeout(() => {
+          suggestions.innerHTML = '';
+          suggestions.style.display = 'none';
+        }, 120);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setupCadastroAutocomplete(
+        'especialidadeCadastro',
+        'especialidadeCadastroSuggestions',
+        CADASTRO_SPECIALTY_OPTIONS
+      );
+
+      if (typeof setupCityNeighborhoodAutocomplete === 'function') {
+        setupCityNeighborhoodAutocomplete(
+          'cidadeCadastro',
+          'cidadeCadastroSuggestions',
+          'bairro',
+          'bairroCadastroSuggestions'
+        );
+      }
+    });
+  </script>
+
 </body>
 </html>
