@@ -29,7 +29,10 @@
         return;
       }
 
-      const authPayload = { token: data.token, user: data.user };
+      const authPayload = {
+        token: data.token,
+        user: data.user || null,
+      };
 
       try {
         window.physioApi.setStoredAuth?.(authPayload, true);
@@ -42,10 +45,12 @@
       showMessage('Login com Google realizado com sucesso.', '#166534');
 
       const profileId = data?.user?.profiles?.[0]?.id;
+      const packedAuth = btoa(encodeURIComponent(JSON.stringify(authPayload)));
+
       setTimeout(() => {
         window.location.href = profileId
-          ? `profile.html?id=${encodeURIComponent(profileId)}`
-          : 'cadastro.html?completeProfile=true';
+          ? `profile.html?id=${encodeURIComponent(profileId)}#auth=${packedAuth}`
+          : `cadastro.html?completeProfile=true#auth=${packedAuth}`;
       }, 600);
     } catch (error) {
       showMessage(error.message || 'Não foi possível entrar com Google.');

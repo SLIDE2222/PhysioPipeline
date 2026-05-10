@@ -25,13 +25,48 @@
   function setStoredAuth(auth, remember = true) {
     try {
       const serializedAuth = JSON.stringify(auth);
-
       localStorage.setItem('physioAuth', serializedAuth);
       sessionStorage.setItem('physioAuth', serializedAuth);
     } catch (_) {
       // ignore storage access issues
     }
   }
+
+
+  function restoreAuthFromHash() {
+    try {
+      const hash = window.location.hash || '';
+      const params = new URLSearchParams(hash.replace(/^#/, ''));
+      const packedAuth = params.get('auth');
+
+      if (!packedAuth) return;
+
+      const decoded = JSON.parse(decodeURIComponent(atob(packedAuth)));
+
+      if (decoded?.token) {
+        setStoredAuth(
+          {
+            token: decoded.token,
+            user: decoded.user || null,
+          },
+          true
+        );
+      }
+
+      params.delete('auth');
+      const cleanHash = params.toString();
+      const cleanUrl =
+        window.location.pathname +
+        window.location.search +
+        (cleanHash ? `#${cleanHash}` : '');
+
+      window.history.replaceState({}, document.title, cleanUrl);
+    } catch (error) {
+      console.warn('Could not restore auth from URL hash:', error);
+    }
+  }
+
+  restoreAuthFromHash();
 
   async function request(path, options = {}) {
     const controller = new AbortController();
@@ -202,6 +237,7 @@ window.debugPhysioAuth = function () {
       localStorageAuth: localStorage.getItem('physioAuth'),
       sessionStorageAuth: sessionStorage.getItem('physioAuth'),
       physioApiAuth: window.physioApi?.getStoredAuth?.() || null,
+      url: window.location.href,
     };
   } catch (error) {
     return { error: error.message };

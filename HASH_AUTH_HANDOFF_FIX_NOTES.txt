@@ -1,0 +1,22 @@
+PhysioPipeline iPhone Google login persistence fix
+
+Replace all included files.
+
+What changed:
+1. Google login now redirects with a one-time auth hash:
+   profile.html?id=PROFILE_ID#auth=PACKED_AUTH
+
+2. api.js reads #auth immediately, saves token into localStorage/sessionStorage, then removes #auth from the URL.
+
+3. This avoids the iPhone issue where localStorage/sessionStorage writes can fail to survive before redirect.
+
+4. api.js still exposes:
+   - getStoredAuth
+   - setStoredAuth
+   - clearStoredAuth
+
+5. HTML files load fresh cache-busted scripts.
+
+Security note:
+The auth data is placed in the URL hash, not query string.
+The hash is not sent to the server and api.js removes it immediately with history.replaceState.

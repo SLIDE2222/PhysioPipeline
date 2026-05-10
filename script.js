@@ -409,7 +409,7 @@ async function renderAuthArea() {
 document.addEventListener('DOMContentLoaded', async () => {
   await renderAuthArea();
 
-  // mobile navbar auth check
+  // mobile navbar auth hash check
   setTimeout(() => {
     cachedMyProfile = null;
     renderAuthArea();
@@ -560,16 +560,4 @@ document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
     </div>
   `;
 }
-});
-
-window.addEventListener('pageshow', () => {
-  cachedMyProfile = null;
-  renderAuthArea();
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) {
-    cachedMyProfile = null;
-    renderAuthArea();
-  }
 });
