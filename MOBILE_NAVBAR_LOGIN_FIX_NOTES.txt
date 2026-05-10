@@ -1,0 +1,23 @@
+PhysioPipeline mobile navbar login fix
+
+Replace:
+- api.js
+- script.js
+
+What changed:
+1. api.js now exposes:
+   - getStoredAuth
+   - setStoredAuth
+   - clearStoredAuth
+
+2. script.js now waits briefly for stored auth on mobile before rendering the navbar.
+
+3. script.js re-renders the auth navbar shortly after page load and when the page becomes visible again.
+
+4. script.js reads both:
+   - profile.nome
+   - profile.name
+
+Why:
+The profile page could load correctly while the navbar still showed Entrar/Cadastrar because renderAuthArea ran before mobile storage/auth state was ready.
+Tiny async goblin, defeated for now.

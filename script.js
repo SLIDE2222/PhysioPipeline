@@ -68,6 +68,25 @@ function normalizeText(value) {
     .trim();
 }
 
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForAuthStorage(retries = 5, delay = 120) {
+  for (let attempt = 0; attempt < retries; attempt += 1) {
+    const auth = window.physioApi?.getStoredAuth?.();
+
+    if (auth?.token) {
+      return auth;
+    }
+
+    await wait(delay);
+  }
+
+  return null;
+}
+
 function findExactMatch(options, value) {
   const normalizedValue = normalizeText(value);
   return options.find((option) => normalizeText(option) === normalizedValue) || null;
@@ -277,8 +296,15 @@ function setupCityNeighborhoodAutocomplete(cityInputId, cityListId, neighborhood
 async function getLoggedUser(force = false) {
   if (!force && cachedMyProfile) return cachedMyProfile;
 
+  // Mobile browsers can restore storage a tick late after redirects.
+  // Yes, the navbar needs babysitting. Civilization peaked.
+  await waitForAuthStorage();
+
   try {
-    const auth = window.physioApi.getStoredAuth?.();
+    const auth =
+      window.physioApi.getStoredAuth?.() ||
+      await waitForAuthStorage();
+
     console.log('Stored auth:', auth);
 
     if (!auth?.token) {
@@ -369,7 +395,12 @@ async function renderAuthArea() {
 
   updateProfileButtons(user);
 
-  const firstName = (user.profile?.nome || user.email || 'Profissional').split(' ')[0];
+  const firstName = (
+    user.profile?.nome ||
+    user.profile?.name ||
+    user.email ||
+    'Profissional'
+  ).split(' ')[0];
   const profileHref = user.profile?.id
     ? `profile.html?id=${encodeURIComponent(user.profile.id)}`
     : 'cadastro.html';
@@ -383,6 +414,11 @@ async function renderAuthArea() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await renderAuthArea();
+
+  // Re-check once more after mobile browser storage/session settles.
+  setTimeout(() => {
+    renderAuthArea();
+  }, 900);
 
   setupSpecialtyAutocomplete('specialtyInput', 'specialtySuggestions');
   setupSpecialtyAutocomplete('buscarEspecialidade', 'buscarSuggestions');
@@ -529,4 +565,21 @@ document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
     </div>
   `;
 }
+});
+
+window.addEventListener('storage', () => {
+  cachedMyProfile = null;
+  renderAuthArea();
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) {
+    cachedMyProfile = null;
+    renderAuthArea();
+  }
+});
+
+window.addEventListener('pageshow', () => {
+  cachedMyProfile = null;
+  renderAuthArea();
 });
