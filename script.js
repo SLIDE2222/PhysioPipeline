@@ -8,7 +8,7 @@ const SPECIALTIES = [
   'Fisioterapia Respiratória',
   'Pilates',
   'Quiropraxia',
-  'Fisioterapia Pediátrica'
+  'Fisioterapia Pediátrica',
   'Ventosaterapia',
   'Pós-operatório'
 ];
