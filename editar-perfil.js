@@ -234,7 +234,7 @@ if (editarForm) {
       editarMensagem.style.color = '#166534';
 
       setTimeout(() => {
-        window.location.href = 'editar-perfil.html';
+        window.location.href = `profile.html?id=${encodeURIComponent(profile.id)}`;
       }, 700);
     } catch (error) {
       editarMensagem.textContent = error.message || 'Não foi possível atualizar o perfil.';
