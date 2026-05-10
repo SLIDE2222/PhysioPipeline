@@ -23,6 +23,19 @@
       }
 
       const data = await window.physioApi.loginWithGoogle(response.credential);
+
+      if (data?.token) {
+        const authPayload = { token: data.token, user: data.user };
+
+        try {
+          window.physioApi.setStoredAuth?.(authPayload, true);
+          localStorage.setItem('physioAuth', JSON.stringify(authPayload));
+          sessionStorage.setItem('physioAuth', JSON.stringify(authPayload));
+        } catch (_) {
+          // ignore storage write issues
+        }
+      }
+
       showMessage('Login com Google realizado com sucesso.', '#166534');
 
       const profileId = data?.user?.profiles?.[0]?.id;
@@ -48,7 +61,8 @@
     });
 
     document.querySelectorAll('[data-google-auth]').forEach((container) => {
-      if (container.classList.contains('google-hidden-render')) return;
+      // Render the real Google button. Mobile browsers are less cursed with the official button.
+      container.classList.remove('google-hidden-render');
       const width = Number(container.dataset.width || 400);
       window.google.accounts.id.renderButton(container, {
         theme: 'outline',

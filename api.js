@@ -24,8 +24,14 @@
 
   function setStoredAuth(auth, remember = true) {
     try {
-      const storage = remember ? localStorage : sessionStorage;
-      storage.setItem('physioAuth', JSON.stringify(auth));
+      const serializedAuth = JSON.stringify(auth);
+
+      if (remember) {
+        localStorage.setItem('physioAuth', serializedAuth);
+        sessionStorage.setItem('physioAuth', serializedAuth);
+      } else {
+        sessionStorage.setItem('physioAuth', serializedAuth);
+      }
     } catch (_) {
       // ignore storage access issues
     }
@@ -114,6 +120,10 @@
   }
 
   window.physioApi = {
+    getStoredAuth,
+    setStoredAuth,
+    clearStoredAuth,
+
     request,
     async register(payload) {
       const data = await request('/auth/register', { method: 'POST', body: payload });

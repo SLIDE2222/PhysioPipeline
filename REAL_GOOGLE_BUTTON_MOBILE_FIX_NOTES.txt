@@ -1,0 +1,17 @@
+PhysioPipeline mobile Google login fix
+
+Replace:
+- api.js
+- google-auth.js
+- login.html
+- cadastro.html
+- script.js
+
+What changed:
+1. login.html and cadastro.html now show the real Google-rendered button instead of a custom fake button + hidden Google render div.
+2. google-auth.js no longer skips google-hidden-render containers and explicitly saves the returned token to localStorage and sessionStorage.
+3. api.js exposes auth helpers and saves auth to both storages.
+4. script.js reads profile.name as well as profile.nome.
+
+Why:
+On mobile, Google Identity Services prompt() can be skipped or blocked when triggered through a custom button. The official rendered button is much more reliable.
