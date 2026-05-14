@@ -2024,3 +2024,28 @@ body:has(#cadastroForm) .form-card {
     font-size: 0.94rem;
   }
 }
+
+.bio {
+  display: block;
+  width: 100%;
+
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: break-word;
+
+  line-height: 1.75;
+}
+
+.bio.collapsed {
+  max-height: 92px;
+  overflow: hidden;
+}
+
+.bio-wrapper {
+  width: 100%;
+  overflow: hidden;
+}
