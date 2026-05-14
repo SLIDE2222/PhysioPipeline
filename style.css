@@ -2064,3 +2064,26 @@ body:has(#cadastroForm) .form-card {
   background: transparent !important;
   border: none !important;
 }
+
+
+/* =========================
+   EQUAL RESULT CARD HEIGHTS
+========================= */
+
+.results-grid {
+  align-items: stretch !important;
+}
+
+.result-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.bio-wrapper {
+  flex-grow: 1;
+}
+
+.result-card .btn {
+  margin-top: auto;
+}
