@@ -2205,3 +2205,173 @@ body:has(#cadastroForm) .form-card {
     max-height: 82px !important;
   }
 }
+
+
+
+/* =========================
+   PHYSIOPIPELINE ARTISTIC BLUE FLOW
+   Global subtle startup-style background for all pages
+========================= */
+
+body {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(37, 99, 235, 0.10), transparent 28%),
+    radial-gradient(circle at 88% 24%, rgba(96, 165, 250, 0.12), transparent 30%),
+    linear-gradient(180deg, #f8fbff 0%, #f6f9ff 42%, #ffffff 100%) !important;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+
+  background:
+    radial-gradient(900px 420px at 105% 42%, rgba(37, 99, 235, 0.16), transparent 58%),
+    radial-gradient(740px 300px at 84% 64%, rgba(96, 165, 250, 0.14), transparent 60%),
+    linear-gradient(115deg, transparent 0 48%, rgba(37, 99, 235, 0.045) 49%, transparent 64%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  right: -12vw;
+  bottom: 6vh;
+  width: min(980px, 70vw);
+  height: min(560px, 48vh);
+  z-index: -1;
+  pointer-events: none;
+
+  background:
+    repeating-linear-gradient(
+      164deg,
+      transparent 0 14px,
+      rgba(37, 99, 235, 0.075) 15px 17px,
+      transparent 18px 34px
+    ),
+    repeating-linear-gradient(
+      156deg,
+      transparent 0 26px,
+      rgba(96, 165, 250, 0.09) 27px 29px,
+      transparent 30px 48px
+    ),
+    linear-gradient(
+      138deg,
+      transparent 0 30%,
+      rgba(249, 115, 22, 0.12) 38%,
+      rgba(37, 99, 235, 0.12) 55%,
+      transparent 78%
+    );
+
+  border-radius: 999px 0 0 999px;
+  filter: blur(0.4px);
+  opacity: 0.9;
+  transform: rotate(-7deg);
+}
+
+.page-main,
+.profile-page {
+  position: relative;
+  isolation: isolate;
+}
+
+.page-main::before,
+.profile-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+
+  background:
+    radial-gradient(circle at 24% 30%, rgba(255, 255, 255, 0.86), transparent 32%),
+    radial-gradient(circle at 82% 72%, rgba(255, 255, 255, 0.68), transparent 35%);
+}
+
+/* Keeps cards readable over the artistic flow */
+.form-card,
+.search-box,
+.profile-card-full,
+.result-card,
+.notice-card,
+.claim-help-box,
+.profile-origin-box,
+.profile-lead-box,
+.empty-results,
+.local-map-panel {
+  background:
+    radial-gradient(circle at top right, rgba(96, 165, 250, 0.11), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.88)) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Smaller/tighter result cards, less giant white box suffering */
+.result-card {
+  min-height: 420px !important;
+  height: auto !important;
+}
+
+.result-card:has(.bio.collapsed) {
+  min-height: 420px !important;
+  height: 420px !important;
+}
+
+.result-card:has(.bio:not(.collapsed)) {
+  min-height: 420px !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.result-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.065), transparent 42%);
+}
+
+.result-card::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  top: -70px;
+  right: -70px;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(8px);
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.22), transparent 70%);
+}
+
+.result-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  body::after {
+    right: -42vw;
+    bottom: 12vh;
+    width: 120vw;
+    height: 48vh;
+    opacity: 0.55;
+  }
+
+  .result-card,
+  .result-card:has(.bio.collapsed),
+  .result-card:has(.bio:not(.collapsed)) {
+    height: auto !important;
+    min-height: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+  }
+}
