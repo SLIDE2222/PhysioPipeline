@@ -2049,3 +2049,18 @@ body:has(#cadastroForm) .form-card {
   width: 100%;
   overflow: hidden;
 }
+
+.result-card .bio {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  color: #334155 !important;
+}
+
+.result-card .bio-wrapper {
+  background: transparent !important;
+  border: none !important;
+}
