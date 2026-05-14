@@ -2066,203 +2066,78 @@ body:has(#cadastroForm) .form-card {
 }
 
 
+
 /* =========================
-   RESULT CARD FINAL HEIGHT FIX
-   Same clean card size when collapsed.
-   Expanded cards grow alone, without forcing neighbors to stretch.
+   RESULT CARDS - ACTUAL FINAL FIX
 ========================= */
 
 .results-grid {
-  align-items: start !important;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 28px;
+  align-items: start;
 }
 
 .result-card {
-  display: block !important;
-  height: auto !important;
-  min-height: 430px;
-  align-self: start !important;
-}
+  position: relative;
+  display: flex;
+  flex-direction: column;
 
-.bio-wrapper {
-  flex-grow: 0 !important;
-}
+  min-height: 455px;
 
-.result-card .btn {
-  margin-top: 20px !important;
-  width: auto;
-}
+  padding: 26px;
+  border-radius: 26px;
 
-@media (max-width: 768px) {
-  .result-card {
-    min-height: auto;
-  }
-}
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  border: 1px solid rgba(37, 99, 235, 0.14);
 
-
-/* =========================
-   RESULT CARDS - RED LINE FIX
-   Collapsed cards match the same compact height.
-   Expanded cards grow only when "Veja mais" is opened.
-========================= */
-
-.results-grid {
-  align-items: start !important;
-}
-
-.result-card {
-  display: flex !important;
-  flex-direction: column !important;
-  height: 370px !important;
-  min-height: 370px !important;
-  align-self: start !important;
+  overflow: hidden;
 }
 
 .result-card:has(.bio:not(.collapsed)) {
-  height: auto !important;
-  min-height: 370px !important;
+  min-height: auto;
 }
 
 .bio-wrapper {
-  flex: 0 0 auto !important;
+  margin-top: 18px;
+}
+
+.bio {
+  line-height: 1.75;
+  color: #334155;
 }
 
 .bio.collapsed {
-  max-height: 86px !important;
-  overflow: hidden !important;
+  max-height: 82px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bio.collapsed::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+
+  width: 100%;
+  height: 40px;
+
+  background: linear-gradient(to bottom, transparent, #f8fbff);
 }
 
 .toggle-bio-btn {
-  margin-top: 12px !important;
+  display: inline-flex;
+  margin-top: 12px;
+
+  background: transparent;
+  border: none;
+
+  color: #2563eb;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .result-card .btn {
-  margin-top: 20px !important;
-  width: fit-content !important;
-}
-
-@media (max-width: 768px) {
-  .result-card {
-    height: auto !important;
-    min-height: auto !important;
-  }
-}
-
-
-/* =========================
-   RESULT CARDS - BUTTON VISIBLE FINAL FIX
-   Same compact card height, no clipping, buttons stay inside.
-========================= */
-
-.results-grid {
-  align-items: start !important;
-}
-
-.result-card {
-  display: flex !important;
-  flex-direction: column !important;
-
-  height: auto !important;
-  min-height: 430px !important;
-
-  overflow: hidden !important;
-  align-self: start !important;
-}
-
-.result-card:has(.bio:not(.collapsed)) {
-  min-height: 430px !important;
-  height: auto !important;
-}
-
-.bio-wrapper {
-  flex: 0 0 auto !important;
-}
-
-.bio.collapsed {
-  max-height: 86px !important;
-  overflow: hidden !important;
-}
-
-.toggle-bio-btn {
-  display: inline-flex !important;
-  margin-top: 12px !important;
-  margin-bottom: 0 !important;
-}
-
-.result-card .btn {
-  display: inline-flex !important;
-  width: fit-content !important;
-  margin-top: 20px !important;
-  flex: 0 0 auto !important;
-}
-
-@media (max-width: 768px) {
-  .result-card {
-    min-height: auto !important;
-    height: auto !important;
-  }
-}
-
-
-/* =========================
-   RESULT CARDS - REAL FINAL FIX
-   Cards match height when collapsed.
-   Buttons stay visible.
-   Expanded bio grows only that card.
-========================= */
-
-.results-grid {
-  align-items: start !important;
-}
-
-.result-card {
-  display: flex !important;
-  flex-direction: column !important;
-  align-self: start !important;
-  overflow: hidden !important;
-}
-
-/* Closed/collapsed state: both cards use the SAME height */
-.result-card:has(.bio.collapsed) {
-  height: 455px !important;
-  min-height: 455px !important;
-}
-
-/* Open/expanded state: only the opened card grows */
-.result-card:has(.bio:not(.collapsed)) {
-  height: auto !important;
-  min-height: 455px !important;
-  overflow: visible !important;
-}
-
-.bio-wrapper {
-  flex: 0 0 auto !important;
-  margin-top: 18px !important;
-}
-
-.bio.collapsed {
-  max-height: 82px !important;
-  overflow: hidden !important;
-}
-
-.toggle-bio-btn {
-  display: inline-flex !important;
-  margin-top: 12px !important;
-  flex: 0 0 auto !important;
-}
-
-.result-card .btn {
-  display: inline-flex !important;
-  width: fit-content !important;
-  margin-top: 20px !important;
-  flex: 0 0 auto !important;
-}
-
-@media (max-width: 768px) {
-  .result-card,
-  .result-card:has(.bio.collapsed),
-  .result-card:has(.bio:not(.collapsed)) {
-    height: auto !important;
-    min-height: auto !important;
-    overflow: visible !important;
-  }
+  margin-top: auto;
+  width: fit-content;
 }
