@@ -2067,23 +2067,33 @@ body:has(#cadastroForm) .form-card {
 
 
 /* =========================
-   EQUAL RESULT CARD HEIGHTS
+   RESULT CARD FINAL HEIGHT FIX
+   Same clean card size when collapsed.
+   Expanded cards grow alone, without forcing neighbors to stretch.
 ========================= */
 
 .results-grid {
-  align-items: stretch !important;
+  align-items: start !important;
 }
 
 .result-card {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  display: block !important;
+  height: auto !important;
+  min-height: 430px;
+  align-self: start !important;
 }
 
 .bio-wrapper {
-  flex-grow: 1;
+  flex-grow: 0 !important;
 }
 
 .result-card .btn {
-  margin-top: auto;
+  margin-top: 20px !important;
+  width: auto;
+}
+
+@media (max-width: 768px) {
+  .result-card {
+    min-height: auto;
+  }
 }
