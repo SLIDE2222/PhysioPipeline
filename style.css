@@ -2201,3 +2201,68 @@ body:has(#cadastroForm) .form-card {
     height: auto !important;
   }
 }
+
+
+/* =========================
+   RESULT CARDS - REAL FINAL FIX
+   Cards match height when collapsed.
+   Buttons stay visible.
+   Expanded bio grows only that card.
+========================= */
+
+.results-grid {
+  align-items: start !important;
+}
+
+.result-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-self: start !important;
+  overflow: hidden !important;
+}
+
+/* Closed/collapsed state: both cards use the SAME height */
+.result-card:has(.bio.collapsed) {
+  height: 455px !important;
+  min-height: 455px !important;
+}
+
+/* Open/expanded state: only the opened card grows */
+.result-card:has(.bio:not(.collapsed)) {
+  height: auto !important;
+  min-height: 455px !important;
+  overflow: visible !important;
+}
+
+.bio-wrapper {
+  flex: 0 0 auto !important;
+  margin-top: 18px !important;
+}
+
+.bio.collapsed {
+  max-height: 82px !important;
+  overflow: hidden !important;
+}
+
+.toggle-bio-btn {
+  display: inline-flex !important;
+  margin-top: 12px !important;
+  flex: 0 0 auto !important;
+}
+
+.result-card .btn {
+  display: inline-flex !important;
+  width: fit-content !important;
+  margin-top: 20px !important;
+  flex: 0 0 auto !important;
+}
+
+@media (max-width: 768px) {
+  .result-card,
+  .result-card:has(.bio.collapsed),
+  .result-card:has(.bio:not(.collapsed)) {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+}
