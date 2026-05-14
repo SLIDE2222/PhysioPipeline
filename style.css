@@ -2068,76 +2068,103 @@ body:has(#cadastroForm) .form-card {
 
 
 /* =========================
-   RESULT CARDS - ACTUAL FINAL FIX
+   RESULT CARDS - CLEAN MATCHING FINAL
+   Keeps both cards the same compact height.
+   Keeps "Veja mais" and "Ver perfil" aligned.
+   Expanded card grows by itself.
 ========================= */
 
 .results-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: 28px;
-  align-items: start;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)) !important;
+  gap: 28px !important;
+  align-items: start !important;
 }
 
 .result-card {
-  position: relative;
-  display: flex;
-  flex-direction: column;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
 
-  min-height: 455px;
+  height: 500px !important;
+  min-height: 500px !important;
 
-  padding: 26px;
-  border-radius: 26px;
+  padding: 26px !important;
+  border-radius: 26px !important;
 
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
-  border: 1px solid rgba(37, 99, 235, 0.14);
+  background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+  border: 1px solid rgba(37, 99, 235, 0.14) !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08) !important;
 
-  overflow: hidden;
+  overflow: hidden !important;
+  align-self: start !important;
 }
 
+/* When bio is opened, only that card grows */
 .result-card:has(.bio:not(.collapsed)) {
-  min-height: auto;
+  height: auto !important;
+  min-height: 500px !important;
+  overflow: visible !important;
 }
 
 .bio-wrapper {
-  margin-top: 18px;
+  margin-top: 18px !important;
+  padding-top: 16px !important;
+  border-top: 1px solid #e2e8f0 !important;
+  flex: 0 0 auto !important;
 }
 
-.bio {
-  line-height: 1.75;
-  color: #334155;
-}
-
+/* Fixed collapsed bio space, so "Veja mais" aligns on all cards */
 .bio.collapsed {
-  max-height: 82px;
-  overflow: hidden;
-  position: relative;
+  height: 82px !important;
+  max-height: 82px !important;
+  overflow: hidden !important;
+  position: relative !important;
 }
 
 .bio.collapsed::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-
-  width: 100%;
-  height: 40px;
-
-  background: linear-gradient(to bottom, transparent, #f8fbff);
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 38px !important;
+  background: linear-gradient(to bottom, transparent, #f8fbff) !important;
 }
 
 .toggle-bio-btn {
-  display: inline-flex;
-  margin-top: 12px;
+  display: inline-flex !important;
+  margin-top: 12px !important;
+  margin-bottom: 0 !important;
 
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
 
-  color: #2563eb;
-  font-weight: 800;
-  cursor: pointer;
+  color: #2563eb !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  flex: 0 0 auto !important;
 }
 
+/* Push profile button to the same place */
 .result-card .btn {
-  margin-top: auto;
-  width: fit-content;
+  display: inline-flex !important;
+  width: fit-content !important;
+  margin-top: auto !important;
+  flex: 0 0 auto !important;
+}
+
+@media (max-width: 768px) {
+  .result-card,
+  .result-card:has(.bio:not(.collapsed)) {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  .bio.collapsed {
+    height: auto !important;
+    max-height: 82px !important;
+  }
 }
