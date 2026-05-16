@@ -2617,7 +2617,7 @@ body::after {
 /* More room so the preview does not disappear on shorter bios */
 .result-card {
   min-height: 430px !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 
