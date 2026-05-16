@@ -2376,14 +2376,6 @@ body::after {
   }
 }
 
-/* =========================================================
-   FINAL FIX - RESULT CARDS BUTTONS NOT BEING CUT OFF
-   Added at the end on purpose to override duplicated rules.
-========================================================= */
-
-.results-grid {
-  align-items: stretch !important;
-}
 
 .result-card {
   display: flex !important;
@@ -2430,6 +2422,103 @@ body::after {
 @media (max-width: 768px) {
   .result-card {
     min-height: 0 !important;
+  }
+
+  .result-card .bio.collapsed {
+    height: 64px !important;
+    max-height: 64px !important;
+  }
+}
+
+/* =========================================================
+   FINAL FIX - RESULT CARDS BUTTONS INSIDE THE BOX
+   Keep this at the very end. CSS duplication is apparently a lifestyle.
+========================================================= */
+
+.results-grid {
+  align-items: stretch !important;
+}
+
+.result-card {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+
+  height: auto !important;
+  min-height: 420px !important;
+
+  padding: 28px 24px 24px !important;
+  overflow: hidden !important;
+}
+
+.result-card .bio-wrapper {
+  width: 100% !important;
+  flex: 1 1 auto !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+
+  margin-top: 16px !important;
+  padding-top: 14px !important;
+  overflow: hidden !important;
+}
+
+.result-card .bio.collapsed {
+  height: 58px !important;
+  max-height: 58px !important;
+  overflow: hidden !important;
+}
+
+.result-card .toggle-bio-btn {
+  position: relative !important;
+  z-index: 5 !important;
+
+  display: inline-flex !important;
+  align-self: flex-start !important;
+
+  margin-top: 10px !important;
+  margin-bottom: 12px !important;
+  padding: 0 !important;
+}
+
+.result-card > a.btn,
+.result-card > .btn-primary {
+  position: relative !important;
+  z-index: 5 !important;
+
+  display: inline-flex !important;
+  align-self: flex-start !important;
+
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+
+  min-height: 44px !important;
+  padding: 0 20px !important;
+
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* When expanded, let only that card grow naturally */
+.result-card:has(.bio:not(.collapsed)) {
+  min-height: 500px !important;
+  overflow: visible !important;
+}
+
+.result-card:has(.bio:not(.collapsed)) .bio-wrapper {
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 768px) {
+  .result-card {
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .result-card .bio-wrapper {
+    flex: 0 0 auto !important;
   }
 
   .result-card .bio.collapsed {
