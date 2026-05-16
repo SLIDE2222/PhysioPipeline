@@ -1581,7 +1581,7 @@ body:has(#cadastroForm) .form-card {
   left: -9999px !important;
   width: 1px !important;
   height: 1px !important;
-  overflow: hidden !important;
+  overflow: visible !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
@@ -2594,9 +2594,17 @@ body::after {
 .result-card > .btn-primary {
   display: inline-flex !important;
   align-self: flex-start !important;
-  margin-top: 0 !important;
+
+  margin-top: 18px !important;
+  margin-bottom: 0 !important;
+
   position: relative !important;
-  z-index: 5 !important;
+  z-index: 8 !important;
+
+  visibility: visible !important;
+  opacity: 1 !important;
+
+  min-height: 46px !important;
 }
 
 /* More room so the preview does not disappear on shorter bios */
