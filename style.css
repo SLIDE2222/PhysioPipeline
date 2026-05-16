@@ -2133,7 +2133,7 @@ body:has(#cadastroForm) .form-card {
 
   backdrop-filter: blur(12px);
 
-  overflow: hidden !important;
+  overflow: visible !important;
   align-self: start !important;
 }
 
