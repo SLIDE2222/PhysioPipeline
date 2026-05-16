@@ -2613,3 +2613,112 @@ body::after {
   overflow: hidden !important;
 }
 
+/* =========================================================
+   ABSOLUTE FIX - KEEP "VER PERFIL" VISIBLE INSIDE CARDS
+   This sits at the very end because the file is a CSS crime scene.
+========================================================= */
+
+.result-card {
+  position: relative !important;
+  min-height: 430px !important;
+  height: 430px !important;
+  padding: 28px 24px 88px !important;
+  overflow: hidden !important;
+  border-radius: 28px !important;
+}
+
+.result-card .bio-wrapper {
+  display: block !important;
+  width: 100% !important;
+  margin-top: 22px !important;
+  padding-top: 14px !important;
+  overflow: visible !important;
+}
+
+.result-card .bio.collapsed {
+  height: 74px !important;
+  max-height: 74px !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+.result-card .bio.collapsed::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  height: 42px !important;
+  pointer-events: none !important;
+  background: linear-gradient(
+    to bottom,
+    rgba(248, 251, 255, 0),
+    rgba(248, 251, 255, 0.92) 72%,
+    #f8fbff 100%
+  ) !important;
+}
+
+.result-card .toggle-bio-btn {
+  position: relative !important;
+  z-index: 10 !important;
+  display: inline-flex !important;
+  margin-top: 10px !important;
+  margin-bottom: 0 !important;
+}
+
+.result-card > a.btn,
+.result-card > .btn-primary {
+  position: absolute !important;
+  left: 24px !important;
+  bottom: 24px !important;
+  z-index: 20 !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: auto !important;
+  min-width: 105px !important;
+  min-height: 46px !important;
+
+  margin: 0 !important;
+  padding: 0 20px !important;
+
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* When bio is expanded, button returns to normal flow under the text */
+.result-card:has(.bio:not(.collapsed)) {
+  height: auto !important;
+  min-height: 430px !important;
+  padding-bottom: 28px !important;
+  overflow: visible !important;
+}
+
+.result-card:has(.bio:not(.collapsed)) > a.btn,
+.result-card:has(.bio:not(.collapsed)) > .btn-primary {
+  position: relative !important;
+  left: auto !important;
+  bottom: auto !important;
+  margin-top: 18px !important;
+}
+
+@media (max-width: 768px) {
+  .result-card {
+    height: auto !important;
+    min-height: 0 !important;
+    padding-bottom: 24px !important;
+    overflow: visible !important;
+  }
+
+  .result-card > a.btn,
+  .result-card > .btn-primary {
+    position: relative !important;
+    left: auto !important;
+    bottom: auto !important;
+    margin-top: 18px !important;
+  }
+}
+
