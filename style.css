@@ -2114,8 +2114,10 @@ body:has(#cadastroForm) .form-card {
   position: relative !important;
   display: flex !important;
   flex-direction: column !important;
+  justify-content: flex-start !important;
 
-  min-height: 390px !important;
+  min-height: 430px !important;
+  height: auto !important;
 
   padding: 24px !important;
   border-radius: 28px !important;
@@ -2133,7 +2135,7 @@ body:has(#cadastroForm) .form-card {
 
   backdrop-filter: blur(12px);
 
-  overflow: visible !important;
+  overflow: hidden !important;
   align-self: start !important;
 }
 
@@ -2485,19 +2487,16 @@ body::after {
 .result-card > a.btn,
 .result-card > .btn-primary {
   position: relative !important;
-  z-index: 5 !important;
+  left: auto !important;
+  bottom: auto !important;
 
   display: inline-flex !important;
   align-self: flex-start !important;
 
-  margin-top: 0 !important;
+  margin-top: 18px !important;
   margin-bottom: 0 !important;
 
-  min-height: 44px !important;
-  padding: 0 20px !important;
-
-  visibility: visible !important;
-  opacity: 1 !important;
+  z-index: 20 !important;
 }
 
 /* When expanded, let only that card grow naturally */
@@ -2668,25 +2667,16 @@ body::after {
 
 .result-card > a.btn,
 .result-card > .btn-primary {
-  position: absolute !important;
-  left: 24px !important;
-  bottom: 24px !important;
+  position: relative !important;
+
+  left: auto !important;
+  bottom: auto !important;
+
+  margin-top: 18px !important;
+
+  align-self: flex-start !important;
+
   z-index: 20 !important;
-
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-
-  width: auto !important;
-  min-width: 105px !important;
-  min-height: 46px !important;
-
-  margin: 0 !important;
-  padding: 0 20px !important;
-
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
 }
 
 /* When bio is expanded, button returns to normal flow under the text */
