@@ -2375,3 +2375,66 @@ body::after {
     scroll-behavior: auto !important;
   }
 }
+
+/* =========================================================
+   FINAL FIX - RESULT CARDS BUTTONS NOT BEING CUT OFF
+   Added at the end on purpose to override duplicated rules.
+========================================================= */
+
+.results-grid {
+  align-items: stretch !important;
+}
+
+.result-card {
+  display: flex !important;
+  flex-direction: column !important;
+  height: auto !important;
+  min-height: 420px !important;
+  overflow: visible !important;
+  padding: 24px !important;
+}
+
+.result-card .bio-wrapper {
+  flex: 0 0 auto !important;
+  margin-top: 16px !important;
+  padding-top: 14px !important;
+  overflow: visible !important;
+}
+
+.result-card .bio.collapsed {
+  height: 54px !important;
+  max-height: 54px !important;
+  overflow: hidden !important;
+}
+
+.result-card .toggle-bio-btn {
+  position: relative !important;
+  z-index: 3 !important;
+  margin-top: 8px !important;
+  margin-bottom: 14px !important;
+}
+
+.result-card > a.btn,
+.result-card .btn-primary {
+  position: relative !important;
+  z-index: 3 !important;
+  display: inline-flex !important;
+  align-self: flex-start !important;
+  margin-top: auto !important;
+  margin-bottom: 0 !important;
+  min-height: 44px !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+@media (max-width: 768px) {
+  .result-card {
+    min-height: 0 !important;
+  }
+
+  .result-card .bio.collapsed {
+    height: 64px !important;
+    max-height: 64px !important;
+  }
+}
+
