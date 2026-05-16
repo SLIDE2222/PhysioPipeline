@@ -2115,7 +2115,7 @@ body:has(#cadastroForm) .form-card {
   display: flex !important;
   flex-direction: column !important;
 
-  min-height: 420px !important;
+  min-height: 390px !important;
 
   padding: 24px !important;
   border-radius: 28px !important;
@@ -2153,8 +2153,8 @@ body:has(#cadastroForm) .form-card {
 
 /* Fixed collapsed bio space, so "Veja mais" aligns on all cards */
 .bio.collapsed {
-  height: 82px !important;
-  max-height: 82px !important;
+  height: 62px !important;
+  max-height: 62px !important;
   overflow: hidden !important;
   position: relative !important;
 }
