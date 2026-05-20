@@ -3374,12 +3374,26 @@ body {
 .results-page-body .page-section > .container {
   position: relative;
   z-index: 1;
+  width: min(100% - 2.5rem, 1320px);
+}
+
+.results-page-body .results-search-inline {
+  gap: 18px;
+  margin-bottom: 44px;
+}
+
+.results-page-body .results-search-inline .autocomplete-wrapper {
+  min-width: 250px;
+}
+
+.results-page-body .results-search-inline .patient-search-field {
+  min-width: 320px;
 }
 
 .results-page-body .results-grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)) !important;
-  gap: 26px !important;
-  margin-top: 22px !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)) !important;
+  gap: 32px !important;
+  margin-top: 24px !important;
 }
 
 .results-page-body .result-card,
@@ -3493,6 +3507,15 @@ body {
   .results-page-body .results-grid {
     grid-template-columns: 1fr !important;
     gap: 18px !important;
+  }
+
+  .results-page-body .page-section > .container {
+    width: min(100% - 1.25rem, var(--container));
+  }
+
+  .results-page-body .results-search-inline .autocomplete-wrapper,
+  .results-page-body .results-search-inline .patient-search-field {
+    min-width: 0;
   }
 
   .results-showing-summary {
