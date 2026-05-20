@@ -3143,3 +3143,179 @@ body::after {
     padding: 24px 22px 28px !important;
   }
 }
+
+/* =========================
+   MOBILE RESULTS SAFETY + SMART SEARCH SUMMARY
+========================= */
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+body {
+  min-width: 0;
+}
+
+.smart-search-summary {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 980px);
+  margin: 12px 0 28px;
+  padding: 16px 18px;
+  border: 1px solid rgba(37, 99, 235, 0.16);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(96, 165, 250, 0.12), transparent 34%),
+    rgba(255, 255, 255, 0.78);
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.smart-search-summary__copy {
+  display: grid;
+  gap: 3px;
+}
+
+.smart-search-summary__copy span {
+  color: var(--primary);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.smart-search-summary__copy strong {
+  color: var(--dark);
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.smart-search-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.smart-search-tags span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 11px;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.results-search-inline .search-mode-toggle input[type="radio"] {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.results-search-inline .patient-search-field[hidden],
+.results-search-inline .specialty-search-field[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  body::after {
+    right: -52vw;
+    width: 100vw;
+    opacity: 0.42;
+  }
+
+  .page-section {
+    padding: 2.1rem 0;
+  }
+
+  .section-heading.left {
+    max-width: 100%;
+  }
+
+  .section-heading h1 {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .section-heading #resultadoResumo {
+    max-width: 100%;
+    line-height: 1.35;
+  }
+
+  .results-search-inline {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    gap: 14px !important;
+    align-items: stretch !important;
+    margin: 22px 0 34px !important;
+    overflow: visible !important;
+  }
+
+  .results-search-inline > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .results-search-inline .results-mode-toggle {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 7px !important;
+    padding: 5px !important;
+    border-radius: 18px !important;
+  }
+
+  .results-search-inline .search-mode-toggle span {
+    min-height: 50px !important;
+    padding: 9px 7px !important;
+    font-size: 0.95rem !important;
+    line-height: 1.12 !important;
+    text-align: center !important;
+    white-space: normal !important;
+  }
+
+  .results-search-inline input:not([type="radio"]),
+  .results-search-inline button {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 56px !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+  }
+
+  .smart-search-summary {
+    margin: 14px 0 24px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .smart-search-tags {
+    gap: 7px;
+  }
+
+  .smart-search-tags span {
+    min-height: 32px;
+    font-size: 0.82rem;
+  }
+}
+
+@supports not (overflow-x: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}

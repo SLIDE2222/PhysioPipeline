@@ -703,15 +703,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       .sort((a, b) => b.score - a.score)
       .map((item) => item.profile);
 
-    resumo.textContent = `${filtered.length} profissional(is) encontrado(s)`;
+    const resultLabel = filtered.length === 1
+      ? '1 profissional encontrado'
+      : `${filtered.length} profissionais encontrados`;
+
+    resumo.textContent = resultLabel;
 
     if (modoBusca === 'leigo' && queixa) {
-      const hintTerms = patientTerms.slice(0, 8).join(', ');
-      resumo.textContent += ` para "${queixa}"`;
-      if (hintTerms) {
+      const hintTerms = patientTerms.slice(0, 8);
+      resumo.textContent = `${resultLabel} para "${queixa}"`;
+
+      if (hintTerms.length) {
         resumo.insertAdjacentHTML(
           'afterend',
-          `<p class="smart-search-hint">Busca inteligente por: ${escapeHtml(hintTerms)}</p>`
+          `
+            <section class="smart-search-summary" aria-label="Resumo da busca inteligente">
+              <div class="smart-search-summary__copy">
+                <span>Busca inteligente</span>
+                <strong>Tambem procuramos termos relacionados</strong>
+              </div>
+              <div class="smart-search-tags">
+                ${hintTerms.map((term) => `<span>${escapeHtml(term)}</span>`).join('')}
+              </div>
+            </section>
+          `
         );
       }
     }
