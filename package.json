@@ -9,7 +9,8 @@
                     "prisma:generate":  "prisma generate",
                     "prisma:migrate":  "prisma migrate dev",
                     "prisma:studio":  "prisma studio",
-                    "db:seed":  "node prisma/seed.js"
+                    "db:seed":  "node prisma/seed.js",
+                    "taxonomy:build":  "node tools/build-search-taxonomy.js"
                 },
     "dependencies":  {
                          "@prisma/client":  "^6.5.0",

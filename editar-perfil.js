@@ -27,7 +27,7 @@ function setInputValue(inputId, value) {
 }
 
 
-const EDITAR_SPECIALTY_OPTIONS = [
+const EDITAR_SPECIALTY_OPTIONS_FALLBACK = [
   'Fisioterapia Ortopédica',
   'Fisioterapia Esportiva',
   'Fisioterapia Neurológica',
@@ -49,6 +49,9 @@ const EDITAR_SPECIALTY_OPTIONS = [
   'Ergonomia',
   'Pós-operatório'
 ];
+
+const EDITAR_SPECIALTY_OPTIONS =
+  window.PhysioTaxonomy?.profileSpecialtyOptions || EDITAR_SPECIALTY_OPTIONS_FALLBACK;
 
 function setupSimpleAutocomplete(inputId, suggestionsId, options) {
   const input = document.getElementById(inputId);

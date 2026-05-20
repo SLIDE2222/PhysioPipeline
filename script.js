@@ -1,6 +1,6 @@
 let cachedMyProfile = null;
 
-const SPECIALTIES = [
+const EXISTING_SPECIALTIES = [
   'Fisioterapia Ortopédica',
   'Fisioterapia Esportiva',
   'Fisioterapia Neurológica',
@@ -14,6 +14,8 @@ const SPECIALTIES = [
   'Ventosaterapia',
   'Pós-operatório'
 ];
+
+const SPECIALTIES = window.PhysioTaxonomy?.profileSpecialtyOptions || EXISTING_SPECIALTIES;
 
 const CITY_NEIGHBORHOODS = {
   'São Paulo': [
@@ -96,6 +98,17 @@ const PATIENT_SEARCH_MAP = [
 
 const STOP_WORDS = new Set(['de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'nos', 'nas', 'com', 'para', 'por', 'um', 'uma', 'o', 'a', 'e']);
 
+function getSpecialtyAutocompleteOptions() {
+  return window.PhysioTaxonomy?.autocompleteSpecialtyOptions || SPECIALTIES;
+}
+
+function getPatientSearchGroups() {
+  return [
+    ...PATIENT_SEARCH_MAP,
+    ...(window.PhysioTaxonomy?.searchSynonymGroups || []),
+  ];
+}
+
 function escapeHtml(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -127,8 +140,10 @@ function uniqueTerms(terms) {
 function expandPatientSearch(query) {
   const normalizedQuery = normalizeText(query);
   const terms = tokenizeSearch(query);
+  const queryTokens = tokenizeSearch(query);
+  const taxonomy = window.PhysioTaxonomy || {};
 
-  PATIENT_SEARCH_MAP.forEach((entry) => {
+  getPatientSearchGroups().forEach((entry) => {
     const matched = entry.triggers.some((trigger) =>
       normalizedQuery.includes(normalizeText(trigger))
     );
@@ -136,6 +151,23 @@ function expandPatientSearch(query) {
     if (matched) {
       terms.push(...entry.triggers.map(normalizeText));
       terms.push(...entry.terms.map(normalizeText));
+    }
+  });
+
+  [
+    ...(taxonomy.treatmentTags || []),
+    ...(taxonomy.coreSpecialties || []),
+    ...(taxonomy.audienceTags || []),
+    ...(taxonomy.seoSearchCombinations || []),
+  ].forEach((value) => {
+    const normalizedValue = normalizeText(value);
+    const hasDirectMatch =
+      normalizedQuery && normalizedValue.includes(normalizedQuery);
+    const hasTokenMatch =
+      queryTokens.length && queryTokens.some((term) => normalizedValue.includes(term));
+
+    if (hasDirectMatch || hasTokenMatch) {
+      terms.push(...tokenizeSearch(value));
     }
   });
 
@@ -320,7 +352,7 @@ function setupSpecialtyAutocomplete(inputId, listId) {
   setupAutocomplete({
     inputId,
     listId,
-    optionsProvider: () => SPECIALTIES,
+    optionsProvider: getSpecialtyAutocompleteOptions,
     minChars: 0,
     showOnFocus: true
   });

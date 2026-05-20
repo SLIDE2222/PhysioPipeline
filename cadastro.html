@@ -165,10 +165,12 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="google-auth.js?v=base64url-auth-fix2"></script>
   <script src="image-cropper.js?v=imagecrop1"></script>
-  <script src="script.js?v=imagecrop1"></script>
+  <script src="search-taxonomy.generated.js?v=taxonomy1"></script>
+  <script src="search-taxonomy.js?v=taxonomy1"></script>
+  <script src="script.js?v=taxonomy1"></script>
 
   <script>
-    const CADASTRO_SPECIALTY_OPTIONS = [
+    const CADASTRO_SPECIALTY_OPTIONS_FALLBACK = [
       'Fisioterapia OrtopÃ©dica',
       'Fisioterapia Esportiva',
       'Fisioterapia NeurolÃ³gica',
@@ -190,6 +192,9 @@
       'Ergonomia',
       'PÃ³s-operatÃ³rio'
     ];
+
+    const CADASTRO_SPECIALTY_OPTIONS =
+      window.PhysioTaxonomy?.profileSpecialtyOptions || CADASTRO_SPECIALTY_OPTIONS_FALLBACK;
 
     function setupCadastroAutocomplete(inputId, suggestionsId, options) {
       const input = document.getElementById(inputId);
