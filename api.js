@@ -143,6 +143,7 @@
       id: profile.id,
       nome: profile.name ?? profile.nome ?? '',
       especialidade: profile.specialty ?? profile.especialidade ?? '',
+      especialidadeSecundaria: profile.secondarySpecialty ?? profile.especialidadeSecundaria ?? '',
       cidade: profile.city ?? profile.cidade ?? '',
       bairro: profile.neighborhood ?? profile.bairro ?? '',
       telefone: profile.phone ?? profile.telefone ?? '',

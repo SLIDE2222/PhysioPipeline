@@ -433,6 +433,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   );
 });
 
+function getSearchableSpecialties(profile) {
+  return [
+    profile.especialidade,
+    profile.specialty,
+    profile.especialidadeSecundaria,
+    profile.secondarySpecialty,
+    profile.specialization,
+    profile.specialty2,
+    profile.extraSpecialty,
+  ]
+    .filter(Boolean)
+    .map(normalizeText)
+    .join(' ');
+}
+
+function getDisplaySpecialties(profile) {
+  return [
+    profile.especialidade || profile.specialty,
+    profile.especialidadeSecundaria || profile.secondarySpecialty,
+  ]
+    .filter(Boolean)
+    .filter((specialty, index, arr) => arr.indexOf(specialty) === index)
+    .join(' • ');
+}
+
 // ===============================
 // RESULTADOS DA BUSCA
 // ===============================
@@ -459,15 +484,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     params.get('bairro') || ''
   );
 
+  const specialtyInput = document.getElementById('specialtyInput');
+  const cityInput = document.getElementById('cityIndexSelect');
+  const bairroInput = document.getElementById('buscarBairroIndex');
+
+  if (specialtyInput) specialtyInput.value = params.get('especialidade') || '';
+  if (cityInput) cityInput.value = params.get('cidade') || '';
+  if (bairroInput) bairroInput.value = params.get('bairro') || '';
+
   try {
     resumo.textContent = 'Buscando profissionais...';
 
     const profiles = await window.physioApi.fetchProfiles();
 
     const filtered = profiles.filter((profile) => {
-     const pEspecialidade = normalizeText(profile.especialidade || profile.specialty);
-const pCidade = normalizeText(profile.cidade || profile.city);
-const pBairro = normalizeText(profile.bairro || profile.neighborhood);
+     const pEspecialidade = getSearchableSpecialties(profile);
+      const pCidade = normalizeText(profile.cidade || profile.city);
+      const pBairro = normalizeText(profile.bairro || profile.neighborhood);
 
       const specialtyMatch =
         !especialidade || pEspecialidade.includes(especialidade);
@@ -503,7 +536,7 @@ const pBairro = normalizeText(profile.bairro || profile.neighborhood);
 
     <p>
       <strong>Especialidade:</strong>
-      ${escapeHtml(profile.especialidade || profile.specialty || 'Não informado')}
+      ${escapeHtml(getDisplaySpecialties(profile) || 'Não informado')}
     </p>
 
     <p>

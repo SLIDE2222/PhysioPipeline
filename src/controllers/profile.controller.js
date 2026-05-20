@@ -5,6 +5,7 @@ const createProfileSchema = z.object({
   name: z.string().min(2).optional(),
   name: z.string().min(2),
   specialty: z.string().min(2),
+  secondarySpecialty: z.string().optional().nullable(),
   city: z.string().min(2),
   neighborhood: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
@@ -42,7 +43,10 @@ export async function listProfiles(req, res) {
 
   const profiles = await prisma.profile.findMany({
     where: {
-      specialty: specialty ? { contains: String(specialty), mode: "insensitive" } : undefined,
+      OR: specialty ? [
+        { specialty: { contains: String(specialty), mode: "insensitive" } },
+        { secondarySpecialty: { contains: String(specialty), mode: "insensitive" } },
+      ] : undefined,
       city: city ? { contains: String(city), mode: "insensitive" } : undefined,
       neighborhood: neighborhood ? { contains: String(neighborhood), mode: "insensitive" } : undefined,
     },
@@ -102,6 +106,7 @@ export async function createProfile(req, res) {
     data: {
       name: parsed.data.name,
       specialty: parsed.data.specialty,
+      secondarySpecialty: clean(parsed.data.secondarySpecialty),
       city: parsed.data.city,
       neighborhood: clean(parsed.data.neighborhood),
       phone: clean(parsed.data.phone),
@@ -152,6 +157,7 @@ export async function updateMyProfile(req, res) {
     data: {
       ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
       ...(parsed.data.specialty !== undefined ? { specialty: parsed.data.specialty } : {}),
+      ...(parsed.data.secondarySpecialty !== undefined ? { secondarySpecialty: clean(parsed.data.secondarySpecialty) } : {}),
       ...(parsed.data.city !== undefined ? { city: parsed.data.city } : {}),
       ...(parsed.data.neighborhood !== undefined ? { neighborhood: clean(parsed.data.neighborhood) } : {}),
       ...(parsed.data.phone !== undefined ? { phone: clean(parsed.data.phone) } : {}),

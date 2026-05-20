@@ -33,6 +33,7 @@ model Profile {
   id            String         @id @default(cuid())
   name          String
   specialty     String
+  secondarySpecialty String?
   city          String
   neighborhood  String?
   phone         String?
