@@ -2827,11 +2827,35 @@ body::after {
 
 .result-card {
   width: 100% !important;
-  max-width: 540px !important;
+  max-width: 620px !important;
 }
 
 @media (max-width: 768px) {
   .result-card {
     max-width: none !important;
+  }
+}
+
+
+/* =========================
+   RESULT CARD ACTION BREATHING ROOM
+========================= */
+.result-card {
+  padding-bottom: 36px !important;
+}
+
+.result-card .bio-wrapper {
+  min-height: 132px !important;
+}
+
+.result-card > a.btn,
+.result-card > .btn-primary {
+  margin-top: 8px !important;
+  margin-bottom: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .result-card {
+    padding-bottom: 28px !important;
   }
 }
