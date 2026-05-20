@@ -2859,3 +2859,58 @@ body::after {
     padding-bottom: 28px !important;
   }
 }
+
+
+/* =========================
+   RESULT CARD FINAL SIZE FIX
+   Force desktop result cards into wider columns and keep actions inside.
+========================= */
+.results-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)) !important;
+  align-items: stretch !important;
+  justify-items: stretch !important;
+}
+
+.result-card,
+.result-card:has(.bio.collapsed),
+.result-card:has(.bio:not(.collapsed)) {
+  width: 100% !important;
+  max-width: 620px !important;
+  height: auto !important;
+  min-height: 520px !important;
+  max-height: none !important;
+  padding: 28px 28px 34px !important;
+  overflow: hidden !important;
+}
+
+.result-card .bio-wrapper {
+  min-height: 126px !important;
+  margin-top: auto !important;
+  padding-top: 14px !important;
+}
+
+.result-card .toggle-bio-btn {
+  margin-top: 10px !important;
+  margin-bottom: 14px !important;
+}
+
+.result-card > a.btn,
+.result-card > .btn-primary {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  align-self: flex-start !important;
+}
+
+@media (max-width: 768px) {
+  .results-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .result-card,
+  .result-card:has(.bio.collapsed),
+  .result-card:has(.bio:not(.collapsed)) {
+    max-width: none !important;
+    min-height: auto !important;
+    padding: 24px 22px 28px !important;
+  }
+}
