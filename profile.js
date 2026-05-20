@@ -79,6 +79,57 @@ function recordProfileLeadEvent(profissional, type, source = 'profile') {
   });
 }
 
+function getLeadCount(summary, type) {
+  return Number(summary?.[type] || 0);
+}
+
+function renderLeadSummaryCard() {
+  return [
+    '        <section class="profile-section profile-performance-section" id="leadPerformanceSection">',
+    '          <div class="performance-heading">',
+    '            <div>',
+    '              <p class="performance-eyebrow">Performance</p>',
+    '              <h3>Últimos 30 dias</h3>',
+    '            </div>',
+    '            <span class="performance-badge">Somente você vê</span>',
+    '          </div>',
+    '          <div id="leadSummaryContent" class="performance-grid">',
+    '            <div class="performance-loading">Carregando dados...</div>',
+    '          </div>',
+    '        </section>'
+  ].join('\n');
+}
+
+async function loadLeadSummary() {
+  const target = document.getElementById('leadSummaryContent');
+  if (!target || !window.physioApi?.fetchMyLeadSummary) return;
+
+  try {
+    const data = await window.physioApi.fetchMyLeadSummary();
+    const summary = data?.summary || {};
+
+    const metrics = [
+      ['Visualizações do perfil', getLeadCount(summary, 'PROFILE_VIEW')],
+      ['Cliques no WhatsApp', getLeadCount(summary, 'WHATSAPP_CLICK')],
+      ['Cliques no Instagram', getLeadCount(summary, 'INSTAGRAM_CLICK')],
+      ['Cliques no LinkedIn', getLeadCount(summary, 'LINKEDIN_CLICK')],
+    ];
+
+    target.innerHTML = metrics.map(([label, value]) => `
+      <article class="performance-metric">
+        <strong>${value}</strong>
+        <span>${escapeHtml(label)}</span>
+      </article>
+    `).join('');
+  } catch (error) {
+    target.innerHTML = [
+      '<div class="performance-loading performance-error">',
+      'Não foi possível carregar a performance agora.',
+      '</div>'
+    ].join('');
+  }
+}
+
 function getProfileSpecialties(profissional) {
   const mainSpecialty =
     profissional.especialidade ||
@@ -151,7 +202,9 @@ async function renderProfilePage() {
       !profissional.isClaimed &&
       !profissional.ownerUserId;
 
-    recordProfileLeadEvent(profissional, 'PROFILE_VIEW');
+    if (!isOwner) {
+      recordProfileLeadEvent(profissional, 'PROFILE_VIEW');
+    }
 
     profileContainer.innerHTML = `
       <article class="profile-card-full">
@@ -177,6 +230,8 @@ async function renderProfilePage() {
           <p>${escapeHtml(profissional.descricao || 'Esse profissional ainda não adicionou uma descrição.')}</p>
         </section>
 
+        ${isOwner ? renderLeadSummaryCard() : ''}
+
         <section class="profile-section">
           <h3>Contato</h3>
           <div class="profile-contact-list">
@@ -187,8 +242,8 @@ async function renderProfilePage() {
 
           <div class="profile-actions">
             ${profissional.telefone ? `<a href="${whatsappLink}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" data-lead-type="WHATSAPP_CLICK">Falar no WhatsApp</a>` : ''}
-            ${profissional.instagram ? `<a href="${escapeHtml(profissional.instagram)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">📸 Instagram</a>` : ''}
-            ${profissional.linkedin ? `<a href="${escapeHtml(profissional.linkedin)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">💼 LinkedIn</a>` : ''}
+            ${profissional.instagram ? `<a href="${escapeHtml(profissional.instagram)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" data-lead-type="INSTAGRAM_CLICK">📸 Instagram</a>` : ''}
+            ${profissional.linkedin ? `<a href="${escapeHtml(profissional.linkedin)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" data-lead-type="LINKEDIN_CLICK">💼 LinkedIn</a>` : ''}
             ${isOwner ? `
   <a href="editar-perfil.html" class="btn btn-secondary">
     Editar perfil
@@ -219,9 +274,15 @@ ${showClaimButton ? `
 </article>
 `;
 
+    if (isOwner) {
+      loadLeadSummary();
+    }
+
     document.querySelectorAll('[data-lead-type]').forEach((link) => {
       link.addEventListener('click', () => {
-        recordProfileLeadEvent(profissional, link.dataset.leadType);
+        if (!isOwner) {
+          recordProfileLeadEvent(profissional, link.dataset.leadType);
+        }
       });
     });
 
