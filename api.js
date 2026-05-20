@@ -215,6 +215,13 @@
     (data.profiles || data || []).map(normalizeProfile)
   );
 },
+    createProfile(payload) {
+      return request('/profiles', {
+        method: 'POST',
+        body: payload,
+        timeoutMs: 20000,
+      }).then((data) => normalizeProfile(data.profile || data));
+    },
     updateMyProfile(payload) {
       return request('/profiles/me', {
         method: 'PUT',

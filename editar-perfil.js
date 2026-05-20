@@ -170,9 +170,26 @@ if (fotoInput) {
       return;
     }
 
-    fotoBase64 = await fileToBase64(file);
-    fotoPreview.src = fotoBase64;
-    fotoPreview.style.display = 'block';
+    try {
+      const croppedPhoto = typeof window.openImageCropper === 'function'
+        ? await window.openImageCropper(file)
+        : await fileToBase64(file);
+
+      if (!croppedPhoto) {
+        fotoInput.value = '';
+        return;
+      }
+
+      fotoBase64 = croppedPhoto;
+      fotoPreview.src = fotoBase64;
+      fotoPreview.style.display = 'block';
+      fotoInput.value = '';
+    } catch (error) {
+      console.error(error);
+      editarMensagem.textContent = 'Não foi possível ajustar essa imagem.';
+      editarMensagem.style.color = '#b91c1c';
+      fotoInput.value = '';
+    }
   });
 }
 

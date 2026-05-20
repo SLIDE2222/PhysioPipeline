@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cadastrar perfil | Physio Pipeline</title>
-  <link rel="stylesheet" href="style.css?v=cadastro-autocomplete-match1" />
+  <link rel="stylesheet" href="style.css?v=imagecrop1" />
  <meta name="google-client-id" content="197182747757-6tm1e8vhu44fkpf89pvvsbooodl48t3o.apps.googleusercontent.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
     <div class="container nav">
       <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
       <nav class="nav-links">
-        <a href="index.html">Início</a>
+        <a href="index.html">Inicio</a>
         <a href="buscar.html">Buscar</a>
       </nav>
       <a href="buscar.html" class="btn btn-outline">Buscar</a>
@@ -163,7 +163,8 @@
   <script src="api.js?v=base64url-auth-fix2"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="google-auth.js?v=base64url-auth-fix2"></script>
-  <script src="script.js?v=base64url-auth-fix2"></script>
+  <script src="image-cropper.js?v=imagecrop1"></script>
+  <script src="script.js?v=imagecrop1"></script>
 
   <script>
     const CADASTRO_SPECIALTY_OPTIONS = [
@@ -235,7 +236,15 @@
       });
     }
 
+    let cadastroFotoBase64 = '';
+
     document.addEventListener('DOMContentLoaded', () => {
+      const cadastroForm = document.getElementById('cadastroForm');
+      const cadastroMensagem = document.getElementById('cadastroMensagem');
+      const senhaErro = document.getElementById('senhaErro');
+      const fotoInput = document.getElementById('foto');
+      const fotoPreview = document.getElementById('fotoPreview');
+
       setupCadastroAutocomplete(
         'especialidadeCadastro',
         'especialidadeCadastroSuggestions',
@@ -249,6 +258,94 @@
           'bairro',
           'bairroCadastroSuggestions'
         );
+      }
+
+      if (fotoInput) {
+        fotoInput.addEventListener('change', async () => {
+          const file = fotoInput.files[0];
+          if (!file) return;
+
+          if (!file.type.startsWith('image/')) {
+            cadastroMensagem.textContent = 'Escolha um arquivo de imagem válido.';
+            cadastroMensagem.style.color = '#b91c1c';
+            fotoInput.value = '';
+            return;
+          }
+
+          try {
+            const croppedPhoto = typeof window.openImageCropper === 'function'
+              ? await window.openImageCropper(file)
+              : '';
+
+            if (!croppedPhoto) {
+              fotoInput.value = '';
+              return;
+            }
+
+            cadastroFotoBase64 = croppedPhoto;
+            fotoPreview.src = cadastroFotoBase64;
+            fotoPreview.style.display = 'block';
+            fotoInput.value = '';
+          } catch (error) {
+            console.error(error);
+            cadastroMensagem.textContent = 'Não foi possível ajustar essa imagem.';
+            cadastroMensagem.style.color = '#b91c1c';
+            fotoInput.value = '';
+          }
+        });
+      }
+
+      if (cadastroForm) {
+        cadastroForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+
+          const password = document.getElementById('senha').value;
+          const confirmPassword = document.getElementById('confirmarSenha').value;
+
+          senhaErro.textContent = '';
+          cadastroMensagem.textContent = '';
+
+          if (password !== confirmPassword) {
+            senhaErro.textContent = 'As senhas não são iguais.';
+            return;
+          }
+
+          const submitBtn = cadastroForm.querySelector('button[type="submit"]');
+          if (submitBtn) submitBtn.disabled = true;
+
+          try {
+            await window.physioApi.register({
+              email: document.getElementById('email').value.trim(),
+              password,
+            });
+
+            const profile = await window.physioApi.createProfile({
+              name: document.getElementById('nome').value.trim(),
+              phone: document.getElementById('telefone').value.trim() || null,
+              specialty: document.getElementById('especialidadeCadastro').value.trim(),
+              city: document.getElementById('cidadeCadastro').value.trim(),
+              neighborhood: document.getElementById('bairro').value.trim() || null,
+              attendance: document.getElementById('atendimento').value,
+              instagram: document.getElementById('instagram').value.trim() || null,
+              linkedin: document.getElementById('linkedin').value.trim() || null,
+              bio: document.getElementById('descricao').value.trim(),
+              photoUrl: cadastroFotoBase64 || null,
+              publicEmail: document.getElementById('email').value.trim(),
+            });
+
+            cadastroMensagem.textContent = 'Conta e perfil criados com sucesso!';
+            cadastroMensagem.style.color = '#166534';
+
+            setTimeout(() => {
+              window.location.href = `profile.html?id=${encodeURIComponent(profile.id)}`;
+            }, 700);
+          } catch (error) {
+            cadastroMensagem.textContent = error.message || 'Não foi possível criar sua conta agora.';
+            cadastroMensagem.style.color = '#b91c1c';
+          } finally {
+            if (submitBtn) submitBtn.disabled = false;
+          }
+        });
       }
     });
   </script>
