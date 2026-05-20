@@ -725,7 +725,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <section class="smart-search-summary" aria-label="Resumo da busca inteligente">
               <div class="smart-search-summary__copy">
                 <span>Busca inteligente</span>
-                <strong>Tambem procuramos termos relacionados</strong>
+                <strong>Tamb&eacute;m procuramos termos relacionados</strong>
               </div>
               <div class="smart-search-tags">
                 ${hintTerms.map((term) => `<span>${escapeHtml(term)}</span>`).join('')}

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -53,7 +53,7 @@
           <input type="file" id="foto" name="foto" accept="image/*" />
 
           <div class="image-preview-wrapper">
-            <img id="fotoPreview" class="image-preview" alt="Previa da foto" />
+            <img id="fotoPreview" class="image-preview" alt="Pr&eacute;via da foto" />
           </div>
 
           <label for="nome">Nome completo</label>
@@ -121,10 +121,10 @@
 
           <label for="atendimento">Tipo de atendimento</label>
           <select id="atendimento" name="atendimento" required>
-            <option value="" disabled selected>Selecione uma opÃƒÂ§ÃƒÂ£o</option>
-            <option value="ClÃƒÂ­nica">ClÃƒÂ­nica</option>
+            <option value="" disabled selected>Selecione uma opção</option>
+            <option value="Clínica">Clínica</option>
             <option value="Domiciliar">Domiciliar</option>
-            <option value="ClÃƒÂ­nica e domiciliar">ClÃƒÂ­nica e domiciliar</option>
+            <option value="Clínica e domiciliar">Clínica e domiciliar</option>
             <option value="Online">Online</option>
           </select>
 
@@ -144,12 +144,12 @@
             placeholder="https://linkedin.com/in/seuperfil"
           />
 
-          <label for="descricao">DescriÃƒÂ§ÃƒÂ£o profissional</label>
+          <label for="descricao">Descrição profissional</label>
           <textarea
             id="descricao"
             name="descricao"
             rows="5"
-            placeholder="Fale brevemente sobre sua atuaÃƒÂ§ÃƒÂ£o..."
+            placeholder="Fale brevemente sobre sua atuação..."
             required
           ></textarea>
 
@@ -169,22 +169,22 @@
   <script src="image-cropper.js?v=imagecrop1"></script>
   <script src="search-taxonomy.generated.js?v=taxonomy1"></script>
   <script src="search-taxonomy.js?v=taxonomy1"></script>
-  <script src="script.js?v=mobilefix1"></script>
+  <script src="script.js?v=ptfix1"></script>
 
   <script>
     const CADASTRO_SPECIALTY_OPTIONS_FALLBACK = [
-      'Fisioterapia OrtopÃƒÂ©dica',
+      'Fisioterapia Ortopédica',
       'Fisioterapia Esportiva',
-      'Fisioterapia NeurolÃƒÂ³gica',
-      'Fisioterapia GeriÃƒÂ¡trica',
-      'Fisioterapia RespiratÃƒÂ³ria',
-      'Fisioterapia PediÃƒÂ¡trica',
+      'Fisioterapia Neurológica',
+      'Fisioterapia Geriátrica',
+      'Fisioterapia Respiratória',
+      'Fisioterapia Pediátrica',
       'Fisioterapia do Trabalho',
       'Fisioterapia Ocupacional',
       'Fisioterapia Dermatofuncional',
-      'Fisioterapia PÃƒÂ©lvica',
+      'Fisioterapia Pélvica',
       'Fisioterapia Cardiovascular',
-      'Fisioterapia AquÃƒÂ¡tica',
+      'Fisioterapia Aquática',
       'Fisioterapia Home Care',
       'Fisioterapia Domiciliar',
       'Quiropraxia',
@@ -192,7 +192,7 @@
       'Domiciliar',
       'Ocupacional',
       'Ergonomia',
-      'PÃƒÂ³s-operatÃƒÂ³rio'
+      'Pós-operatório'
     ];
 
     const CADASTRO_SPECIALTY_OPTIONS =
@@ -286,7 +286,7 @@
             fotoInput.value = '';
           } catch (error) {
             console.error(error);
-            cadastroMensagem.textContent = 'NÃƒÂ£o foi possÃƒÂ­vel ajustar essa imagem.';
+            cadastroMensagem.textContent = 'Não foi possível ajustar essa imagem.';
             cadastroMensagem.style.color = '#b91c1c';
             fotoInput.value = '';
           }
@@ -297,7 +297,7 @@
           if (!file) return;
 
           if (!file.type.startsWith('image/')) {
-            cadastroMensagem.textContent = 'Escolha um arquivo de imagem vÃƒÂ¡lido.';
+            cadastroMensagem.textContent = 'Escolha um arquivo de imagem válido.';
             cadastroMensagem.style.color = '#b91c1c';
             fotoInput.value = '';
             return;
@@ -336,7 +336,7 @@
           cadastroMensagem.textContent = '';
 
           if (password !== confirmPassword) {
-            senhaErro.textContent = 'As senhas nÃƒÂ£o sÃƒÂ£o iguais.';
+            senhaErro.textContent = 'As senhas não são iguais.';
             return;
           }
 
@@ -370,7 +370,7 @@
               window.location.href = `profile.html?id=${encodeURIComponent(profile.id)}`;
             }, 700);
           } catch (error) {
-            cadastroMensagem.textContent = error.message || 'NÃƒÂ£o foi possÃƒÂ­vel criar sua conta agora.';
+            cadastroMensagem.textContent = error.message || 'Não foi possível criar sua conta agora.';
             cadastroMensagem.style.color = '#b91c1c';
           } finally {
             if (submitBtn) submitBtn.disabled = false;

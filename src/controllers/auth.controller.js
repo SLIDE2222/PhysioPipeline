@@ -180,8 +180,8 @@ export async function googleLogin(req, res) {
       const profile = await prisma.profile.create({
         data: {
           name: firstName,
-          specialty: "NÃ£o informado",
-          city: "NÃ£o informado",
+          specialty: "Não informado",
+          city: "Não informado",
           neighborhood: null,
           phone: user.phone || null,
           bio: "Perfil criado com Google. Complete seus dados profissionais para aparecer melhor nas buscas.",
@@ -347,7 +347,7 @@ export async function forgotPassword(req, res) {
     // Generic response so people cannot check which emails exist.
     if (!user) {
       return res.json({
-        message: "Se o e-mail existir, o link de recuperaÃ§Ã£o foi enviado.",
+        message: "Se o e-mail existir, o link de recuperação foi enviado.",
       });
     }
 
@@ -373,38 +373,38 @@ export async function forgotPassword(req, res) {
       sender: mailConfig.user,
       to: email,
       replyTo: mailConfig.user,
-      subject: "RecuperaÃ§Ã£o de senha - PhysioPipeline",
+      subject: "Recuperação de senha - PhysioPipeline",
       text: [
-        "RecuperaÃ§Ã£o de senha",
+        "Recuperação de senha",
         "",
-        "Recebemos uma solicitaÃ§Ã£o para redefinir sua senha no PhysioPipeline.",
+        "Recebemos uma solicitação para redefinir sua senha no PhysioPipeline.",
         `Abra este link para criar uma nova senha: ${resetLink}`,
         "",
         "Este link expira em 30 minutos.",
-        "Se vocÃª nÃ£o solicitou isso, ignore este e-mail.",
+        "Se você não solicitou isso, ignore este e-mail.",
       ].join("\n"),
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a">
-          <h2>RecuperaÃ§Ã£o de senha</h2>
-          <p>Recebemos uma solicitaÃ§Ã£o para redefinir sua senha no <strong>PhysioPipeline</strong>.</p>
+          <h2>Recuperação de senha</h2>
+          <p>Recebemos uma solicitação para redefinir sua senha no <strong>PhysioPipeline</strong>.</p>
           <p>
             <a href="${resetLink}" style="display:inline-block;padding:12px 18px;background:#2563eb;color:#fff;text-decoration:none;border-radius:10px;">
               Criar nova senha
             </a>
           </p>
           <p>Este link expira em <strong>30 minutos</strong>.</p>
-          <p>Se vocÃª nÃ£o solicitou isso, ignore este e-mail.</p>
+          <p>Se você não solicitou isso, ignore este e-mail.</p>
         </div>
       `,
     });
 
     return res.json({
-      message: "Se o e-mail existir, o link de recuperaÃ§Ã£o foi enviado.",
+      message: "Se o e-mail existir, o link de recuperação foi enviado.",
     });
   } catch (error) {
     console.error("Forgot password error:", error);
     return res.status(500).json({
-      message: error.message || "NÃ£o foi possÃ­vel enviar o link de recuperaÃ§Ã£o.",
+      message: error.message || "Não foi possível enviar o link de recuperação.",
     });
   }
 }
@@ -415,7 +415,7 @@ export async function updatePassword(req, res) {
     const password = String(req.body?.password || "");
 
     if (!token || !password) {
-      return res.status(400).json({ message: "Token e nova senha sÃ£o obrigatÃ³rios." });
+      return res.status(400).json({ message: "Token e nova senha são obrigatórios." });
     }
 
     if (password.length < 6) {
@@ -427,7 +427,7 @@ export async function updatePassword(req, res) {
     });
 
     if (!resetToken) {
-      return res.status(400).json({ message: "Token invÃ¡lido ou expirado." });
+      return res.status(400).json({ message: "Token inválido ou expirado." });
     }
 
     if (resetToken.expiresAt < new Date()) {
@@ -442,7 +442,7 @@ export async function updatePassword(req, res) {
 
     if (!user) {
       await prisma.passwordResetToken.deleteMany({ where: { email: resetToken.email } });
-      return res.status(400).json({ message: "Token invÃ¡lido ou expirado." });
+      return res.status(400).json({ message: "Token inválido ou expirado." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -461,7 +461,7 @@ export async function updatePassword(req, res) {
   } catch (error) {
     console.error("Update password error:", error);
     return res.status(500).json({
-      message: error.message || "NÃ£o foi possÃ­vel atualizar a senha.",
+      message: error.message || "Não foi possível atualizar a senha.",
     });
   }
 }
