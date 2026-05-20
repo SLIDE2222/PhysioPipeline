@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 
 const leadEventSchema = z.object({
@@ -74,10 +74,17 @@ export async function getMyLeadSummary(req, res) {
     _count: { _all: true },
   });
 
-  const summary = events.reduce((acc, event) => {
-    acc[event.type] = event._count._all;
-    return acc;
-  }, {});
+  const summary = {
+    PROFILE_VIEW: 0,
+    WHATSAPP_CLICK: 0,
+    EMAIL_CLICK: 0,
+    INSTAGRAM_CLICK: 0,
+    LINKEDIN_CLICK: 0,
+  };
+
+  events.forEach((event) => {
+    summary[event.type] = event._count._all;
+  });
 
   return res.json({
     profileId: profile.id,
@@ -85,3 +92,4 @@ export async function getMyLeadSummary(req, res) {
     summary,
   });
 }
+
