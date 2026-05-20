@@ -30,10 +30,17 @@
         <div class="section-heading left">
           <p class="eyebrow">Editar perfil</p>
           <h1>Atualize seu perfil</h1>
-          <p>Altere foto, contato e descrição sem ter que recriar tudo.</p>
+          <p>Altere foto, contato e descriÃ§Ã£o sem ter que recriar tudo.</p>
         </div>
 
         <form class="form-card" id="editarPerfilForm">
+          <label for="foto">Foto do perfil</label>
+          <input type="file" id="foto" name="foto" accept="image/*" />
+
+          <div class="image-preview-wrapper">
+            <img id="fotoPreview" class="image-preview" alt="Previa da foto" />
+          </div>
+
           <label for="telefone">Telefone</label>
           <input type="text" id="telefone" name="telefone" placeholder="(11) 99999-9999" />
 
@@ -82,13 +89,13 @@
             <ul id="editarEspecialidadeSuggestions" class="suggestions-list"></ul>
           </div>
 
-          <label for="especialidadeSecundaria">Especialização adicional <span style="font-weight:400; color:#64748b;">(opcional)</span></label>
+          <label for="especialidadeSecundaria">EspecializaÃ§Ã£o adicional <span style="font-weight:400; color:#64748b;">(opcional)</span></label>
           <div class="autocomplete-wrapper">
             <input
               type="text"
               id="especialidadeSecundaria"
               name="especialidadeSecundaria"
-              placeholder="Digite uma especialização adicional"
+              placeholder="Digite uma especializaÃ§Ã£o adicional"
               autocomplete="off"
             />
             <ul id="editarEspecialidadeSecundariaSuggestions" class="suggestions-list"></ul>
@@ -96,10 +103,10 @@
 
           <label for="atendimento">Tipo de atendimento</label>
           <select id="atendimento" name="atendimento">
-            <option value="">Selecione uma opção</option>
-            <option value="Clínica">Clínica</option>
+            <option value="">Selecione uma opÃ§Ã£o</option>
+            <option value="ClÃ­nica">ClÃ­nica</option>
             <option value="Domiciliar">Domiciliar</option>
-            <option value="Clínica e domiciliar">Clínica e domiciliar</option>
+            <option value="ClÃ­nica e domiciliar">ClÃ­nica e domiciliar</option>
             <option value="Online">Online</option>
           </select>
 
@@ -109,18 +116,12 @@
           <label for="linkedin">LinkedIn</label>
           <input type="url" id="linkedin" name="linkedin" placeholder="https://linkedin.com/in/seuperfil" />
 
-          <label for="foto">Foto do perfil</label>
-<input type="file" id="foto" name="foto" accept="image/*" />
 
-<div class="image-preview-wrapper">
-  <img id="fotoPreview" class="image-preview" alt="Prévia da foto" />
-</div>
-
-          <label for="descricao">Sobre você</label>
-          <textarea id="descricao" name="descricao" rows="5" placeholder="Fale brevemente sobre sua atuação..."></textarea>
+          <label for="descricao">Sobre vocÃª</label>
+          <textarea id="descricao" name="descricao" rows="5" placeholder="Fale brevemente sobre sua atuaÃ§Ã£o..."></textarea>
 
           <button type="submit" class="btn btn-primary btn-block">
-            Salvar alterações
+            Salvar alteraÃ§Ãµes
           </button>
 
           <p id="editarMensagem" class="success-message"></p>

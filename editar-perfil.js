@@ -159,21 +159,11 @@ async function loadMyProfile() {
 }
 
 if (fotoInput) {
-  fotoInput.addEventListener('change', async () => {
-    const file = fotoInput.files[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      editarMensagem.textContent = 'Escolha um arquivo de imagem válido.';
-      editarMensagem.style.color = '#b91c1c';
-      fotoInput.value = '';
-      return;
-    }
-
+  async function openPhotoEditor(source) {
     try {
       const croppedPhoto = typeof window.openImageCropper === 'function'
-        ? await window.openImageCropper(file)
-        : await fileToBase64(file);
+        ? await window.openImageCropper(source)
+        : source;
 
       if (!croppedPhoto) {
         fotoInput.value = '';
@@ -190,7 +180,39 @@ if (fotoInput) {
       editarMensagem.style.color = '#b91c1c';
       fotoInput.value = '';
     }
+  }
+
+  fotoInput.addEventListener('change', async () => {
+    const file = fotoInput.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      editarMensagem.textContent = 'Escolha um arquivo de imagem válido.';
+      editarMensagem.style.color = '#b91c1c';
+      fotoInput.value = '';
+      return;
+    }
+
+    await openPhotoEditor(file);
   });
+
+  if (fotoPreview) {
+    fotoPreview.setAttribute('role', 'button');
+    fotoPreview.setAttribute('tabindex', '0');
+    fotoPreview.title = 'Clique para ajustar a foto';
+
+    fotoPreview.addEventListener('click', async () => {
+      if (fotoBase64) await openPhotoEditor(fotoBase64);
+      else fotoInput.click();
+    });
+
+    fotoPreview.addEventListener('keydown', async (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      if (fotoBase64) await openPhotoEditor(fotoBase64);
+      else fotoInput.click();
+    });
+  }
 }
 
 if (editarForm) {
