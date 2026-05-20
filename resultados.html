@@ -6,7 +6,7 @@
   <title>Resultados da busca | Physio Pipeline</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
-  <link rel="stylesheet" href="style.css?v=mobilefix1" />
+  <link rel="stylesheet" href="style.css?v=results-page1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -14,7 +14,7 @@
     rel="stylesheet"
   >
 </head>
-<body>
+<body class="results-page-body">
 <header class="header">
   <div class="container nav">
     <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
@@ -101,7 +101,9 @@
 
 </form>
 
+        <p class="results-showing-summary" id="resultsShowingSummary"></p>
         <div class="results-grid" id="resultsGrid"></div>
+        <nav class="pagination-controls" id="paginationControls" aria-label="Paginação de resultados"></nav>
       </div>
     </section>
   </main>
@@ -109,7 +111,7 @@
   <script src="api.js?v=prodapi2"></script>
   <script src="search-taxonomy.generated.js?v=taxonomy1"></script>
   <script src="search-taxonomy.js?v=taxonomy1"></script>
-  <script src="script.js?v=mobilefix1"></script>
+  <script src="script.js?v=results-page1"></script>
     <footer class="footer tech-signature-footer">
     <div class="container footer-content tech-signature-footer__content">
       <div>

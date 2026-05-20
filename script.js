@@ -629,6 +629,8 @@ function getDisplaySpecialties(profile) {
 // RESULTADOS DA BUSCA
 // ===============================
 
+const RESULTS_PER_PAGE = 12;
+
 document.addEventListener('DOMContentLoaded', async () => {
   const resultsGrid = document.getElementById('resultsGrid');
 
@@ -636,8 +638,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!resultsGrid) return;
 
   const resumo = document.getElementById('resultadoResumo');
+  const resultsShowingSummary = document.getElementById('resultsShowingSummary');
+  const paginationControls = document.getElementById('paginationControls');
 
   const params = new URLSearchParams(window.location.search);
+  const requestedPage = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
 
   const especialidade = normalizeText(
     params.get('especialidade') || ''
@@ -738,12 +743,121 @@ document.addEventListener('DOMContentLoaded', async () => {
           <p>Tente pesquisar outra especialidade ou cidade.</p>
         </div>
       `;
+      if (resultsShowingSummary) resultsShowingSummary.textContent = 'Mostrando 0 de 0 profissionais';
+      if (paginationControls) paginationControls.innerHTML = '';
       return;
     }
 
-    const shuffledProfiles = [...filtered].sort(() => Math.random() - 0.5);
+    const totalPages = Math.ceil(filtered.length / RESULTS_PER_PAGE);
+    const clampPage = (page) => Math.min(Math.max(page, 1), totalPages);
+    let currentPage = clampPage(requestedPage);
 
-   resultsGrid.innerHTML = shuffledProfiles.map((profile) => `
+    const updatePageUrl = (page) => {
+      const urlParams = new URLSearchParams(window.location.search);
+
+      if (page <= 1) {
+        urlParams.delete('page');
+      } else {
+        urlParams.set('page', String(page));
+      }
+
+      const queryString = urlParams.toString();
+      const nextUrl = queryString
+        ? `${window.location.pathname}?${queryString}`
+        : window.location.pathname;
+
+      window.history.replaceState(null, '', nextUrl);
+    };
+
+    const getPaginationItems = (page) => {
+      const pages = [];
+
+      if (totalPages <= 7) {
+        for (let index = 1; index <= totalPages; index += 1) pages.push(index);
+        return pages;
+      }
+
+      pages.push(1);
+      if (page > 4) pages.push('...');
+
+      const start = Math.max(2, page - 1);
+      const end = Math.min(totalPages - 1, page + 1);
+
+      for (let index = start; index <= end; index += 1) pages.push(index);
+
+      if (page < totalPages - 3) pages.push('...');
+      pages.push(totalPages);
+
+      return pages;
+    };
+
+    const renderPagination = () => {
+      if (!paginationControls) return;
+
+      if (totalPages <= 1) {
+        paginationControls.innerHTML = '';
+        return;
+      }
+
+      const pageButtons = getPaginationItems(currentPage)
+        .map((item) => {
+          if (item === '...') {
+            return '<span class="pagination-ellipsis" aria-hidden="true">...</span>';
+          }
+
+          return `
+            <button
+              type="button"
+              class="pagination-page ${item === currentPage ? 'is-active' : ''}"
+              data-page="${item}"
+              aria-label="Ir para a página ${item}"
+              ${item === currentPage ? 'aria-current="page"' : ''}
+            >
+              ${item}
+            </button>
+          `;
+        })
+        .join('');
+
+      paginationControls.innerHTML = `
+        <button
+          type="button"
+          class="pagination-btn"
+          data-page="${currentPage - 1}"
+          ${currentPage === 1 ? 'disabled' : ''}
+        >
+          Anterior
+        </button>
+
+        <div class="pagination-pages">
+          ${pageButtons}
+        </div>
+
+        <button
+          type="button"
+          class="pagination-btn"
+          data-page="${currentPage + 1}"
+          ${currentPage === totalPages ? 'disabled' : ''}
+        >
+          Próxima
+        </button>
+      `;
+
+      paginationControls.querySelectorAll('button[data-page]').forEach((button) => {
+        button.addEventListener('click', () => {
+          renderPage(Number.parseInt(button.dataset.page, 10), true);
+        });
+      });
+    };
+
+    const renderPage = (page, shouldScroll = false) => {
+      currentPage = clampPage(page);
+
+      const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
+      const endIndex = Math.min(startIndex + RESULTS_PER_PAGE, filtered.length);
+      const pageProfiles = filtered.slice(startIndex, endIndex);
+
+   resultsGrid.innerHTML = pageProfiles.map((profile) => `
   <article class="result-card">
     <h3>
       ${escapeHtml(profile.nome || profile.name || 'Fisioterapeuta')}
@@ -797,10 +911,26 @@ document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
   });
 });
 
+      renderPagination();
+      updatePageUrl(currentPage);
+
+      if (resultsShowingSummary) {
+        resultsShowingSummary.textContent = `Mostrando ${endIndex} de ${filtered.length} profissionais`;
+      }
+
+      if (shouldScroll) {
+        resultsGrid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+
+    renderPage(currentPage);
+
 } catch (error) {
   console.error(error);
 
   resumo.textContent = 'Erro ao carregar resultados.';
+  if (resultsShowingSummary) resultsShowingSummary.textContent = '';
+  if (paginationControls) paginationControls.innerHTML = '';
 
   resultsGrid.innerHTML = `
     <div class="empty-results">
