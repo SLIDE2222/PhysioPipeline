@@ -1,5 +1,5 @@
 ﻿import crypto from "crypto";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
 import { mailConfig, sendMailOrThrow } from "../lib/mail.js";
@@ -465,4 +465,5 @@ export async function updatePassword(req, res) {
     });
   }
 }
+
 
