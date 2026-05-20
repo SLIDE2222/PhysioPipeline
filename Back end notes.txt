@@ -47,3 +47,189 @@ Backend ✔ | DB ✔ | Email ✔ | Auth ✔ | iPhone ✔
 🔥 Next
 
 Search + profiles + real data
+
+---------------------------------------------------------------------------
+
+
+06/05/2026 4:50 PM - PhysioPipeline progress log
+
+Today we worked on several important marketplace features and fixes.
+
+What was completed:
+
+1. Search/results flow
+- Fixed the search results page so it actually displays profiles.
+- Added fetchProfiles() to api.js.
+- Results now filter by specialty, city, and neighborhood.
+- Search cards now render professional profile data correctly.
+
+2. Public profile claim system
+- Created/connected the claim profile page.
+- Fixed claim-profile.js errors:
+  - getNeighborhoodBadge undefined
+  - recursive escapeHtml issue
+  - hardcoded localhost claim request URL
+- Claim requests now send to the backend using window.physioApi.request("/claims/request").
+- Added /claims route mounting in server.js.
+
+3. Claim email + PDF upload
+- Claim form now sends:
+  - profile ID
+  - claimant email
+  - consent confirmation
+  - PDF diploma/proof
+- Backend sends claim request email through Brevo SMTP.
+- Fixed Brevo sender issue by using MAIL_FROM instead of SMTP_USER.
+- Confirmed email arrives at physiopipelinefisio@gmail.com with PDF attached.
+
+4. Manual claim approval test
+- Created a fake user account through Postman using POST /auth/register.
+- Tested the idea of linking a claimed public profile to a user account.
+- Planned manual approval flow:
+  - user submits claim
+  - admin checks proof
+  - admin creates/links account
+  - profile becomes claimed
+
+5. Edit profile improvements
+- Added city field to editar-perfil.
+- Added city dropdown/autocomplete.
+- Added bairro dropdown/autocomplete based on selected city.
+- Updated edit profile payload to send city and neighborhood.
+
+6. Google login setup started
+- Created Google OAuth Client ID in Google Cloud.
+- Added Google Client ID meta tag to cadastro.html.
+- Added Google button container to cadastro page.
+- Added google-auth.js.
+- Fixed cadastro.html so it loads:
+  - Google Identity script
+  - google-auth.js
+  - updated api.js
+- Added backend/frontend structure for Google login MVP.
+
+Pending tasks:
+
+1. Finish Google login testing
+- Confirm Google button renders correctly on cadastro.html.
+- Confirm POST /auth/google works on backend.
+- Add GOOGLE_CLIENT_ID to Render env vars.
+- Redeploy backend and frontend.
+- Test login/signup with Google account.
+
+2. Improve Google button design
+- Reshape/restyle the Google button so it matches the PhysioPipeline UI better.
+- Make it look less random and more integrated with the form layout.
+
+3. Auto-create profile after Google signup
+- After logging in with Google, automatically create a draft/incomplete profile using known Google info:
+  - name
+  - email
+  - profile picture if available
+- Then redirect user to complete missing professional fields:
+  - phone
+  - specialty
+  - city
+  - neighborhood
+  - attendance type
+  - bio
+- Important: Google login should NOT auto-claim existing public profiles.
+- Existing public profiles must still require manual claim approval.
+
+4. Add more public profiles
+- Add a batch of fake/seed public profiles for testing.
+- Make sure search feels alive.
+- Test multiple specialties, cities, and neighborhoods.
+
+5. Improve business/trust layer
+- Add verified profile badge.
+- Add “Founder & CEO - Jeffrey Walker” subtly in footer/about area.
+- Later: prepare premium/featured profile idea.
+
+Current status:
+The project now has search, public profiles, claim requests, PDF proof upload, SMTP email delivery, manual verification logic, profile editing, and early Google login setup. It is moving from practice project into real MVP territory.
+
+---------------------------------------------------------------------------
+
+# PhysioPipeline - Dev Log 5/7/2026 4:09PM
+
+## Today's Progress
+
+### Google Authentication
+
+* Fixed Google login/signup integration
+* Configured Google OAuth credentials correctly
+* Fixed callback/login flow after Google popup
+* Added automatic account creation when signing in with Google
+* Added automatic profile creation after Google signup
+* Added redirect to profile after Google authentication
+* Added support for saving:
+
+  * first name
+  * Google avatar
+  * phone number
+* Fixed Prisma/database issues related to Google auth
+
+### UI / UX Improvements
+
+* Fixed the Google signup bar styling
+* Added Google auth bar to:
+
+  * signup page
+  * login page
+* Fixed broken CSS classes causing ugly fallback button rendering
+* Improved mobile responsiveness
+* Added "Meu perfil" dynamic buttons for logged users
+* Hid "Já tenho conta" for authenticated users
+* Added editable profile name field
+* Added footer tech signature
+
+### Branding
+
+* Added:
+  "Developed by Jeffrey Walker"
+* Styled footer with tech/health aesthetic
+* Added Founder & Creator badge
+* Added animated pulse effect
+
+### Backend / Database
+
+* Fixed Prisma deployment issues
+* Fixed Supabase schema sync issues
+* Added missing DB columns:
+
+  * name
+  * phone
+  * googleSub
+* Fixed Render deployment problems
+* Configured direct database workflow
+
+---
+
+# TODO
+
+## Immediate
+
+* Translate "Claim profile" page to Portuguese
+* Add more physiotherapist profiles to populate platform
+* Buy custom domain
+
+## Important
+
+* Make platform feel trustworthy and alive
+* Remove “prototype/fake project” vibe
+* Add more, specialties, and professionals
+* Improve SEO later
+
+## Deployment Status
+
+* Platform is online and functional
+* Google auth working
+* Profiles functional
+* Search functional
+* Mobile much cleaner now
+
+## General Notes
+
+The platform is reaching the point where it actually feels like a real startup instead of "three HTML files fighting for survival in a trench coat." Progress. 🚑
+

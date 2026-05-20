@@ -46,6 +46,7 @@ model Profile {
   ownerUserId   String?
   ownerUser     User?          @relation(fields: [ownerUserId], references: [id])
   claimRequests ClaimRequest[]
+  leadEvents    LeadEvent[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -79,3 +80,17 @@ model PasswordResetToken {
   @@index([expiresAt])
 }
 
+model LeadEvent {
+  id        String   @id @default(cuid())
+  profileId String
+  type      String
+  source    String?
+  city      String?
+  specialty String?
+  createdAt DateTime @default(now())
+
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId, createdAt])
+  @@index([type, createdAt])
+}

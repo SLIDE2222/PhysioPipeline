@@ -226,6 +226,19 @@
         normalizeProfile(data.profile || data)
       );
     },
+    recordLeadEvent(payload) {
+      return request('/lead-events', {
+        method: 'POST',
+        body: payload,
+        timeoutMs: 5000,
+      }).catch((error) => {
+        console.warn('Could not record lead event:', error);
+        return null;
+      });
+    },
+    fetchMyLeadSummary() {
+      return request('/lead-events/me/summary');
+    },
     requestPasswordReset(email) {
       return request('/auth/forgot-password', {
         method: 'POST',

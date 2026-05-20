@@ -67,6 +67,18 @@ function getNeighborhoodBadge(profissional) {
     .join(' • ') || 'Localização não informada';
 }
 
+function recordProfileLeadEvent(profissional, type, source = 'profile') {
+  if (!profissional?.id || !window.physioApi?.recordLeadEvent) return Promise.resolve(null);
+
+  return window.physioApi.recordLeadEvent({
+    profileId: profissional.id,
+    type,
+    source,
+    city: profissional.cidade || profissional.city || null,
+    specialty: profissional.especialidade || profissional.specialty || null,
+  });
+}
+
 function getProfileSpecialties(profissional) {
   const mainSpecialty =
     profissional.especialidade ||
@@ -139,6 +151,8 @@ async function renderProfilePage() {
       !profissional.isClaimed &&
       !profissional.ownerUserId;
 
+    recordProfileLeadEvent(profissional, 'PROFILE_VIEW');
+
     profileContainer.innerHTML = `
       <article class="profile-card-full">
         <div class="profile-header">
@@ -172,7 +186,7 @@ async function renderProfilePage() {
           </div>
 
           <div class="profile-actions">
-            ${profissional.telefone ? `<a href="${whatsappLink}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Falar no WhatsApp</a>` : ''}
+            ${profissional.telefone ? `<a href="${whatsappLink}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" data-lead-type="WHATSAPP_CLICK">Falar no WhatsApp</a>` : ''}
             ${profissional.instagram ? `<a href="${escapeHtml(profissional.instagram)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">📸 Instagram</a>` : ''}
             ${profissional.linkedin ? `<a href="${escapeHtml(profissional.linkedin)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">💼 LinkedIn</a>` : ''}
             ${isOwner ? `
@@ -204,6 +218,12 @@ ${showClaimButton ? `
 </section>
 </article>
 `;
+
+    document.querySelectorAll('[data-lead-type]').forEach((link) => {
+      link.addEventListener('click', () => {
+        recordProfileLeadEvent(profissional, link.dataset.leadType);
+      });
+    });
 
     setupImageModal();
   } catch (error) {

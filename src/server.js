@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import claimRoutes from "./routes/claim.routes.js";
+import leadRoutes from "./routes/lead.routes.js";
 
 dotenv.config();
 
@@ -41,6 +42,7 @@ app.get("/health", (_req, res) => {
 app.use("/auth", authRoutes);
 app.use("/profiles", profileRoutes);
 app.use("/claims", claimRoutes);
+app.use("/lead-events", leadRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
