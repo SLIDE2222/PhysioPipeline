@@ -51,6 +51,51 @@ const CITY_NEIGHBORHOODS = {
 
 const CITIES = Object.keys(CITY_NEIGHBORHOODS);
 
+const PATIENT_SEARCH_MAP = [
+  {
+    triggers: ['dedo em gatilho', 'gatilho', 'dedo travando', 'dedo preso'],
+    terms: ['dedo em gatilho', 'mao', 'punho', 'tendao', 'tendinite', 'ler', 'dort', 'ortopedica', 'ocupacional', 'trabalho', 'reabilitacao'],
+  },
+  {
+    triggers: ['dor lombar', 'lombar', 'coluna', 'costas', 'ciatica', 'nervo ciatico', 'hernia de disco'],
+    terms: ['lombar', 'coluna', 'costas', 'ciatica', 'hernia', 'ortopedica', 'quiropraxia', 'pilates', 'ocupacional', 'ergonomia'],
+  },
+  {
+    triggers: ['dor no joelho', 'joelho', 'menisco', 'ligamento', 'acl', 'lca'],
+    terms: ['joelho', 'menisco', 'ligamento', 'ortopedica', 'esportiva', 'pos-operatorio', 'reabilitacao'],
+  },
+  {
+    triggers: ['ombro', 'dor no ombro', 'manguito', 'bursite', 'tendinite no ombro'],
+    terms: ['ombro', 'manguito', 'bursite', 'tendinite', 'ortopedica', 'esportiva', 'reabilitacao'],
+  },
+  {
+    triggers: ['avc', 'derrame', 'paralisia', 'neurologico', 'neurologica'],
+    terms: ['avc', 'derrame', 'paralisia', 'neurologica', 'neuro', 'reabilitacao'],
+  },
+  {
+    triggers: ['asma', 'respiracao', 'respiratoria', 'pulmao', 'bronquite', 'dpoc'],
+    terms: ['asma', 'respiracao', 'respiratoria', 'pulmao', 'bronquite', 'dpoc'],
+  },
+  {
+    triggers: ['trabalho', 'ergonomia', 'ler', 'dort', 'tendinite', 'escritorio', 'home office'],
+    terms: ['trabalho', 'ergonomia', 'ocupacional', 'ler', 'dort', 'tendinite', 'postura', 'mao', 'punho', 'lombar'],
+  },
+  {
+    triggers: ['pos operatorio', 'cirurgia', 'operou', 'recuperacao'],
+    terms: ['pos-operatorio', 'pos operatorio', 'cirurgia', 'recuperacao', 'reabilitacao', 'ortopedica'],
+  },
+  {
+    triggers: ['crianca', 'bebe', 'infantil', 'pediatrica', 'pediatria'],
+    terms: ['pediatrica', 'pediatria', 'crianca', 'bebe', 'infantil'],
+  },
+  {
+    triggers: ['idoso', 'idosa', 'geriatrica', 'equilibrio', 'queda'],
+    terms: ['geriatrica', 'idoso', 'idosa', 'equilibrio', 'queda', 'mobilidade'],
+  },
+];
+
+const STOP_WORDS = new Set(['de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'nos', 'nas', 'com', 'para', 'por', 'um', 'uma', 'o', 'a', 'e']);
+
 function escapeHtml(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -66,6 +111,68 @@ function normalizeText(value) {
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim();
+}
+
+function tokenizeSearch(value) {
+  return normalizeText(value)
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter((term) => term.length > 2 && !STOP_WORDS.has(term));
+}
+
+function uniqueTerms(terms) {
+  return [...new Set(terms.filter(Boolean))];
+}
+
+function expandPatientSearch(query) {
+  const normalizedQuery = normalizeText(query);
+  const terms = tokenizeSearch(query);
+
+  PATIENT_SEARCH_MAP.forEach((entry) => {
+    const matched = entry.triggers.some((trigger) =>
+      normalizedQuery.includes(normalizeText(trigger))
+    );
+
+    if (matched) {
+      terms.push(...entry.triggers.map(normalizeText));
+      terms.push(...entry.terms.map(normalizeText));
+    }
+  });
+
+  return uniqueTerms(terms);
+}
+
+function getProfileSearchText(profile) {
+  return normalizeText([
+    profile.nome,
+    profile.name,
+    profile.especialidade,
+    profile.specialty,
+    profile.especialidadeSecundaria,
+    profile.secondarySpecialty,
+    profile.specialization,
+    profile.specialty2,
+    profile.extraSpecialty,
+    profile.atendimento,
+    profile.attendance,
+    profile.descricao,
+    profile.bio,
+  ].filter(Boolean).join(' '));
+}
+
+function scorePatientMatch(profile, terms) {
+  if (!terms.length) return 0;
+
+  const specialtyText = getSearchableSpecialties(profile);
+  const profileText = getProfileSearchText(profile);
+  let score = 0;
+
+  terms.forEach((term) => {
+    if (specialtyText.includes(term)) score += 5;
+    if (profileText.includes(term)) score += 2;
+  });
+
+  return score;
 }
 
 
@@ -291,6 +398,32 @@ function setupCityNeighborhoodAutocomplete(cityInputId, cityListId, neighborhood
   syncNeighborhoodState();
 }
 
+function setupSearchModeSwitches() {
+  document.querySelectorAll('form[action="resultados.html"]').forEach((form) => {
+    const modeInputs = Array.from(form.querySelectorAll('input[name="modo"]'));
+    const specialtyField = form.querySelector('.specialty-search-field');
+    const patientField = form.querySelector('.patient-search-field');
+    const specialtyInput = specialtyField?.querySelector('input[name="especialidade"]');
+    const patientInput = patientField?.querySelector('input[name="queixa"]');
+
+    if (!modeInputs.length || !specialtyField || !patientField) return;
+
+    const syncMode = () => {
+      const mode = modeInputs.find((input) => input.checked)?.value || 'especialidade';
+      const isPatientMode = mode === 'leigo';
+
+      specialtyField.hidden = isPatientMode;
+      patientField.hidden = !isPatientMode;
+
+      if (specialtyInput) specialtyInput.required = !isPatientMode;
+      if (patientInput) patientInput.required = isPatientMode;
+    };
+
+    modeInputs.forEach((input) => input.addEventListener('change', syncMode));
+    syncMode();
+  });
+}
+
 async function getLoggedUser(force = false) {
   if (!force && cachedMyProfile) return cachedMyProfile;
 
@@ -431,6 +564,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     'buscarBairro',
     'bairroSuggestions'
   );
+
+  setupSearchModeSwitches();
 });
 
 function getSearchableSpecialties(profile) {
@@ -476,6 +611,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     params.get('especialidade') || ''
   );
 
+  const modoBusca = params.get('modo') === 'leigo' ? 'leigo' : 'especialidade';
+  const queixa = params.get('queixa') || '';
+  const patientTerms = expandPatientSearch(queixa);
+
   const cidade = normalizeText(
     params.get('cidade') || ''
   );
@@ -487,23 +626,32 @@ document.addEventListener('DOMContentLoaded', async () => {
   const specialtyInput = document.getElementById('specialtyInput');
   const cityInput = document.getElementById('cityIndexSelect');
   const bairroInput = document.getElementById('buscarBairroIndex');
+  const patientInput = document.querySelector('.patient-search-field input[name="queixa"]');
 
   if (specialtyInput) specialtyInput.value = params.get('especialidade') || '';
+  if (patientInput) patientInput.value = queixa;
   if (cityInput) cityInput.value = params.get('cidade') || '';
   if (bairroInput) bairroInput.value = params.get('bairro') || '';
+  setupSearchModeSwitches();
+  document.querySelectorAll('input[name="modo"]').forEach((input) => {
+    input.checked = input.value === modoBusca;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
 
   try {
     resumo.textContent = 'Buscando profissionais...';
 
     const profiles = await window.physioApi.fetchProfiles();
 
-    const filtered = profiles.filter((profile) => {
-     const pEspecialidade = getSearchableSpecialties(profile);
+    const matchedProfiles = profiles.map((profile) => {
+      const pEspecialidade = getSearchableSpecialties(profile);
       const pCidade = normalizeText(profile.cidade || profile.city);
       const pBairro = normalizeText(profile.bairro || profile.neighborhood);
 
       const specialtyMatch =
-        !especialidade || pEspecialidade.includes(especialidade);
+        modoBusca === 'leigo'
+          ? scorePatientMatch(profile, patientTerms) > 0
+          : (!especialidade || pEspecialidade.includes(especialidade));
 
       const cityMatch =
         !cidade || pCidade.includes(cidade);
@@ -511,10 +659,30 @@ document.addEventListener('DOMContentLoaded', async () => {
       const neighborhoodMatch =
         !bairro || pBairro.includes(bairro);
 
-      return specialtyMatch && cityMatch && neighborhoodMatch;
+      return {
+        profile,
+        score: modoBusca === 'leigo' ? scorePatientMatch(profile, patientTerms) : 0,
+        matched: specialtyMatch && cityMatch && neighborhoodMatch,
+      };
     });
 
+    const filtered = matchedProfiles
+      .filter((item) => item.matched)
+      .sort((a, b) => b.score - a.score)
+      .map((item) => item.profile);
+
     resumo.textContent = `${filtered.length} profissional(is) encontrado(s)`;
+
+    if (modoBusca === 'leigo' && queixa) {
+      const hintTerms = patientTerms.slice(0, 8).join(', ');
+      resumo.textContent += ` para "${queixa}"`;
+      if (hintTerms) {
+        resumo.insertAdjacentHTML(
+          'afterend',
+          `<p class="smart-search-hint">Busca inteligente por: ${escapeHtml(hintTerms)}</p>`
+        );
+      }
+    }
 
     if (filtered.length === 0) {
       resultsGrid.innerHTML = `

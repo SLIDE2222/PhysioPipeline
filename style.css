@@ -267,6 +267,65 @@ textarea {
   margin-bottom: 1rem;
 }
 
+.search-mode-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 1rem;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.search-mode-toggle label {
+  margin: 0;
+}
+
+.search-mode-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.search-mode-toggle span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  color: var(--muted);
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.search-mode-toggle input:checked + span {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+}
+
+.patient-search-field input {
+  margin-bottom: 0.4rem;
+}
+
+.search-field-hint,
+.smart-search-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.search-field-hint {
+  margin: -0.15rem 0 1rem;
+}
+
+.smart-search-hint {
+  margin-top: -0.7rem;
+  margin-bottom: 1.4rem;
+}
+
 .search-box input,
 .form-card input,
 .form-card textarea {
@@ -1953,9 +2012,20 @@ body:has(#cadastroForm) .form-card {
   flex-wrap: nowrap;
 }
 
+.results-search-inline .results-mode-toggle {
+  flex: 1 1 260px;
+  min-width: 240px;
+  margin: 0;
+}
+
 .results-search-inline .autocomplete-wrapper {
   flex: 1;
   min-width: 220px;
+}
+
+.results-search-inline .patient-search-field {
+  flex: 1.4;
+  min-width: 260px;
 }
 
 .results-search-inline input {
@@ -1991,6 +2061,12 @@ body:has(#cadastroForm) .form-card {
   }
 
   .results-search-inline .autocomplete-wrapper {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .results-search-inline .results-mode-toggle,
+  .results-search-inline .patient-search-field {
     width: 100%;
     min-width: 0;
   }

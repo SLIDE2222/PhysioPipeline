@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Resultados da busca | Physio Pipeline</title>
-  <link rel="stylesheet" href="style.css?v=resultcards2" />
+  <link rel="stylesheet" href="style.css?v=smartsearch1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -37,7 +37,18 @@
 
        <form class="results-search-inline" action="resultados.html" method="GET">
 
-  <div class="autocomplete-wrapper">
+  <div class="search-mode-toggle results-mode-toggle" role="group" aria-label="Tipo de busca">
+    <label>
+      <input type="radio" name="modo" value="especialidade" checked />
+      <span>Sou fisio</span>
+    </label>
+    <label>
+      <input type="radio" name="modo" value="leigo" />
+      <span>Sou paciente</span>
+    </label>
+  </div>
+
+  <div class="autocomplete-wrapper specialty-search-field">
     <input
       type="text"
       id="specialtyInput"
@@ -47,6 +58,15 @@
       required
     />
     <ul id="specialtySuggestions" class="suggestions-list"></ul>
+  </div>
+
+  <div class="patient-search-field" hidden>
+    <input
+      type="text"
+      name="queixa"
+      placeholder="Sintoma, dor ou condicao"
+      autocomplete="off"
+    />
   </div>
 
   <div class="autocomplete-wrapper">
@@ -85,7 +105,7 @@
   </main>
 
   <script src="api.js?v=prodapi2"></script>
-  <script src="script.js?v=specialtymatch1"></script>
+  <script src="script.js?v=smartsearch1"></script>
     <footer class="footer tech-signature-footer">
     <div class="container footer-content tech-signature-footer__content">
       <div>

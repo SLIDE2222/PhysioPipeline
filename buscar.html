@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Buscar fisioterapeuta | Physio Pipeline</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=smartsearch1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -36,8 +36,21 @@
         </div>
 
         <form class="form-card" id="buscaForm" action="resultados.html" method="GET">
-          <label for="buscarEspecialidade">Especialidade</label>
-          <div class="autocomplete-wrapper">
+          <label>Tipo de busca</label>
+
+            <div class="search-mode-toggle" role="group" aria-label="Tipo de busca">
+              <label>
+                <input type="radio" name="modo" value="especialidade" checked />
+                <span>Sou fisio</span>
+              </label>
+              <label>
+                <input type="radio" name="modo" value="leigo" />
+                <span>Sou paciente</span>
+              </label>
+            </div>
+
+
+          <div class="autocomplete-wrapper specialty-search-field">
             <input
               type="text"
               id="buscarEspecialidade"
@@ -48,6 +61,16 @@
             />
             <ul id="buscarSuggestions" class="suggestions-list"></ul>
           </div>
+
+            <div class="patient-search-field" hidden>
+              <input
+                type="text"
+                name="queixa"
+                placeholder="Ex.: dedo em gatilho, dor no joelho, lombar"
+                autocomplete="off"
+              />
+              <p class="search-field-hint">Para quem nao sabe qual especialidade procurar.</p>
+            </div>
 
           <label for="buscarCidade">Cidade</label>
           <div class="autocomplete-wrapper">
@@ -84,7 +107,7 @@
   </main>
 
  <script src="api.js?v=nostorage1"></script>
-  <script src="script.js?v=autocomplete2"></script>
+  <script src="script.js?v=smartsearch1"></script>
   <script>
   document.addEventListener("DOMContentLoaded", () => {
     const cadastroLink = document.getElementById("cadastroLink");

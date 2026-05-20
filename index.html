@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Physio Pipeline | Encontre o fisioterapeuta ideal</title>
-  <link rel="stylesheet" href="style.css?v=realstats2" />
+  <link rel="stylesheet" href="style.css?v=smartsearch1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -62,12 +62,25 @@
 
         <div class="hero-card" id="busca">
           <form class="search-box" action="resultados.html" method="GET">
-            <h2>Encontre por especialidade</h2>
+            <h2>Encontre seu fisioterapeuta</h2>
             <p class="search-subtitle">
               Digite a área que você procura e veja sugestões automaticamente.
             </p>
 
-            <div class="autocomplete-wrapper">
+            <div class="search-mode-toggle" role="group" aria-label="Tipo de busca">
+              <label>
+                <input type="radio" name="modo" value="especialidade" checked />
+                <span>Sou fisio</span>
+              </label>
+              <label>
+                <input type="radio" name="modo" value="leigo" />
+                <span>Sou paciente</span>
+              </label>
+            </div>
+
+
+
+            <div class="autocomplete-wrapper specialty-search-field">
               <input
                 type="text"
                 id="specialtyInput"
@@ -77,6 +90,16 @@
                 required
               />
               <ul id="specialtySuggestions" class="suggestions-list"></ul>
+            </div>
+
+            <div class="patient-search-field" hidden>
+              <input
+                type="text"
+                name="queixa"
+                placeholder="Ex.: dedo em gatilho, dor no joelho, lombar"
+                autocomplete="off"
+              />
+              <p class="search-field-hint">Para quem nao sabe qual especialidade procurar.</p>
             </div>
 
             <div class="autocomplete-wrapper">
@@ -148,6 +171,6 @@
 
 
   <script src="api.js?v=base64url-auth-fix2"></script>
-  <script src="script.js?v=realstats2"></script>
+  <script src="script.js?v=smartsearch1"></script>
 </body>
 </html>
