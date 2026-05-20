@@ -2814,3 +2814,24 @@ body::after {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* =========================
+   RESULT CARDS WIDTH LOCK
+   Keep one search result the same visual size as multi-card rows.
+========================= */
+.results-grid {
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)) !important;
+  align-items: stretch !important;
+}
+
+.result-card {
+  width: 100% !important;
+  max-width: 540px !important;
+}
+
+@media (max-width: 768px) {
+  .result-card {
+    max-width: none !important;
+  }
+}
