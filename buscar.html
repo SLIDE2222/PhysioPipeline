@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -6,7 +6,7 @@
   <title>Buscar fisioterapeuta | Physio Pipeline</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
-  <link rel="stylesheet" href="style.css?v=mobilefix1" />
+  <link rel="stylesheet" href="style.css?v=background1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -20,7 +20,7 @@
       <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
 
       <nav class="nav-links">
-  <a href="index.html">Início</a>
+  <a href="index.html">InÃ­cio</a>
   <a href="cadastro.html" id="cadastroLink">Cadastro</a>
 </nav>
 
@@ -34,7 +34,7 @@
         <div class="section-heading left">
           <p class="eyebrow">Busca</p>
           <h1>Encontre um fisioterapeuta</h1>
-          <p>Pesquise por especialidade e cidade. O básico que qualquer ser humano esperaria de um marketplace.</p>
+          <p>Pesquise por especialidade e cidade. O bÃ¡sico que qualquer ser humano esperaria de um marketplace.</p>
         </div>
 
         <form class="form-card" id="buscaForm" action="resultados.html" method="GET">
@@ -57,7 +57,7 @@
               type="text"
               id="buscarEspecialidade"
               name="especialidade"
-              placeholder="Ex.: ortopédica"
+              placeholder="Ex.: ortopÃ©dica"
               autocomplete="off"
               required
             />
@@ -80,7 +80,7 @@
               type="text"
               id="buscarCidade"
               name="cidade"
-              placeholder="Ex.: São Paulo"
+              placeholder="Ex.: SÃ£o Paulo"
               autocomplete="off"
               required
             />
@@ -128,7 +128,7 @@
       sessionStorage.getItem("user");
 
     const authAreaShowsLoggedIn =
-      authArea && authArea.innerText.toLowerCase().includes("olá");
+      authArea && authArea.innerText.toLowerCase().includes("olÃ¡");
 
     if ((possibleUser || authAreaShowsLoggedIn) && cadastroLink) {
       cadastroLink.remove();

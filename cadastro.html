@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -6,7 +6,7 @@
   <title>Cadastrar perfil | Physio Pipeline</title>
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
-  <link rel="stylesheet" href="style.css?v=mobilefix1" />
+  <link rel="stylesheet" href="style.css?v=background1" />
  <meta name="google-client-id" content="197182747757-6tm1e8vhu44fkpf89pvvsbooodl48t3o.apps.googleusercontent.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -121,10 +121,10 @@
 
           <label for="atendimento">Tipo de atendimento</label>
           <select id="atendimento" name="atendimento" required>
-            <option value="" disabled selected>Selecione uma opÃ§Ã£o</option>
-            <option value="ClÃ­nica">ClÃ­nica</option>
+            <option value="" disabled selected>Selecione uma opÃƒÂ§ÃƒÂ£o</option>
+            <option value="ClÃƒÂ­nica">ClÃƒÂ­nica</option>
             <option value="Domiciliar">Domiciliar</option>
-            <option value="ClÃ­nica e domiciliar">ClÃ­nica e domiciliar</option>
+            <option value="ClÃƒÂ­nica e domiciliar">ClÃƒÂ­nica e domiciliar</option>
             <option value="Online">Online</option>
           </select>
 
@@ -144,12 +144,12 @@
             placeholder="https://linkedin.com/in/seuperfil"
           />
 
-          <label for="descricao">DescriÃ§Ã£o profissional</label>
+          <label for="descricao">DescriÃƒÂ§ÃƒÂ£o profissional</label>
           <textarea
             id="descricao"
             name="descricao"
             rows="5"
-            placeholder="Fale brevemente sobre sua atuaÃ§Ã£o..."
+            placeholder="Fale brevemente sobre sua atuaÃƒÂ§ÃƒÂ£o..."
             required
           ></textarea>
 
@@ -173,18 +173,18 @@
 
   <script>
     const CADASTRO_SPECIALTY_OPTIONS_FALLBACK = [
-      'Fisioterapia OrtopÃ©dica',
+      'Fisioterapia OrtopÃƒÂ©dica',
       'Fisioterapia Esportiva',
-      'Fisioterapia NeurolÃ³gica',
-      'Fisioterapia GeriÃ¡trica',
-      'Fisioterapia RespiratÃ³ria',
-      'Fisioterapia PediÃ¡trica',
+      'Fisioterapia NeurolÃƒÂ³gica',
+      'Fisioterapia GeriÃƒÂ¡trica',
+      'Fisioterapia RespiratÃƒÂ³ria',
+      'Fisioterapia PediÃƒÂ¡trica',
       'Fisioterapia do Trabalho',
       'Fisioterapia Ocupacional',
       'Fisioterapia Dermatofuncional',
-      'Fisioterapia PÃ©lvica',
+      'Fisioterapia PÃƒÂ©lvica',
       'Fisioterapia Cardiovascular',
-      'Fisioterapia AquÃ¡tica',
+      'Fisioterapia AquÃƒÂ¡tica',
       'Fisioterapia Home Care',
       'Fisioterapia Domiciliar',
       'Quiropraxia',
@@ -192,7 +192,7 @@
       'Domiciliar',
       'Ocupacional',
       'Ergonomia',
-      'PÃ³s-operatÃ³rio'
+      'PÃƒÂ³s-operatÃƒÂ³rio'
     ];
 
     const CADASTRO_SPECIALTY_OPTIONS =
@@ -286,7 +286,7 @@
             fotoInput.value = '';
           } catch (error) {
             console.error(error);
-            cadastroMensagem.textContent = 'NÃ£o foi possÃ­vel ajustar essa imagem.';
+            cadastroMensagem.textContent = 'NÃƒÂ£o foi possÃƒÂ­vel ajustar essa imagem.';
             cadastroMensagem.style.color = '#b91c1c';
             fotoInput.value = '';
           }
@@ -297,7 +297,7 @@
           if (!file) return;
 
           if (!file.type.startsWith('image/')) {
-            cadastroMensagem.textContent = 'Escolha um arquivo de imagem vÃ¡lido.';
+            cadastroMensagem.textContent = 'Escolha um arquivo de imagem vÃƒÂ¡lido.';
             cadastroMensagem.style.color = '#b91c1c';
             fotoInput.value = '';
             return;
@@ -336,7 +336,7 @@
           cadastroMensagem.textContent = '';
 
           if (password !== confirmPassword) {
-            senhaErro.textContent = 'As senhas nÃ£o sÃ£o iguais.';
+            senhaErro.textContent = 'As senhas nÃƒÂ£o sÃƒÂ£o iguais.';
             return;
           }
 
@@ -370,7 +370,7 @@
               window.location.href = `profile.html?id=${encodeURIComponent(profile.id)}`;
             }, 700);
           } catch (error) {
-            cadastroMensagem.textContent = error.message || 'NÃ£o foi possÃ­vel criar sua conta agora.';
+            cadastroMensagem.textContent = error.message || 'NÃƒÂ£o foi possÃƒÂ­vel criar sua conta agora.';
             cadastroMensagem.style.color = '#b91c1c';
           } finally {
             if (submitBtn) submitBtn.disabled = false;
