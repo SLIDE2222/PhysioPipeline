@@ -1685,6 +1685,36 @@ body.cropper-open {
   margin-bottom: 1.25rem;
 }
 
+.claim-profile-preview .result-card {
+  min-height: auto !important;
+  height: auto !important;
+  padding: 20px 22px !important;
+  border-radius: 22px !important;
+  gap: 12px !important;
+}
+
+.claim-profile-preview .result-card p {
+  margin: 0 !important;
+}
+
+body:has(#claimForm) .page-section {
+  padding-top: 1.75rem;
+}
+
+body:has(#claimForm) .section-heading {
+  margin-bottom: 1.25rem;
+}
+
+body:has(#claimForm) .section-heading h1 {
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  margin-bottom: 0.6rem;
+}
+
+body:has(#claimForm) .form-card {
+  padding: 1.5rem;
+  border-radius: 22px;
+}
+
 .claim-help-box,
 .profile-origin-box,
 .profile-lead-box {

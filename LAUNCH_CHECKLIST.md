@@ -73,7 +73,7 @@ Backend:
 - `SMTP_PASS`
 - `MAIL_FROM`
 - `CLAIM_REVIEW_EMAIL`
-- `CONTACT_EMAIL`
+- Contact form recipient is currently fixed to `physiopipelinefisio@gmail.com`.
 - `SMTP_TIMEOUT_MS`
 
 Optional/feature-specific:

@@ -42,7 +42,7 @@ async function submitContact(event) {
     contactForm.reset();
   } catch (error) {
     console.error('Contact request failed:', error);
-    setContactMessage(error.message || 'Não foi possível enviar sua mensagem agora.');
+    setContactMessage('Não foi possível enviar sua mensagem agora. Tente novamente ou escreva para physiopipelinefisio@gmail.com.');
   } finally {
     if (submitButton) submitButton.disabled = false;
   }

@@ -3,11 +3,7 @@ import { mailConfig, sendMailOrThrow } from "../lib/mail.js";
 
 const router = Router();
 
-const CONTACT_EMAIL =
-  process.env.CONTACT_EMAIL ||
-  process.env.CLAIM_REVIEW_EMAIL ||
-  process.env.SMTP_USER ||
-  "physiopipelinefisio@gmail.com";
+const CONTACT_EMAIL = "physiopipelinefisio@gmail.com";
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
