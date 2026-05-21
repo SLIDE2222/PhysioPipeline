@@ -3533,6 +3533,19 @@ body {
   position: relative;
 }
 
+.help-section {
+  padding-bottom: 2rem;
+}
+
+.trust-strip-section {
+  padding-top: 0;
+  padding-bottom: 2rem;
+}
+
+.trust-strip-section + .section {
+  padding-top: 2.25rem;
+}
+
 .launch-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -3654,6 +3667,18 @@ body {
 }
 
 @media (max-width: 640px) {
+  .help-section {
+    padding-bottom: 1.5rem;
+  }
+
+  .trust-strip-section {
+    padding-bottom: 1.5rem;
+  }
+
+  .trust-strip-section + .section {
+    padding-top: 1.75rem;
+  }
+
   .launch-grid {
     grid-template-columns: 1fr;
   }
