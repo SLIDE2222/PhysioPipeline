@@ -9,7 +9,7 @@ export function requireAuth(req, res, next) {
   const token = req.cookies?.token || tokenFromHeader;
 
   if (!token) {
-    return res.status(401).json({ message: "Authentication required." });
+    return res.status(401).json({ message: "Login obrigatório." });
   }
 
   try {
@@ -17,6 +17,6 @@ export function requireAuth(req, res, next) {
     req.user = payload;
     next();
   } catch {
-    return res.status(401).json({ message: "Invalid or expired token." });
+    return res.status(401).json({ message: "Sessão inválida ou expirada." });
   }
 }

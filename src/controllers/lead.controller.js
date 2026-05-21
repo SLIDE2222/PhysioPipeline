@@ -25,7 +25,7 @@ export async function createLeadEvent(req, res) {
 
   if (!parsed.success) {
     return res.status(400).json({
-      message: "Invalid lead event data.",
+      message: "Dados de performance inválidos.",
       errors: parsed.error.flatten(),
     });
   }
@@ -36,7 +36,7 @@ export async function createLeadEvent(req, res) {
   });
 
   if (!profile) {
-    return res.status(404).json({ message: "Profile not found." });
+    return res.status(404).json({ message: "Perfil não encontrado." });
   }
 
   const leadEvent = await prisma.leadEvent.create({
@@ -59,7 +59,7 @@ export async function getMyLeadSummary(req, res) {
   });
 
   if (!profile) {
-    return res.status(404).json({ message: "No profile is linked to this account." });
+    return res.status(404).json({ message: "Nenhum perfil está vinculado a esta conta." });
   }
 
   const since = new Date();

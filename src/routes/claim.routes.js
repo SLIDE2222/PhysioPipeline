@@ -26,29 +26,34 @@ router.post("/request", async (req, res) => {
       consentContact,
       fileName,
       fileMime,
-      fileContentBase64
+      fileContentBase64,
+      website
     } = req.body || {};
 
+    if (String(website || "").trim()) {
+      return res.status(400).json({ message: "Pedido bloqueado por validação anti-spam." });
+    }
+
     if (!profileId) {
-      return res.status(400).json({ message: "Profile id is required." });
+      return res.status(400).json({ message: "Perfil é obrigatório." });
     }
 
     const claimantEmail = normalizeEmail(email);
     if (!claimantEmail) {
-      return res.status(400).json({ message: "E-mail is required." });
+      return res.status(400).json({ message: "E-mail é obrigatório." });
     }
 
     if (String(consentContact) !== "true" && consentContact !== true) {
-      return res.status(400).json({ message: "Consent is required." });
+      return res.status(400).json({ message: "Autorização de contato é obrigatória." });
     }
 
     if (!fileName || !fileContentBase64) {
-      return res.status(400).json({ message: "Diploma PDF is required." });
+      return res.status(400).json({ message: "Diploma em PDF é obrigatório." });
     }
 
     const normalizedMime = String(fileMime || "application/pdf").toLowerCase();
     if (!normalizedMime.includes("pdf")) {
-      return res.status(400).json({ message: "The diploma must be a PDF." });
+      return res.status(400).json({ message: "O diploma precisa estar em PDF." });
     }
 
     const profile = await prisma.profile.findUnique({
@@ -56,12 +61,12 @@ router.post("/request", async (req, res) => {
     });
 
     if (!profile) {
-      return res.status(404).json({ message: "Profile not found." });
+      return res.status(404).json({ message: "Perfil não encontrado." });
     }
 
     if (profile.isClaimed) {
       return res.status(400).json({
-        message: "This profile has already been claimed."
+        message: "Esse perfil já foi reivindicado."
       });
     }
 
@@ -73,9 +78,9 @@ router.post("/request", async (req, res) => {
       sender: mailConfig.user,
       to: CLAIM_REVIEW_EMAIL,
       replyTo: claimantEmail,
-      subject: `Novo pedido de claim - ${profile.name}`,
+      subject: `Novo pedido de reivindicação - ${profile.name}`,
       text: [
-        "Novo pedido de claim recebido.",
+        "Novo pedido de reivindicação recebido.",
         "",
         `Perfil: ${profile.name}`,
         `ID do perfil: ${profile.id}`,
@@ -89,7 +94,7 @@ router.post("/request", async (req, res) => {
       ].join("\n"),
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.5">
-          <h2>Novo pedido de claim recebido</h2>
+          <h2>Novo pedido de reivindicação recebido</h2>
           <p><strong>Perfil:</strong> ${profile.name}</p>
           <p><strong>ID do perfil:</strong> ${profile.id}</p>
           <p><strong>Especialidade:</strong> ${profile.specialty || "-"}</p>
@@ -116,12 +121,12 @@ router.post("/request", async (req, res) => {
       emailSent: true,
     });
   } catch (error) {
-    console.error("Claim request route error:", error);
+    console.error("Erro na rota de reivindicação:", error);
 
-    const detailedMessage = error?.response || error?.message || "Unknown mail error.";
+    const detailedMessage = error?.response || error?.message || "Erro de e-mail desconhecido.";
 
     return res.status(500).json({
-      message: `Failed to send claim e-mail: ${detailedMessage}`,
+      message: `Não foi possível enviar o e-mail de reivindicação: ${detailedMessage}`,
       error: detailedMessage
     });
   }

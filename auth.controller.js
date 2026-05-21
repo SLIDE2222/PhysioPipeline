@@ -77,11 +77,11 @@ export async function register(req, res) {
     const password = String(req.body?.password || "");
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required." });
+      return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
     }
 
     if (password.length < 6) {
-      return res.status(400).json({ message: "Password must have at least 6 characters." });
+      return res.status(400).json({ message: "A senha precisa ter pelo menos 6 caracteres." });
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -89,7 +89,7 @@ export async function register(req, res) {
     });
 
     if (existingUser) {
-      return res.status(409).json({ message: "This email is already registered." });
+      return res.status(409).json({ message: "Este e-mail já está cadastrado." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -112,7 +112,7 @@ export async function register(req, res) {
     });
   } catch (error) {
     console.error("Register error:", error);
-    return res.status(500).json({ message: error.message || "Could not create account." });
+    return res.status(500).json({ message: error.message || "Não foi possível criar a conta." });
   }
 }
 
@@ -122,7 +122,7 @@ export async function login(req, res) {
     const password = String(req.body?.password || "");
 
     if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required." });
+      return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
     }
 
     const user = await prisma.user.findUnique({
@@ -133,13 +133,13 @@ export async function login(req, res) {
     });
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid email or password." });
+      return res.status(401).json({ message: "E-mail ou senha inválidos." });
     }
 
     const passwordIsValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!passwordIsValid) {
-      return res.status(401).json({ message: "Invalid email or password." });
+      return res.status(401).json({ message: "E-mail ou senha inválidos." });
     }
 
     const token = createToken(user);
@@ -150,7 +150,7 @@ export async function login(req, res) {
     });
   } catch (error) {
     console.error("Login error:", error);
-    return res.status(500).json({ message: error.message || "Could not login." });
+    return res.status(500).json({ message: error.message || "Não foi possível entrar." });
   }
 }
 
@@ -161,7 +161,7 @@ export async function logout(_req, res) {
     secure: process.env.NODE_ENV === "production",
   });
 
-  return res.json({ message: "Logged out." });
+  return res.json({ message: "Sessão encerrada." });
 }
 
 export async function me(req, res) {
@@ -174,7 +174,7 @@ export async function me(req, res) {
     });
 
     if (!user) {
-      return res.status(404).json({ message: "User not found." });
+      return res.status(404).json({ message: "Usuário não encontrado." });
     }
 
     return res.json({
@@ -182,7 +182,7 @@ export async function me(req, res) {
     });
   } catch (error) {
     console.error("Me error:", error);
-    return res.status(500).json({ message: error.message || "Could not load user." });
+    return res.status(500).json({ message: error.message || "Não foi possível carregar o usuário." });
   }
 }
 
@@ -191,7 +191,7 @@ export async function forgotPassword(req, res) {
     const email = normalizeEmail(req.body?.email);
 
     if (!email) {
-      return res.status(400).json({ message: "Email is required." });
+      return res.status(400).json({ message: "E-mail é obrigatório." });
     }
 
     const user = await prisma.user.findUnique({

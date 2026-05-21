@@ -27,7 +27,7 @@ function renderClaimPreview(profile) {
       <p><strong>Status:</strong> ${
         profile.isClaimed
           ? "Perfil já reivindicado"
-          : "Perfil público disponível para claim"
+          : "Perfil público disponível para reivindicação"
       }</p>
     </div>
   `;
@@ -78,15 +78,19 @@ async function submitClaim(event) {
   const emailInput = document.getElementById("claimEmail");
   const degreeInput = document.getElementById("claimDegreeFile");
   const consentInput = document.getElementById("claimConsentContact");
+  const websiteInput = document.getElementById("claimWebsite");
   const submitBtn = claimForm.querySelector('button[type="submit"]');
 
   const email = String(emailInput?.value || "").trim().toLowerCase();
   const degreeFile = degreeInput?.files?.[0] || null;
   const consentChecked = Boolean(consentInput?.checked);
+  const honeypot = String(websiteInput?.value || "").trim();
 
   setClaimMessage("");
 
-  if (!profileId) return setClaimMessage("Perfil inválido para claim.");
+  if (honeypot) return setClaimMessage("Pedido bloqueado por validação anti-spam.");
+
+  if (!profileId) return setClaimMessage("Perfil inválido para reivindicação.");
   if (!email) return setClaimMessage("Informe seu e-mail.");
   if (!degreeFile) return setClaimMessage("Adicione seu diploma para continuar.");
 
@@ -97,7 +101,7 @@ async function submitClaim(event) {
   try {
     if (submitBtn) submitBtn.disabled = true;
 
-    setClaimMessage("Enviando claim...", "#2563eb");
+    setClaimMessage("Enviando solicitação...", "#2563eb");
 
     const fileContentBase64 = await fileToBase64(degreeFile);
 
@@ -109,7 +113,8 @@ async function submitClaim(event) {
         consentContact: true,
         fileName: degreeFile.name,
         fileMime: degreeFile.type || "application/pdf",
-        fileContentBase64
+        fileContentBase64,
+        website: honeypot
       },
       timeoutMs: 30000
     });
@@ -117,7 +122,7 @@ async function submitClaim(event) {
     setClaimMessage(data.message || "Pedido enviado com sucesso.", "#166534");
     claimForm.reset();
   } catch (error) {
-    console.error("Claim request failed:", error);
+    console.error("Erro ao enviar reivindicação:", error);
     setClaimMessage(error.message || "Não foi possível enviar a reivindicação.");
   } finally {
     if (submitBtn) submitBtn.disabled = false;

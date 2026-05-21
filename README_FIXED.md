@@ -1,4 +1,4 @@
-Physio Pipeline - Email delivery fix
+PhysioPipeline - Email delivery fix
 
 What changed:
 - Claim requests now MUST send the email to CLAIM_REVIEW_EMAIL / SMTP_USER.

@@ -189,7 +189,7 @@ async function renderProfilePage() {
     const specialtiesText = specialties.length ? specialties.join(' • ') : '-';
 
     const fotoHTML = profissional.foto
-      ? `<img src="${escapeHtml(profissional.foto)}" alt="${escapeHtml(profissional.nome)}" class="clickable-avatar">`
+      ? `<img src="${escapeHtml(profissional.foto)}" alt="${escapeHtml(profissional.nome)}" class="clickable-avatar" loading="lazy" decoding="async">`
       : `<span>${escapeHtml((profissional.nome || '?').charAt(0).toUpperCase())}</span>`;
 
    const whatsappLink = buildWhatsAppLink(
@@ -222,7 +222,7 @@ async function renderProfilePage() {
           ${profissional.cidade ? `<span class="profile-badge">${escapeHtml(profissional.cidade)}</span>` : ''}
           ${profissional.bairro ? `<span class="profile-badge">${escapeHtml(profissional.bairro)}</span>` : ''}
           ${specialties.map((specialty) => `<span class="profile-badge">${escapeHtml(specialty)}</span>`).join('')}
-          ${profissional.isClaimed ? '<span class="profile-badge">Perfil reivindicado</span>' : '<span class="profile-badge">Perfil público</span>'}
+          ${profissional.isClaimed ? '<span class="profile-badge">Perfil reivindicado</span>' : '<span class="profile-badge">Perfil não reivindicado</span>'}
         </div>
 
         <section class="profile-section">
@@ -255,7 +255,7 @@ ${showClaimButton ? `
     href="claim-profile.html?id=${encodeURIComponent(profissional.id)}"
     class="btn btn-outline"
   >
-    Clame o perfil
+    Reivindicar perfil
   </a>
 ` : ''}
 
@@ -265,7 +265,7 @@ ${showClaimButton ? `
 
 ${showClaimButton ? `
   <p class="claim-profile-warning">
-    Esse perfil é seu? Então reivindique ele!
+    Esse perfil é seu? Reivindique para atualizar as informações.
   </p>
 ` : ''}
 

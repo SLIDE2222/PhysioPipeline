@@ -59,7 +59,7 @@ export async function listProfiles(req, res) {
 export async function getProfile(req, res) {
   const profile = await prisma.profile.findUnique({ where: { id: req.params.id } });
   if (!profile) {
-    return res.status(404).json({ message: "Profile not found." });
+    return res.status(404).json({ message: "Perfil não encontrado." });
   }
   return res.json({ profile });
 }
@@ -71,13 +71,13 @@ export async function getMyProfile(req, res) {
   });
 
   if (!user) {
-    return res.status(404).json({ message: "User not found." });
+    return res.status(404).json({ message: "Usuário não encontrado." });
   }
 
   const profile = await resolveOwnedProfile(user.id, user.email);
 
   if (!profile) {
-    return res.status(404).json({ message: "No profile is linked to this account." });
+    return res.status(404).json({ message: "Nenhum perfil está vinculado a esta conta." });
   }
 
   return res.json({ profile });
@@ -86,7 +86,7 @@ export async function getMyProfile(req, res) {
 export async function createProfile(req, res) {
   const parsed = createProfileSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: "Invalid profile data.", errors: parsed.error.flatten() });
+    return res.status(400).json({ message: "Dados do perfil inválidos.", errors: parsed.error.flatten() });
   }
 
   const user = await prisma.user.findUnique({
@@ -99,7 +99,7 @@ export async function createProfile(req, res) {
   });
 
   if (existing) {
-    return res.status(409).json({ message: "This account already has a profile." });
+    return res.status(409).json({ message: "Esta conta já possui um perfil." });
   }
 
   const profile = await prisma.profile.create({
@@ -134,7 +134,7 @@ export async function createProfile(req, res) {
 export async function updateMyProfile(req, res) {
   const parsed = createProfileSchema.partial().safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: "Invalid profile update.", errors: parsed.error.flatten() });
+    return res.status(400).json({ message: "Atualização de perfil inválida.", errors: parsed.error.flatten() });
   }
 
   const user = await prisma.user.findUnique({
@@ -143,13 +143,13 @@ export async function updateMyProfile(req, res) {
   });
 
   if (!user) {
-    return res.status(404).json({ message: "User not found." });
+    return res.status(404).json({ message: "Usuário não encontrado." });
   }
 
   const profile = await resolveOwnedProfile(user.id, user.email);
 
   if (!profile) {
-    return res.status(404).json({ message: "No profile is linked to this account." });
+    return res.status(404).json({ message: "Nenhum perfil está vinculado a esta conta." });
   }
 
   const updated = await prisma.profile.update({

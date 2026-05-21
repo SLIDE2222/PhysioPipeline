@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contato | PhysioPipeline</title>
+  <meta name="description" content="Entre em contato com o PhysioPipeline para dúvidas, suporte, parcerias ou solicitações sobre perfis de fisioterapeutas." />
+  <meta property="og:title" content="Contato | PhysioPipeline" />
+  <meta property="og:description" content="Fale com o PhysioPipeline sobre suporte, dúvidas e perfis profissionais." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="PhysioPipeline" />
+  <!-- Google Search Console: cole aqui a meta tag de verificação real quando tiver o domínio. -->
+  <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de medição. -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="shortcut icon" href="favicon.svg" />
+  <link rel="stylesheet" href="style.css?v=launch1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
+      <nav class="nav-links">
+        <a href="index.html">Inicio</a>
+        <a href="buscar.html">Buscar</a>
+        <a href="about.html">Sobre</a>
+      </nav>
+      <div id="authArea" style="display:flex; gap:10px; align-items:center;"></div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <section class="page-section">
+      <div class="container narrow">
+        <div class="section-heading left">
+          <p class="eyebrow">Contato</p>
+          <h1>Fale com o PhysioPipeline.</h1>
+          <p>Use o formulário para dúvidas, suporte, sugestões ou solicitações sobre a plataforma.</p>
+        </div>
+
+        <form class="form-card" id="contactForm">
+          <label for="contactName">Nome</label>
+          <input type="text" id="contactName" name="name" placeholder="Seu nome" required />
+
+          <label for="contactEmail">E-mail</label>
+          <input type="email" id="contactEmail" name="email" placeholder="voce@email.com" required />
+
+          <label for="contactSubject">Assunto</label>
+          <input type="text" id="contactSubject" name="subject" placeholder="Como podemos ajudar?" required />
+
+          <label for="contactMessage">Mensagem</label>
+          <textarea id="contactMessage" name="message" rows="6" placeholder="Escreva sua mensagem" required></textarea>
+
+          <div class="honeypot-field" aria-hidden="true">
+            <label for="contactWebsite">Website</label>
+            <input type="text" id="contactWebsite" name="website" tabindex="-1" autocomplete="off" />
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Enviar mensagem</button>
+          <p id="contactMensagem" class="success-message" role="status"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer tech-signature-footer">
+    <div class="container footer-content tech-signature-footer__content">
+      <div>
+        <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
+        <p class="footer-text">Contato direto para suporte e dúvidas sobre a plataforma.</p>
+      </div>
+      <nav class="footer-links" aria-label="Links institucionais">
+        <a href="about.html">Sobre</a>
+        <a href="contato.html">Contato</a>
+        <a href="privacidade.html">Privacidade</a>
+        <a href="termos.html">Termos</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="api.js?v=base64url-auth-fix2"></script>
+  <script src="script.js?v=ptfix1"></script>
+  <script src="contact.js?v=launch1"></script>
+</body>
+</html>

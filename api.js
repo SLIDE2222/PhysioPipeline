@@ -247,6 +247,13 @@
     fetchMyLeadSummary() {
       return request('/lead-events/me/summary');
     },
+    sendContactMessage(payload) {
+      return request('/contact', {
+        method: 'POST',
+        body: payload,
+        timeoutMs: 30000,
+      });
+    },
     requestPasswordReset(email) {
       return request('/auth/forgot-password', {
         method: 'POST',

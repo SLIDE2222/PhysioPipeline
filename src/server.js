@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import claimRoutes from "./routes/claim.routes.js";
 import leadRoutes from "./routes/lead.routes.js";
+import contactRoutes from "./routes/contact.routes.js";
 
 dotenv.config();
 
@@ -43,6 +44,7 @@ app.use("/auth", authRoutes);
 app.use("/profiles", profileRoutes);
 app.use("/claims", claimRoutes);
 app.use("/lead-events", leadRoutes);
+app.use("/contact", contactRoutes);
 
 app.use((err, _req, res, _next) => {
   console.error(err);
@@ -53,5 +55,5 @@ app.use((err, _req, res, _next) => {
 
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => {
-  console.log(`Physio Pipeline API running on http://localhost:${port}`);
+  console.log(`PhysioPipeline API running on http://localhost:${port}`);
 });

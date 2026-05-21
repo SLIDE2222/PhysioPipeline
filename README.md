@@ -1,4 +1,4 @@
-# Physio Pipeline backend starter
+# PhysioPipeline backend starter
 
 A Node.js + Express + PostgreSQL + Prisma starter for your physio marketplace.
 
