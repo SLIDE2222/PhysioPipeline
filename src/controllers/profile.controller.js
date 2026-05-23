@@ -22,6 +22,43 @@ function clean(value) {
   return value ?? null;
 }
 
+function cleanOption(value, maxLength = 160) {
+  const option = String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+
+  if (!option || option === "-" || /^n[aã]o informado$/i.test(option)) return null;
+
+  return option;
+}
+
+function normalizeOptionKey(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function uniqueSortedOptions(values) {
+  const byKey = new Map();
+
+  values.forEach((value) => {
+    const option = cleanOption(value);
+    if (!option) return;
+
+    const key = normalizeOptionKey(option);
+    if (!key || byKey.has(key)) return;
+
+    byKey.set(key, option);
+  });
+
+  return Array.from(byKey.values()).sort((a, b) =>
+    a.localeCompare(b, "pt-BR", { sensitivity: "base" })
+  );
+}
+
 async function resolveOwnedProfile(userId, userEmail) {
   const byOwner = await prisma.profile.findFirst({
     where: { ownerUserId: userId },
@@ -36,6 +73,43 @@ async function resolveOwnedProfile(userId, userEmail) {
     },
     orderBy: { createdAt: "desc" },
   });
+}
+
+export async function listProfileOptions(_req, res) {
+  try {
+    const profiles = await prisma.profile.findMany({
+      select: {
+        city: true,
+        specialty: true,
+        secondarySpecialty: true,
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 3000,
+    });
+
+    const cities = uniqueSortedOptions(profiles.map((profile) => profile.city));
+    const specialties = uniqueSortedOptions(
+      profiles.flatMap((profile) => [
+        profile.specialty,
+        profile.secondarySpecialty,
+      ])
+    );
+
+    res.set("Cache-Control", "public, max-age=300");
+
+    return res.json({
+      cities,
+      specialties,
+    });
+  } catch (error) {
+    console.error("Profile options route error:", error);
+    res.set("Cache-Control", "no-store");
+
+    return res.json({
+      cities: [],
+      specialties: [],
+    });
+  }
 }
 
 export async function listProfiles(req, res) {

@@ -53,6 +53,17 @@ const CITY_NEIGHBORHOODS = {
 
 const CITIES = Object.keys(CITY_NEIGHBORHOODS);
 
+let dynamicCityOptions = [];
+let dynamicSpecialtyOptions = [];
+let dynamicOptionsLoaded = false;
+
+const DYNAMIC_OPTIONS_CACHE_KEY = 'physioDynamicOptions:v1';
+const DYNAMIC_OPTIONS_CACHE_MS = 5 * 60 * 1000;
+const OPTION_SORTER = new Intl.Collator('pt-BR', {
+  sensitivity: 'base',
+  numeric: true,
+});
+
 const PATIENT_SEARCH_MAP = [
   {
     triggers: ['dedo em gatilho', 'gatilho', 'dedo travando', 'dedo preso'],
@@ -98,9 +109,106 @@ const PATIENT_SEARCH_MAP = [
 
 const STOP_WORDS = new Set(['de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'nos', 'nas', 'com', 'para', 'por', 'um', 'uma', 'o', 'a', 'e']);
 
-function getSpecialtyAutocompleteOptions() {
-  return window.PhysioTaxonomy?.autocompleteSpecialtyOptions || SPECIALTIES;
+function cleanOptionLabel(value) {
+  return String(value || '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
+
+function mergeOptionLists(...lists) {
+  const byKey = new Map();
+
+  lists.flat().forEach((value) => {
+    const option = cleanOptionLabel(value);
+    if (!option || option === '-') return;
+
+    const key = normalizeText(option);
+    if (!key || byKey.has(key)) return;
+
+    byKey.set(key, option);
+  });
+
+  return Array.from(byKey.values()).sort((a, b) => OPTION_SORTER.compare(a, b));
+}
+
+function applyDynamicOptions(options = {}) {
+  dynamicCityOptions = Array.isArray(options.cities) ? options.cities : [];
+  dynamicSpecialtyOptions = Array.isArray(options.specialties) ? options.specialties : [];
+  dynamicOptionsLoaded = true;
+
+  window.PhysioDynamicOptions = {
+    cities: getCityOptions(),
+    specialties: getSpecialtyAutocompleteOptions(),
+  };
+}
+
+function readCachedDynamicOptions() {
+  try {
+    const cached = JSON.parse(sessionStorage.getItem(DYNAMIC_OPTIONS_CACHE_KEY) || 'null');
+    if (!cached?.createdAt || Date.now() - cached.createdAt > DYNAMIC_OPTIONS_CACHE_MS) return null;
+    return cached.options || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function writeCachedDynamicOptions(options) {
+  try {
+    sessionStorage.setItem(
+      DYNAMIC_OPTIONS_CACHE_KEY,
+      JSON.stringify({
+        createdAt: Date.now(),
+        options,
+      })
+    );
+  } catch (_) {
+    // Storage may be unavailable on some private/mobile browsers.
+  }
+}
+
+async function loadDynamicSearchOptions() {
+  if (dynamicOptionsLoaded) return window.PhysioDynamicOptions;
+
+  const cachedOptions = readCachedDynamicOptions();
+  if (cachedOptions) {
+    applyDynamicOptions(cachedOptions);
+    return window.PhysioDynamicOptions;
+  }
+
+  if (!window.physioApi?.fetchProfileOptions) {
+    applyDynamicOptions({});
+    return window.PhysioDynamicOptions;
+  }
+
+  try {
+    const options = await window.physioApi.fetchProfileOptions();
+    writeCachedDynamicOptions(options);
+    applyDynamicOptions(options);
+  } catch (error) {
+    console.warn('Não foi possível carregar opções dinâmicas:', error);
+    applyDynamicOptions({});
+  }
+
+  return window.PhysioDynamicOptions;
+}
+
+function getCityOptions() {
+  return mergeOptionLists(CITIES, dynamicCityOptions);
+}
+
+function getSpecialtyAutocompleteOptions() {
+  return mergeOptionLists(
+    SPECIALTIES,
+    window.PhysioTaxonomy?.autocompleteSpecialtyOptions || [],
+    dynamicSpecialtyOptions
+  );
+}
+
+window.physioSearchOptions = {
+  getCities: getCityOptions,
+  getSpecialties: getSpecialtyAutocompleteOptions,
+  loadDynamicOptions: loadDynamicSearchOptions,
+};
 
 function getPatientSearchGroups() {
   return [
@@ -365,13 +473,13 @@ function setupCityNeighborhoodAutocomplete(cityInputId, cityListId, neighborhood
 
   if (!cityInput || !neighborhoodInput || !neighborhoodList) return;
 
-  const getMatchedCity = () => findExactMatch(CITIES, cityInput.value);
+  const getMatchedCity = () => findExactMatch(getCityOptions(), cityInput.value);
 
   const syncNeighborhoodState = () => {
     const matchedCity = getMatchedCity();
     const neighborhoods = matchedCity ? CITY_NEIGHBORHOODS[matchedCity] || [] : [];
 
-    if (!matchedCity) {
+    if (!cityInput.value.trim()) {
       neighborhoodInput.value = '';
       neighborhoodInput.disabled = true;
       neighborhoodInput.placeholder = 'Selecione ou digite uma cidade primeiro';
@@ -390,7 +498,7 @@ function setupCityNeighborhoodAutocomplete(cityInputId, cityListId, neighborhood
   setupAutocomplete({
     inputId: cityInputId,
     listId: cityListId,
-    optionsProvider: () => CITIES,
+    optionsProvider: getCityOptions,
     minChars: 0,
     showOnFocus: true,
     onSelect: () => {
@@ -573,6 +681,7 @@ async function renderAuthArea() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   await renderAuthArea();
+  await loadDynamicSearchOptions();
 
   // mobile navbar base64url auth check
   setTimeout(() => {

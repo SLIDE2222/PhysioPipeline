@@ -20,6 +20,8 @@
 - Contact form with honeypot anti-spam validation.
 - Claim form honeypot anti-spam validation.
 - Public trust labels for claimed and unclaimed profiles.
+- Dynamic city and specialty dropdown expansion from saved profile data through `GET /profiles/options`.
+- Frontend dropdowns now merge predefined options with database values, dedupe them, sort them, and keep defaults available.
 
 ## Manual setup before public launch
 
@@ -90,5 +92,6 @@ Optional/feature-specific:
 - Check that no page has horizontal scroll on mobile.
 - Submit a contact form test with a real e-mail.
 - Submit a claim form test with a PDF.
+- Create or edit one profile with a new city/specialty, then confirm it appears in search/register/edit dropdown suggestions.
 - Confirm the backend receives no spam submission when honeypot fields are filled.
 - Submit sitemap/important pages in Google Search Console after the domain is live.

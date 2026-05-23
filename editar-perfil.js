@@ -50,8 +50,11 @@ const EDITAR_SPECIALTY_OPTIONS_FALLBACK = [
   'Pós-operatório'
 ];
 
-const EDITAR_SPECIALTY_OPTIONS =
-  window.PhysioTaxonomy?.profileSpecialtyOptions || EDITAR_SPECIALTY_OPTIONS_FALLBACK;
+function getEditarSpecialtyOptions() {
+  return window.physioSearchOptions?.getSpecialties?.() ||
+    window.PhysioTaxonomy?.profileSpecialtyOptions ||
+    EDITAR_SPECIALTY_OPTIONS_FALLBACK;
+}
 
 function setupSimpleAutocomplete(inputId, suggestionsId, options) {
   const input = document.getElementById(inputId);
@@ -61,8 +64,9 @@ function setupSimpleAutocomplete(inputId, suggestionsId, options) {
 
   function renderSuggestions() {
     const term = input.value.trim().toLowerCase();
+    const availableOptions = typeof options === 'function' ? options() : options;
 
-    const filteredOptions = options.filter((option) =>
+    const filteredOptions = availableOptions.filter((option) =>
       option.toLowerCase().includes(term)
     );
 
@@ -222,13 +226,13 @@ if (editarForm) {
   setupSimpleAutocomplete(
     'especialidade',
     'editarEspecialidadeSuggestions',
-    EDITAR_SPECIALTY_OPTIONS
+    getEditarSpecialtyOptions
   );
 
   setupSimpleAutocomplete(
     'especialidadeSecundaria',
     'editarEspecialidadeSecundariaSuggestions',
-    EDITAR_SPECIALTY_OPTIONS
+    getEditarSpecialtyOptions
   );
 
   if (typeof setupCityNeighborhoodAutocomplete === 'function') {

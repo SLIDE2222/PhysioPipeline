@@ -3,6 +3,7 @@ import {
   createProfile,
   getMyProfile,
   getProfile,
+  listProfileOptions,
   listProfiles,
   updateMyProfile
 } from "../controllers/profile.controller.js";
@@ -11,6 +12,7 @@ import { requireAuth } from "../middleware/auth.middleware.js";
 const router = Router();
 
 router.get("/", listProfiles);
+router.get("/options", listProfileOptions);
 router.get("/me", requireAuth, getMyProfile);
 router.get("/:id", getProfile);
 router.post("/", requireAuth, createProfile);

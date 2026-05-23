@@ -52,6 +52,7 @@ Server runs on `http://localhost:3000`
 
 ### Profiles
 - `GET /profiles`
+- `GET /profiles/options`
 - `GET /profiles/:id`
 - `POST /profiles`
 - `PUT /profiles/me`

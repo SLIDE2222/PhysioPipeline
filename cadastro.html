@@ -202,8 +202,11 @@
       'Pós-operatório'
     ];
 
-    const CADASTRO_SPECIALTY_OPTIONS =
-      window.PhysioTaxonomy?.profileSpecialtyOptions || CADASTRO_SPECIALTY_OPTIONS_FALLBACK;
+    function getCadastroSpecialtyOptions() {
+      return window.physioSearchOptions?.getSpecialties?.() ||
+        window.PhysioTaxonomy?.profileSpecialtyOptions ||
+        CADASTRO_SPECIALTY_OPTIONS_FALLBACK;
+    }
 
     function setupCadastroAutocomplete(inputId, suggestionsId, options) {
       const input = document.getElementById(inputId);
@@ -213,8 +216,9 @@
 
       function renderSuggestions() {
         const term = input.value.trim().toLowerCase();
+        const availableOptions = typeof options === 'function' ? options() : options;
 
-        const filteredOptions = options.filter((option) =>
+        const filteredOptions = availableOptions.filter((option) =>
           option.toLowerCase().includes(term)
         );
 
@@ -263,7 +267,7 @@
       setupCadastroAutocomplete(
         'especialidadeCadastro',
         'especialidadeCadastroSuggestions',
-        CADASTRO_SPECIALTY_OPTIONS
+        getCadastroSpecialtyOptions
       );
 
       if (typeof setupCityNeighborhoodAutocomplete === 'function') {

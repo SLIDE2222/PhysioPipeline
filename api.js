@@ -234,6 +234,11 @@
         normalizeProfile(data.profile || data)
       );
     },
+    fetchProfileOptions() {
+      return request('/profiles/options', {
+        timeoutMs: 10000,
+      });
+    },
     recordLeadEvent(payload) {
       return request('/lead-events', {
         method: 'POST',
