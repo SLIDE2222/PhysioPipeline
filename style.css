@@ -3411,6 +3411,69 @@ body {
   max-width: none !important;
 }
 
+.result-card-skeleton {
+  pointer-events: none;
+}
+
+.result-card-skeleton .skeleton-line,
+.result-card-skeleton .skeleton-pill,
+.result-card-skeleton .skeleton-button {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(219, 234, 254, 0.7), rgba(255, 255, 255, 0.92), rgba(219, 234, 254, 0.7));
+  background-size: 220% 100%;
+  animation: skeletonShimmer 1.15s ease-in-out infinite;
+}
+
+.result-card-skeleton .skeleton-title {
+  width: 58%;
+  height: 26px;
+  margin-bottom: 20px;
+}
+
+.result-card-skeleton .skeleton-pill {
+  width: 70%;
+  height: 42px;
+  margin-bottom: 14px;
+}
+
+.result-card-skeleton .skeleton-pill-short {
+  width: 48%;
+}
+
+.result-card-skeleton .skeleton-pill-shorter {
+  width: 38%;
+  margin-bottom: auto;
+}
+
+.result-card-skeleton .skeleton-line {
+  width: 88%;
+  height: 16px;
+  margin-top: 12px;
+}
+
+.result-card-skeleton .skeleton-line + .skeleton-line {
+  width: 76%;
+}
+
+.result-card-skeleton .skeleton-button {
+  width: 116px;
+  height: 48px;
+  margin-top: 22px;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
+  }
+}
+
 .results-showing-summary {
   width: fit-content;
   max-width: 100%;

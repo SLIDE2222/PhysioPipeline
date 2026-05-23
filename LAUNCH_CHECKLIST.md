@@ -22,6 +22,11 @@
 - Public trust labels for claimed and unclaimed profiles.
 - Dynamic city and specialty dropdown expansion from saved profile data through `GET /profiles/options`.
 - Frontend dropdowns now merge predefined options with database values, dedupe them, sort them, and keep defaults available.
+- Public profile browsing now tries Supabase first through `api.js`, caches safe public profile cards in `sessionStorage`, and falls back to Render if Supabase blocks the request.
+- Results page shows loading skeleton cards before profile data arrives.
+- `about.html` and logged-in profile CTA buttons now send authenticated users to their profile instead of signup.
+- `cadastro.html` redirects logged-in users with an existing profile away from duplicate signup.
+- Added `supabase-public-read-policies.sql` with a safe public-profile view setup and notes for future direct Supabase ownership policies.
 
 ## Manual setup before public launch
 
@@ -30,6 +35,8 @@
 - Add the production backend URL to frontend config if it changes from the current Render URL.
 - Test register, login, profile creation, profile edit, search, claim request, password reset, and contact form on the production domain.
 - Review Privacy Policy and Terms with legal guidance before serious paid traffic.
+- In Supabase, run or adapt `supabase-public-read-policies.sql` if direct public reads are blocked by RLS or grants.
+- Do not move profile creation/editing fully to frontend Supabase until `Profile` has a Supabase Auth ownership mapping. Current `Profile.ownerUserId` points to the app `User.id`, not `auth.uid()`.
 
 ## Google Analytics
 
@@ -61,6 +68,7 @@ Example shape only:
 - Point the API/backend domain or Render service separately if using a subdomain like `api.yourdomain.com`.
 - Update `CLIENT_URL` on the backend to the final frontend domain, for example `https://physiopipeline.com.br`.
 - If the API domain changes, update `API_BASE` logic in `api.js` or set `window.PHYSIO_API_BASE`.
+- If the Supabase project changes, update `window.PHYSIO_SUPABASE_URL` and `window.PHYSIO_SUPABASE_ANON_KEY` or the defaults in `api.js`.
 
 ## Required environment variables
 
@@ -77,6 +85,8 @@ Backend:
 - `CLAIM_REVIEW_EMAIL`
 - Contact form recipient is currently fixed to `physiopipelinefisio@gmail.com`.
 - `SMTP_TIMEOUT_MS`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
 
 Optional/feature-specific:
 

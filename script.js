@@ -343,6 +343,15 @@ function closeSuggestionList(listElement) {
   listElement.style.display = 'none';
 }
 
+function debounce(fn, wait = 350) {
+  let timeoutId = null;
+
+  return (...args) => {
+    window.clearTimeout(timeoutId);
+    timeoutId = window.setTimeout(() => fn(...args), wait);
+  };
+}
+
 function renderSuggestionList(listElement, inputElement, options, onSelect) {
   if (!listElement || !inputElement) return;
 
@@ -403,7 +412,9 @@ function setupAutocomplete({
     renderSuggestionList(listElement, inputElement, getFilteredOptions(), onSelect);
   };
 
-  inputElement.addEventListener('input', refreshSuggestions);
+  const debouncedRefreshSuggestions = debounce(refreshSuggestions, 350);
+
+  inputElement.addEventListener('input', debouncedRefreshSuggestions);
 
   inputElement.addEventListener('focus', () => {
     if (!inputElement.disabled) refreshSuggestions();
@@ -580,16 +591,35 @@ async function getLoggedUser(force = false) {
     }
 
     let rawUser = auth.user || {};
+    const storedHasProfileId = Boolean(
+      rawUser.profiles?.[0]?.id ||
+      rawUser.profile?.id
+    );
 
-    try {
-      const meData = await window.physioApi.me();
-      rawUser = meData?.user ?? meData ?? rawUser;
-    } catch (error) {
-      console.warn('Using stored auth fallback because /auth/me failed:', error);
+    if (!storedHasProfileId && window.physioApi.me) {
+      try {
+        const meData = await window.physioApi.me();
+        rawUser = meData?.user ?? meData ?? rawUser;
+      } catch (error) {
+        console.warn('Using stored auth fallback because /auth/me failed:', error);
+      }
     }
 
     let profile = null;
-    if (window.physioApi.fetchMyProfile) {
+    const storedProfileId =
+      rawUser.profiles?.[0]?.id ||
+      rawUser.profile?.id ||
+      null;
+
+    if (storedProfileId && window.physioApi.fetchProfile) {
+      try {
+        profile = await window.physioApi.fetchProfile(storedProfileId);
+      } catch (_) {
+        profile = { id: storedProfileId };
+      }
+    }
+
+    if (!profile && window.physioApi.fetchMyProfile) {
       try {
         profile = await window.physioApi.fetchMyProfile();
       } catch (_) {
@@ -621,18 +651,24 @@ async function logout() {
 window.logout = logout;
 window.getLoggedUser = getLoggedUser;
 
+function getUserProfileHref(user) {
+  return user?.profile?.id
+    ? `profile.html?id=${encodeURIComponent(user.profile.id)}`
+    : 'profile.html';
+}
+
 
 function updateProfileButtons(user) {
   const heroBtn = document.getElementById('heroProfileBtn');
   const ctaBtn = document.getElementById('ctaProfileBtn');
+  const pageProfileBtn = document.getElementById('pageProfileBtn');
+  const profileCtas = Array.from(document.querySelectorAll('[data-profile-cta]'));
 
-  const profileHref = user.profile?.id
-    ? `profile.html?id=${encodeURIComponent(user.profile.id)}`
-    : 'cadastro.html';
+  const profileHref = getUserProfileHref(user);
 
-  const text = user.profile ? 'Meu perfil' : 'Criar perfil';
+  const text = 'Meu perfil';
 
-  [heroBtn, ctaBtn].forEach((btn) => {
+  [heroBtn, ctaBtn, pageProfileBtn, ...profileCtas].forEach((btn) => {
     if (!btn) return;
     btn.textContent = text;
     btn.href = profileHref;
@@ -668,9 +704,7 @@ async function renderAuthArea() {
     user.email ||
     'Profissional'
   ).split(' ')[0];
-  const profileHref = user.profile?.id
-    ? `profile.html?id=${encodeURIComponent(user.profile.id)}`
-    : 'cadastro.html';
+  const profileHref = getUserProfileHref(user);
 
   authArea.innerHTML = `
     <span class="user-greeting">Olá, ${escapeHtml(firstName)}</span>
@@ -750,6 +784,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   const resultsShowingSummary = document.getElementById('resultsShowingSummary');
   const paginationControls = document.getElementById('paginationControls');
 
+  const renderResultsSkeleton = (count = 6) => {
+    resultsGrid.innerHTML = Array.from({ length: count }, () => `
+      <article class="result-card result-card-skeleton" aria-hidden="true">
+        <span class="skeleton-line skeleton-title"></span>
+        <span class="skeleton-pill"></span>
+        <span class="skeleton-pill skeleton-pill-short"></span>
+        <span class="skeleton-pill skeleton-pill-shorter"></span>
+        <span class="skeleton-line"></span>
+        <span class="skeleton-line"></span>
+        <span class="skeleton-button"></span>
+      </article>
+    `).join('');
+  };
+
   const params = new URLSearchParams(window.location.search);
   const requestedPage = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
 
@@ -786,6 +834,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   try {
     resumo.textContent = 'Buscando profissionais...';
+    renderResultsSkeleton();
 
     const profiles = await window.physioApi.fetchProfiles();
 

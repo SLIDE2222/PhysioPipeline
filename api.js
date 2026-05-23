@@ -10,6 +10,32 @@
       : 'https://physiopipeline-2.onrender.com');
 
   const REQUEST_TIMEOUT_MS = 15000;
+  const PUBLIC_PROFILE_CACHE_KEY = 'physioPublicProfiles:v1';
+  const PUBLIC_PROFILE_CACHE_TTL_MS = 1000 * 60 * 3;
+  const SUPABASE_URL =
+    window.PHYSIO_SUPABASE_URL ||
+    'https://epptihpvgwzrodfsukpr.supabase.co';
+  const SUPABASE_ANON_KEY =
+    window.PHYSIO_SUPABASE_ANON_KEY ||
+    'sb_publishable_QNqv1waCxDu2z2vprYM62w_zkhrafGH';
+  const PUBLIC_PROFILE_SELECT = [
+    'id',
+    'name',
+    'specialty',
+    'secondarySpecialty',
+    'city',
+    'neighborhood',
+    'phone',
+    'bio',
+    'instagram',
+    'linkedin',
+    'photoUrl',
+    'attendance',
+    'isClaimed',
+    'createdAt',
+    'updatedAt',
+  ].join(',');
+  const PUBLIC_PROFILE_SOURCES = ['public_profiles', 'Profile'];
 
   function getStoredAuth() {
     try {
@@ -30,6 +56,150 @@
     } catch (_) {
       // ignore storage access issues
     }
+  }
+
+  function isSupabasePublicConfigured() {
+    return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+  }
+
+  function readPublicProfileCache() {
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(PUBLIC_PROFILE_CACHE_KEY) || 'null');
+      if (!cached?.profiles || !cached?.savedAt) return null;
+
+      if (Date.now() - cached.savedAt > PUBLIC_PROFILE_CACHE_TTL_MS) {
+        sessionStorage.removeItem(PUBLIC_PROFILE_CACHE_KEY);
+        return null;
+      }
+
+      return cached.profiles;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function writePublicProfileCache(profiles) {
+    try {
+      sessionStorage.setItem(
+        PUBLIC_PROFILE_CACHE_KEY,
+        JSON.stringify({
+          savedAt: Date.now(),
+          profiles,
+        })
+      );
+    } catch (_) {
+      // ignore storage access issues
+    }
+  }
+
+  function clearPublicProfileCache() {
+    try {
+      sessionStorage.removeItem(PUBLIC_PROFILE_CACHE_KEY);
+    } catch (_) {
+      // ignore storage access issues
+    }
+  }
+
+  async function supabasePublicRequest(resource, query = '') {
+    if (!isSupabasePublicConfigured()) {
+      throw new Error('Supabase public client is not configured.');
+    }
+
+    const path = `${SUPABASE_URL.replace(/\/$/, '')}/rest/v1/${resource}${query ? `?${query}` : ''}`;
+    const response = await fetch(path, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Accept: 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || `Supabase request failed with status ${response.status}.`);
+    }
+
+    return response.json();
+  }
+
+  async function fetchPublicProfilesFromSupabase({ useCache = true } = {}) {
+    if (useCache) {
+      const cached = readPublicProfileCache();
+      if (cached) return cached.map(normalizeProfile);
+    }
+
+    const query = [
+      `select=${encodeURIComponent(PUBLIC_PROFILE_SELECT)}`,
+      'order=createdAt.desc',
+      'limit=1000',
+    ].join('&');
+
+    let lastError = null;
+
+    for (const source of PUBLIC_PROFILE_SOURCES) {
+      try {
+        const rows = await supabasePublicRequest(source, query);
+        const profiles = (rows || []).map(normalizeProfile).filter(Boolean);
+        writePublicProfileCache(profiles);
+        return profiles;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error('Could not load public profiles from Supabase.');
+  }
+
+  async function fetchPublicProfileFromSupabase(id) {
+    if (!id) return null;
+
+    const safeId = String(id).replace(/"/g, '');
+    const query = [
+      `select=${encodeURIComponent(PUBLIC_PROFILE_SELECT)}`,
+      `id=eq.${encodeURIComponent(safeId)}`,
+      'limit=1',
+    ].join('&');
+
+    let lastError = null;
+
+    for (const source of PUBLIC_PROFILE_SOURCES) {
+      try {
+        const rows = await supabasePublicRequest(source, query);
+        return normalizeProfile(rows?.[0] || null);
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error('Could not load public profile from Supabase.');
+  }
+
+  function buildProfileOptionsFromProfiles(profiles) {
+    const clean = (value) => String(value || '').trim().replace(/\s+/g, ' ');
+    const dedupeSort = (values) => {
+      const seen = new Set();
+
+      return values
+        .map(clean)
+        .filter(Boolean)
+        .filter((value) => {
+          const key = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
+    };
+
+    return {
+      cities: dedupeSort(profiles.map((profile) => profile.cidade || profile.city)),
+      specialties: dedupeSort(
+        profiles.flatMap((profile) => [
+          profile.especialidade || profile.specialty,
+          profile.especialidadeSecundaria || profile.secondarySpecialty,
+        ])
+      ),
+    };
   }
 
 
@@ -210,34 +380,75 @@
     fetchMyProfile() {
       return request('/profiles/me').then((data) => normalizeProfile(data.profile));
     },
-    fetchProfiles() {
-  return request('/profiles').then((data) =>
-    (data.profiles || data || []).map(normalizeProfile)
-  );
-},
+    async fetchProfiles(options = {}) {
+      try {
+        return await fetchPublicProfilesFromSupabase(options);
+      } catch (error) {
+        console.warn('Using Render fallback for public profiles:', error);
+        return request('/profiles').then((data) =>
+          (data.profiles || data || []).map(normalizeProfile)
+        );
+      }
+    },
     createProfile(payload) {
       return request('/profiles', {
         method: 'POST',
         body: payload,
         timeoutMs: 20000,
-      }).then((data) => normalizeProfile(data.profile || data));
+      }).then((data) => {
+        clearPublicProfileCache();
+        const profile = normalizeProfile(data.profile || data);
+
+        try {
+          const auth = getStoredAuth();
+          if (auth?.user && profile?.id) {
+            setStoredAuth({
+              ...auth,
+              user: {
+                ...auth.user,
+                profiles: [{ id: profile.id }],
+              },
+            }, true);
+          }
+        } catch (_) {
+          // ignore storage sync issues
+        }
+
+        return profile;
+      });
     },
     updateMyProfile(payload) {
       return request('/profiles/me', {
         method: 'PUT',
         body: payload,
         timeoutMs: 20000,
-      }).then((data) => normalizeProfile(data.profile || data));
+      }).then((data) => {
+        clearPublicProfileCache();
+        return normalizeProfile(data.profile || data);
+      });
     },
-    fetchProfile(id) {
+    async fetchProfile(id) {
+      try {
+        const profile = await fetchPublicProfileFromSupabase(id);
+        if (profile) return profile;
+      } catch (error) {
+        console.warn('Using Render fallback for public profile:', error);
+      }
+
       return request(`/profiles/${id}`).then((data) =>
         normalizeProfile(data.profile || data)
       );
     },
-    fetchProfileOptions() {
-      return request('/profiles/options', {
-        timeoutMs: 10000,
-      });
+    async fetchProfileOptions() {
+      try {
+        const profiles = await fetchPublicProfilesFromSupabase();
+        return buildProfileOptionsFromProfiles(profiles);
+      } catch (error) {
+        console.warn('Using Render fallback for profile options:', error);
+        return request('/profiles/options', {
+          timeoutMs: 10000,
+        });
+      }
     },
     recordLeadEvent(payload) {
       return request('/lead-events', {

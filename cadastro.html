@@ -170,13 +170,13 @@
     </section>
   </main>
 
-  <script src="api.js?v=base64url-auth-fix2"></script>
+  <script src="api.js?v=supabase-public1"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="google-auth.js?v=base64url-auth-fix2"></script>
   <script src="image-cropper.js?v=imagecrop1"></script>
   <script src="search-taxonomy.generated.js?v=taxonomy1"></script>
   <script src="search-taxonomy.js?v=taxonomy1"></script>
-  <script src="script.js?v=ptfix1"></script>
+  <script src="script.js?v=auth-cta1"></script>
 
   <script>
     const CADASTRO_SPECIALTY_OPTIONS_FALLBACK = [
@@ -257,12 +257,32 @@
 
     let cadastroFotoBase64 = '';
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       const cadastroForm = document.getElementById('cadastroForm');
       const cadastroMensagem = document.getElementById('cadastroMensagem');
       const senhaErro = document.getElementById('senhaErro');
       const fotoInput = document.getElementById('foto');
       const fotoPreview = document.getElementById('fotoPreview');
+      const pageParams = new URLSearchParams(window.location.search);
+      const isCompletingProfile = pageParams.get('completeProfile') === 'true';
+
+      if (window.physioApi?.getStoredAuth?.()?.token && typeof window.getLoggedUser === 'function') {
+        try {
+          const loggedUser = await window.getLoggedUser(true);
+
+          if (loggedUser?.profile?.id) {
+            window.location.replace(`profile.html?id=${encodeURIComponent(loggedUser.profile.id)}`);
+            return;
+          }
+
+          if (loggedUser && !isCompletingProfile) {
+            window.location.replace('profile.html');
+            return;
+          }
+        } catch (_) {
+          // If the session check fails, keep the form usable instead of trapping the user.
+        }
+      }
 
       setupCadastroAutocomplete(
         'especialidadeCadastro',

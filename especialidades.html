@@ -81,8 +81,8 @@
     </section>
   </main>
 
-  <script src="api.js?v=info-pages1"></script>
-  <script src="script.js?v=ptfix1"></script>
+  <script src="api.js?v=supabase-public1"></script>
+  <script src="script.js?v=auth-cta1"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const pageProfileBtn = document.getElementById('pageProfileBtn');
@@ -98,8 +98,8 @@
         }
 
         if (user) {
-          pageProfileBtn.textContent = 'Criar perfil';
-          pageProfileBtn.href = 'cadastro.html';
+          pageProfileBtn.textContent = 'Meu perfil';
+          pageProfileBtn.href = 'profile.html';
         }
       } catch (_) {
         pageProfileBtn.textContent = 'Cadastrar perfil';

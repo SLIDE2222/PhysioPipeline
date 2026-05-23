@@ -156,10 +156,23 @@ async function renderProfilePage() {
   const profileId = params.get('id');
 
   if (!profileId) {
+    const loggedUser = await (window.getLoggedUser
+      ? window.getLoggedUser(true)
+      : Promise.resolve(null));
+
+    if (loggedUser?.profile?.id) {
+      window.location.replace(`profile.html?id=${encodeURIComponent(loggedUser.profile.id)}`);
+      return;
+    }
+
     profileContainer.innerHTML = `
       <article class="profile-card-full">
-        <h2>Perfil não encontrado</h2>
-        <p>Nenhum id de perfil foi informado.</p>
+        <h2>Perfil ainda não encontrado</h2>
+        <p>Não encontramos um perfil publicado ligado a esta sessão.</p>
+        <div class="profile-actions">
+          <a href="cadastro.html?completeProfile=true" class="btn btn-primary">Completar cadastro</a>
+          <a href="buscar.html" class="btn btn-secondary">Buscar fisioterapeuta</a>
+        </div>
       </article>
     `;
     return;
