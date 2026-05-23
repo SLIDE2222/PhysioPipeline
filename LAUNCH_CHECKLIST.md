@@ -82,9 +82,11 @@ Backend:
 - `SMTP_USER`
 - `SMTP_PASS`
 - `MAIL_FROM`
+- `CONTACT_EMAIL` optional, defaults to `physiopipelinefisio@gmail.com`.
 - `CLAIM_REVIEW_EMAIL`
-- Contact form recipient is currently fixed to `physiopipelinefisio@gmail.com`.
+- Contact form recipient defaults to `physiopipelinefisio@gmail.com`.
 - `SMTP_TIMEOUT_MS`
+- `SMTP_SECURE` optional. Use `true` for SMTP port `465`; the app now auto-detects this when the port is `465`.
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 

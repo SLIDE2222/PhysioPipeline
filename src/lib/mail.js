@@ -9,6 +9,11 @@ const rawUser = String(process.env.SMTP_USER || "").trim();
 const rawHost = String(process.env.SMTP_HOST || "smtp-relay.brevo.com").trim();
 const rawFrom = String(process.env.MAIL_FROM || rawUser).trim();
 const rawClientUrl = String(process.env.CLIENT_URL || "http://localhost:5500").trim();
+const rawSecure = String(process.env.SMTP_SECURE || "").trim().toLowerCase();
+const secureSmtp =
+  rawSecure
+    ? ["1", "true", "yes", "ssl"].includes(rawSecure)
+    : rawPort === 465;
 
 function withTimeout(promise, timeoutMs, label = "SMTP timeout") {
   return Promise.race([
@@ -27,6 +32,7 @@ export const mailConfig = {
   pass: rawPass,
   from: rawFrom,
   clientUrl: rawClientUrl,
+  secure: secureSmtp,
   timeoutMs: Number(process.env.SMTP_TIMEOUT_MS || 8000),
 };
 
@@ -35,7 +41,7 @@ export const transporter =
     ? nodemailer.createTransport({
         host: mailConfig.host,
         port: mailConfig.port,
-        secure: false,
+        secure: mailConfig.secure,
         auth: {
           user: mailConfig.user,
           pass: mailConfig.pass,
