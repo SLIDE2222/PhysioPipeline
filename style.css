@@ -85,8 +85,8 @@ textarea {
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 1.4rem;
+  gap: 0.62rem;
+  font-size: 1.48rem;
   font-weight: 800;
   line-height: 1;
   color: var(--dark);
@@ -95,12 +95,12 @@ textarea {
 
 .logo::before {
   content: "";
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   display: inline-block;
   background: url("favicon.svg") center / contain no-repeat;
-  filter: drop-shadow(0 6px 12px rgba(37, 99, 235, 0.14));
+  filter: drop-shadow(0 8px 16px rgba(37, 99, 235, 0.18));
 }
 
 .logo span {
@@ -1086,13 +1086,14 @@ body.cropper-open {
   }
 
   .logo {
-    font-size: 1.15rem;
+    gap: 0.5rem;
+    font-size: 1.18rem;
   }
 
   .logo::before {
-    width: 26px;
-    height: 26px;
-    flex-basis: 26px;
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
   }
 
   .nav-links {

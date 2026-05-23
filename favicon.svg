@@ -1,19 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PhysioPipeline">
   <defs>
-    <radialGradient id="bgGlow" cx="48%" cy="42%" r="68%">
-      <stop offset="0" stop-color="#38bdf8"/>
-      <stop offset="0.48" stop-color="#0b7cff"/>
+    <radialGradient id="blue" cx="43%" cy="34%" r="76%">
+      <stop offset="0" stop-color="#28c8ff"/>
+      <stop offset="0.46" stop-color="#0878ff"/>
       <stop offset="1" stop-color="#0052ff"/>
     </radialGradient>
-    <filter id="letterShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#001a66" flood-opacity="0.45"/>
+    <filter id="pShadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#001a66" flood-opacity="0.55"/>
+      <feDropShadow dx="0" dy="-2" stdDeviation="1.5" flood-color="#ffffff" flood-opacity="0.38"/>
     </filter>
   </defs>
-  <circle cx="256" cy="256" r="248" fill="#ffffff"/>
-  <circle cx="256" cy="256" r="220" fill="url(#bgGlow)"/>
+  <circle cx="256" cy="256" r="252" fill="#ffffff"/>
+  <circle cx="256" cy="256" r="221" fill="url(#blue)"/>
   <path
     fill="#111111"
-    filter="url(#letterShadow)"
+    filter="url(#pShadow)"
+    transform="translate(-20 64) scale(1.04)"
     d="M171 395c10-71 44-126 103-166 25-17 51-30 78-42 30-14 45-32 45-56 0-31-29-51-73-51-40 0-84 8-132 23l4-45c45-14 89-21 132-21 75 0 123 36 123 91 0 48-28 82-84 106-65 28-105 52-127 73-23 22-38 51-45 88h-24Zm87 0h-39l9-47c11-11 27-23 48-36l-18 83Zm1-146 40-150h54l-33 131-61 19Z"
   />
 </svg>
