@@ -675,6 +675,48 @@ function updateProfileButtons(user) {
   });
 }
 
+function closeAccountMenus(exceptMenu = null) {
+  document.querySelectorAll('[data-account-menu]').forEach((menu) => {
+    if (menu === exceptMenu) return;
+
+    const button = menu.querySelector('[data-account-menu-toggle]');
+    const panel = menu.querySelector('[data-account-menu-panel]');
+    if (!button || !panel) return;
+
+    button.setAttribute('aria-expanded', 'false');
+    panel.hidden = true;
+  });
+}
+
+function setupAccountMenuEvents() {
+  if (window.__physioAccountMenuReady) return;
+  window.__physioAccountMenuReady = true;
+
+  document.addEventListener('click', (event) => {
+    const toggle = event.target.closest('[data-account-menu-toggle]');
+
+    if (toggle) {
+      const menu = toggle.closest('[data-account-menu]');
+      const panel = menu?.querySelector('[data-account-menu-panel]');
+      if (!menu || !panel) return;
+
+      const willOpen = panel.hidden;
+      closeAccountMenus(menu);
+      toggle.setAttribute('aria-expanded', String(willOpen));
+      panel.hidden = !willOpen;
+      return;
+    }
+
+    if (!event.target.closest('[data-account-menu]')) {
+      closeAccountMenus();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeAccountMenus();
+  });
+}
+
 
 async function renderAuthArea() {
   const authArea = document.getElementById('authArea');
@@ -708,12 +750,30 @@ async function renderAuthArea() {
 
   authArea.innerHTML = `
     <span class="user-greeting">Olá, ${escapeHtml(firstName)}</span>
-    <a href="${profileHref}" class="btn btn-outline">Meu perfil</a>
-    <button class="btn btn-secondary" onclick="logout()">Sair</button>
+    <div class="account-menu" data-account-menu>
+      <button
+        class="account-menu__button"
+        type="button"
+        aria-label="Abrir menu da conta"
+        aria-expanded="false"
+        data-account-menu-toggle
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="account-menu__panel" role="menu" data-account-menu-panel hidden>
+        <a role="menuitem" href="${profileHref}">Meu perfil</a>
+        <a role="menuitem" href="editar-perfil.html">Editar perfil</a>
+        <a role="menuitem" href="planos.html">Planos</a>
+        <button role="menuitem" type="button" onclick="logout()">Sair</button>
+      </div>
+    </div>
   `;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  setupAccountMenuEvents();
   await renderAuthArea();
   await loadDynamicSearchOptions();
 

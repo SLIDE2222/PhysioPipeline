@@ -13,7 +13,7 @@
   <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de medição. -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
-  <link rel="stylesheet" href="style.css?v=logo3" />
+  <link rel="stylesheet" href="style.css?v=menu1" />
   <meta name="google-client-id" content="197182747757-6tm1e8vhu44fkpf89pvvsbooodl48t3o.apps.googleusercontent.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +32,9 @@
         <a href="buscar.html">Buscar</a>
       </nav>
 
-      <a href="cadastro.html" class="btn btn-outline">Cadastrar</a>
+      <div id="authArea" style="display:flex; gap:10px; align-items:center;">
+        <a href="cadastro.html" class="btn btn-outline">Cadastrar</a>
+      </div>
     </div>
   </header>
 
@@ -96,6 +98,7 @@
   </main>
 
 <script src="api.js?v=supabase-public1"></script>
+<script src="script.js?v=account-menu1"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="google-auth.js?v=base64url-auth-fix2"></script>
 <script src="login.js?v=prodfix2"></script>
