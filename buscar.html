@@ -9,11 +9,11 @@
   <meta property="og:description" content="Busque fisioterapeutas por especialidade, cidade, bairro ou sintoma no PhysioPipeline." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="PhysioPipeline" />
-  <!-- Google Search Console: cole aqui a meta tag de verificação real quando tiver o domínio. -->
-  <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de medição. -->
+  <!-- Google Search Console: cole aqui a meta tag de verificaÃ§Ã£o real quando tiver o domÃ­nio. -->
+  <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de mediÃ§Ã£o. -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
-  <link rel="stylesheet" href="style.css?v=launch1" />
+  <link rel="stylesheet" href="style.css?v=logo1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -41,7 +41,7 @@
         <div class="section-heading left">
           <p class="eyebrow">Busca</p>
           <h1>Encontre um fisioterapeuta</h1>
-          <p>Pesquise por especialidade e cidade. O básico que qualquer ser humano esperaria de um marketplace.</p>
+          <p>Pesquise por especialidade e cidade. O bÃ¡sico que qualquer ser humano esperaria de um marketplace.</p>
         </div>
 
         <form class="form-card" id="buscaForm" action="resultados.html" method="GET">
@@ -64,7 +64,7 @@
               type="text"
               id="buscarEspecialidade"
               name="especialidade"
-              placeholder="Ex.: ortopédica"
+              placeholder="Ex.: ortopÃ©dica"
               autocomplete="off"
               required
             />
@@ -87,7 +87,7 @@
               type="text"
               id="buscarCidade"
               name="cidade"
-              placeholder="Ex.: São Paulo"
+              placeholder="Ex.: SÃ£o Paulo"
               autocomplete="off"
               required
             />
@@ -135,7 +135,7 @@
       sessionStorage.getItem("user");
 
     const authAreaShowsLoggedIn =
-      authArea && authArea.innerText.toLowerCase().includes("olá");
+      authArea && authArea.innerText.toLowerCase().includes("olÃ¡");
 
     if ((possibleUser || authAreaShowsLoggedIn) && cadastroLink) {
       cadastroLink.remove();
