@@ -23,6 +23,17 @@ function escapeHtml(value) {
     .replace(/'/g, "&#039;");
 }
 
+router.get("/health", (_req, res) => {
+  res.json({
+    ok: true,
+    route: "contact",
+    recipient: CONTACT_EMAIL,
+    mailConfigured: Boolean(mailConfig.user && mailConfig.pass),
+    smtpHost: mailConfig.host,
+    smtpPort: mailConfig.port,
+  });
+});
+
 router.post("/", async (req, res) => {
   try {
     const {
