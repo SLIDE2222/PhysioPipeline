@@ -9,8 +9,8 @@
   <meta property="og:description" content="Cadastre seu perfil profissional no PhysioPipeline para aparecer em buscas por fisioterapia." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="PhysioPipeline" />
-  <!-- Google Search Console: cole aqui a meta tag de verificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o real quando tiver o domÃƒÆ’Ã‚Â­nio. -->
-  <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de mediÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o. -->
+  <!-- Google Search Console: cole aqui a meta tag de verificação real quando tiver o domínio. -->
+  <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de medição. -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
   <link rel="stylesheet" href="style.css?v=logo3" />
@@ -128,10 +128,10 @@
 
           <label for="atendimento">Tipo de atendimento</label>
           <select id="atendimento" name="atendimento" required>
-            <option value="" disabled selected>Selecione uma opÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o</option>
-            <option value="ClÃƒÆ’Ã‚Â­nica">ClÃƒÆ’Ã‚Â­nica</option>
+            <option value="" disabled selected>Selecione uma opção</option>
+            <option value="Clínica">Clínica</option>
             <option value="Domiciliar">Domiciliar</option>
-            <option value="ClÃƒÆ’Ã‚Â­nica e domiciliar">ClÃƒÆ’Ã‚Â­nica e domiciliar</option>
+            <option value="Clínica e domiciliar">Clínica e domiciliar</option>
             <option value="Online">Online</option>
           </select>
 
@@ -151,12 +151,12 @@
             placeholder="https://linkedin.com/in/seuperfil"
           />
 
-          <label for="descricao">DescriÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o profissional</label>
+          <label for="descricao">Descrição profissional</label>
           <textarea
             id="descricao"
             name="descricao"
             rows="5"
-            placeholder="Fale brevemente sobre sua atuaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o..."
+            placeholder="Fale brevemente sobre sua atuação..."
             required
           ></textarea>
 
@@ -180,18 +180,18 @@
 
   <script>
     const CADASTRO_SPECIALTY_OPTIONS_FALLBACK = [
-      'Fisioterapia OrtopÃƒÆ’Ã‚Â©dica',
+      'Fisioterapia Ortopédica',
       'Fisioterapia Esportiva',
-      'Fisioterapia NeurolÃƒÆ’Ã‚Â³gica',
-      'Fisioterapia GeriÃƒÆ’Ã‚Â¡trica',
-      'Fisioterapia RespiratÃƒÆ’Ã‚Â³ria',
-      'Fisioterapia PediÃƒÆ’Ã‚Â¡trica',
+      'Fisioterapia Neurológica',
+      'Fisioterapia Geriátrica',
+      'Fisioterapia Respiratória',
+      'Fisioterapia Pediátrica',
       'Fisioterapia do Trabalho',
       'Fisioterapia Ocupacional',
       'Fisioterapia Dermatofuncional',
-      'Fisioterapia PÃƒÆ’Ã‚Â©lvica',
+      'Fisioterapia Pélvica',
       'Fisioterapia Cardiovascular',
-      'Fisioterapia AquÃƒÆ’Ã‚Â¡tica',
+      'Fisioterapia Aquática',
       'Fisioterapia Home Care',
       'Fisioterapia Domiciliar',
       'Quiropraxia',
@@ -199,7 +199,7 @@
       'Domiciliar',
       'Ocupacional',
       'Ergonomia',
-      'PÃƒÆ’Ã‚Â³s-operatÃƒÆ’Ã‚Â³rio'
+      'Pós-operatório'
     ];
 
     function getCadastroSpecialtyOptions() {
@@ -317,7 +317,7 @@
             fotoInput.value = '';
           } catch (error) {
             console.error(error);
-            cadastroMensagem.textContent = 'NÃƒÆ’Ã‚Â£o foi possÃƒÆ’Ã‚Â­vel ajustar essa imagem.';
+            cadastroMensagem.textContent = 'Não foi possível ajustar essa imagem.';
             cadastroMensagem.style.color = '#b91c1c';
             fotoInput.value = '';
           }
@@ -328,7 +328,7 @@
           if (!file) return;
 
           if (!file.type.startsWith('image/')) {
-            cadastroMensagem.textContent = 'Escolha um arquivo de imagem vÃƒÆ’Ã‚Â¡lido.';
+            cadastroMensagem.textContent = 'Escolha um arquivo de imagem válido.';
             cadastroMensagem.style.color = '#b91c1c';
             fotoInput.value = '';
             return;
@@ -367,7 +367,7 @@
           cadastroMensagem.textContent = '';
 
           if (password !== confirmPassword) {
-            senhaErro.textContent = 'As senhas nÃƒÆ’Ã‚Â£o sÃƒÆ’Ã‚Â£o iguais.';
+            senhaErro.textContent = 'As senhas não são iguais.';
             return;
           }
 
@@ -401,7 +401,7 @@
               window.location.href = `profile.html?id=${encodeURIComponent(profile.id)}`;
             }, 700);
           } catch (error) {
-            cadastroMensagem.textContent = error.message || 'NÃƒÆ’Ã‚Â£o foi possÃƒÆ’Ã‚Â­vel criar sua conta agora.';
+            cadastroMensagem.textContent = error.message || 'Não foi possível criar sua conta agora.';
             cadastroMensagem.style.color = '#b91c1c';
           } finally {
             if (submitBtn) submitBtn.disabled = false;

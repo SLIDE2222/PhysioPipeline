@@ -9,8 +9,8 @@
   <meta property="og:description" content="Busque fisioterapeutas por especialidade, cidade, bairro ou sintoma no PhysioPipeline." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="PhysioPipeline" />
-  <!-- Google Search Console: cole aqui a meta tag de verificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o real quando tiver o domÃƒÆ’Ã‚Â­nio. -->
-  <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de mediÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o. -->
+  <!-- Google Search Console: cole aqui a meta tag de verificação real quando tiver o domínio. -->
+  <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de medição. -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
   <link rel="stylesheet" href="style.css?v=logo3" />
@@ -41,7 +41,7 @@
         <div class="section-heading left">
           <p class="eyebrow">Busca</p>
           <h1>Encontre um fisioterapeuta</h1>
-          <p>Pesquise por especialidade e cidade. O bÃƒÆ’Ã‚Â¡sico que qualquer ser humano esperaria de um marketplace.</p>
+          <p>Pesquise por especialidade e cidade. O básico que qualquer ser humano esperaria de um marketplace.</p>
         </div>
 
         <form class="form-card" id="buscaForm" action="resultados.html" method="GET">
@@ -64,7 +64,7 @@
               type="text"
               id="buscarEspecialidade"
               name="especialidade"
-              placeholder="Ex.: ortopÃƒÆ’Ã‚Â©dica"
+              placeholder="Ex.: ortopédica"
               autocomplete="off"
               required
             />
@@ -87,7 +87,7 @@
               type="text"
               id="buscarCidade"
               name="cidade"
-              placeholder="Ex.: SÃƒÆ’Ã‚Â£o Paulo"
+              placeholder="Ex.: São Paulo"
               autocomplete="off"
               required
             />
@@ -135,7 +135,7 @@
       sessionStorage.getItem("user");
 
     const authAreaShowsLoggedIn =
-      authArea && authArea.innerText.toLowerCase().includes("olÃƒÆ’Ã‚Â¡");
+      authArea && authArea.innerText.toLowerCase().includes("olá");
 
     if ((possibleUser || authAreaShowsLoggedIn) && cadastroLink) {
       cadastroLink.remove();
