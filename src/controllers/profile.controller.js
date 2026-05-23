@@ -80,6 +80,7 @@ export async function listProfileOptions(_req, res) {
     const profiles = await prisma.profile.findMany({
       select: {
         city: true,
+        neighborhood: true,
         specialty: true,
         secondarySpecialty: true,
       },
@@ -88,6 +89,22 @@ export async function listProfileOptions(_req, res) {
     });
 
     const cities = uniqueSortedOptions(profiles.map((profile) => profile.city));
+    const neighborhoods = uniqueSortedOptions(profiles.map((profile) => profile.neighborhood));
+    const neighborhoodsByCity = {};
+
+    profiles.forEach((profile) => {
+      const city = cleanOption(profile.city);
+      const neighborhood = cleanOption(profile.neighborhood);
+      if (!city || !neighborhood) return;
+
+      if (!neighborhoodsByCity[city]) neighborhoodsByCity[city] = [];
+      neighborhoodsByCity[city].push(neighborhood);
+    });
+
+    Object.keys(neighborhoodsByCity).forEach((city) => {
+      neighborhoodsByCity[city] = uniqueSortedOptions(neighborhoodsByCity[city]);
+    });
+
     const specialties = uniqueSortedOptions(
       profiles.flatMap((profile) => [
         profile.specialty,
@@ -99,6 +116,8 @@ export async function listProfileOptions(_req, res) {
 
     return res.json({
       cities,
+      neighborhoods,
+      neighborhoodsByCity,
       specialties,
     });
   } catch (error) {
@@ -107,6 +126,8 @@ export async function listProfileOptions(_req, res) {
 
     return res.json({
       cities: [],
+      neighborhoods: [],
+      neighborhoodsByCity: {},
       specialties: [],
     });
   }

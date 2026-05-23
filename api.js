@@ -11,6 +11,7 @@
 
   const REQUEST_TIMEOUT_MS = 15000;
   const PUBLIC_PROFILE_CACHE_KEY = 'physioPublicProfiles:v1';
+  const DYNAMIC_OPTIONS_CACHE_KEY = 'physioDynamicOptions:v1';
   const PUBLIC_PROFILE_CACHE_TTL_MS = 1000 * 60 * 3;
   const SUPABASE_URL =
     window.PHYSIO_SUPABASE_URL ||
@@ -95,6 +96,7 @@
   function clearPublicProfileCache() {
     try {
       sessionStorage.removeItem(PUBLIC_PROFILE_CACHE_KEY);
+      sessionStorage.removeItem(DYNAMIC_OPTIONS_CACHE_KEY);
     } catch (_) {
       // ignore storage access issues
     }
@@ -176,14 +178,17 @@
 
   function buildProfileOptionsFromProfiles(profiles) {
     const clean = (value) => String(value || '').trim().replace(/\s+/g, ' ');
+    const getKey = (value) =>
+      clean(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
     const dedupeSort = (values) => {
       const seen = new Set();
 
       return values
         .map(clean)
-        .filter(Boolean)
+        .filter((value) => value && value !== '-')
         .filter((value) => {
-          const key = value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          const key = getKey(value);
           if (seen.has(key)) return false;
           seen.add(key);
           return true;
@@ -191,8 +196,25 @@
         .sort((a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base' }));
     };
 
+    const neighborhoodsByCity = {};
+
+    profiles.forEach((profile) => {
+      const city = clean(profile.cidade || profile.city);
+      const neighborhood = clean(profile.bairro || profile.neighborhood);
+      if (!city || !neighborhood || city === '-' || neighborhood === '-') return;
+
+      if (!neighborhoodsByCity[city]) neighborhoodsByCity[city] = [];
+      neighborhoodsByCity[city].push(neighborhood);
+    });
+
+    Object.keys(neighborhoodsByCity).forEach((city) => {
+      neighborhoodsByCity[city] = dedupeSort(neighborhoodsByCity[city]);
+    });
+
     return {
       cities: dedupeSort(profiles.map((profile) => profile.cidade || profile.city)),
+      neighborhoods: dedupeSort(profiles.map((profile) => profile.bairro || profile.neighborhood)),
+      neighborhoodsByCity,
       specialties: dedupeSort(
         profiles.flatMap((profile) => [
           profile.especialidade || profile.specialty,

@@ -13,7 +13,7 @@
   <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de medição. -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
-  <link rel="stylesheet" href="style.css?v=menu1" />
+  <link rel="stylesheet" href="style.css?v=dropdown1" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -40,17 +40,35 @@
           <p>O PhysioPipeline ainda está em fase inicial. O perfil básico continua gratuito enquanto a plataforma valida demanda, busca e contatos reais.</p>
         </div>
 
-        <article class="form-card seo-copy">
-          <h2>Plano atual</h2>
-          <p><strong>Perfil gratuito:</strong> cadastro profissional, foto, especialidade, cidade, bairro, descrição, WhatsApp, redes sociais e presença na busca.</p>
-          <p>Depois, os planos pagos podem entrar para recursos como destaque na cidade, métricas avançadas, fotos extras, página de clínica e prioridade em resultados patrocinados.</p>
-          <p>Nada disso bloqueia a busca básica agora. A ideia é crescer sem transformar a plataforma numa parede de pagamento logo no começo.</p>
+        <div class="plans-grid">
+          <article class="plan-card plan-card--active">
+            <p class="eyebrow">Atual</p>
+            <h2>Free plan</h2>
+            <p class="plan-card__price">R$ 0</p>
+            <p>Perfil gratuito para aparecer na busca enquanto o PhysioPipeline cresce.</p>
+            <ul>
+              <li>Cadastro profissional</li>
+              <li>Foto, especialidade, cidade e bairro</li>
+              <li>Descrição, WhatsApp e redes sociais</li>
+              <li>Presença na busca por cidade e especialidade</li>
+            </ul>
+            <a href="profile.html" id="pageProfileBtn" data-profile-cta class="btn btn-primary btn-block">Meu perfil</a>
+          </article>
 
-          <div class="profile-actions">
-            <a href="profile.html" id="pageProfileBtn" data-profile-cta class="btn btn-primary">Meu perfil</a>
-            <a href="buscar.html" class="btn btn-secondary">Buscar fisioterapeuta</a>
-          </div>
-        </article>
+          <article class="plan-card">
+            <p class="eyebrow">Depois</p>
+            <h2>Coming soon</h2>
+            <p class="plan-card__price">Em validação</p>
+            <p>Recursos pagos podem entrar só quando fizer sentido para quem já recebe contato pela plataforma.</p>
+            <ul>
+              <li>Destaque na cidade</li>
+              <li>Métricas avançadas de performance</li>
+              <li>Fotos extras e página de clínica</li>
+              <li>Prioridade em resultados patrocinados</li>
+            </ul>
+            <a href="buscar.html" class="btn btn-secondary btn-block">Buscar fisioterapeuta</a>
+          </article>
+        </div>
       </div>
     </section>
   </main>
@@ -70,7 +88,7 @@
     </div>
   </footer>
 
-  <script src="api.js?v=supabase-public1"></script>
-  <script src="script.js?v=account-menu1"></script>
+  <script src="api.js?v=dropdown1"></script>
+  <script src="script.js?v=dropdown1"></script>
 </body>
 </html>

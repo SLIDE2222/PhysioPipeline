@@ -55,6 +55,8 @@ const CITIES = Object.keys(CITY_NEIGHBORHOODS);
 
 let dynamicCityOptions = [];
 let dynamicSpecialtyOptions = [];
+let dynamicNeighborhoodOptions = [];
+let dynamicNeighborhoodOptionsByCity = {};
 let dynamicOptionsLoaded = false;
 
 const DYNAMIC_OPTIONS_CACHE_KEY = 'physioDynamicOptions:v1';
@@ -134,10 +136,25 @@ function mergeOptionLists(...lists) {
 function applyDynamicOptions(options = {}) {
   dynamicCityOptions = Array.isArray(options.cities) ? options.cities : [];
   dynamicSpecialtyOptions = Array.isArray(options.specialties) ? options.specialties : [];
+  dynamicNeighborhoodOptions = Array.isArray(options.neighborhoods) ? options.neighborhoods : [];
+  dynamicNeighborhoodOptionsByCity = {};
+
+  Object.entries(options.neighborhoodsByCity || {}).forEach(([city, neighborhoods]) => {
+    const cityKey = normalizeText(city);
+    if (!cityKey || !Array.isArray(neighborhoods)) return;
+
+    dynamicNeighborhoodOptionsByCity[cityKey] = mergeOptionLists(
+      dynamicNeighborhoodOptionsByCity[cityKey] || [],
+      neighborhoods
+    );
+  });
+
   dynamicOptionsLoaded = true;
 
   window.PhysioDynamicOptions = {
     cities: getCityOptions(),
+    neighborhoods: getNeighborhoodOptions(),
+    neighborhoodsByCity: dynamicNeighborhoodOptionsByCity,
     specialties: getSpecialtyAutocompleteOptions(),
   };
 }
@@ -204,9 +221,35 @@ function getSpecialtyAutocompleteOptions() {
   );
 }
 
+function getNeighborhoodOptions(cityValue = '') {
+  const typedCity = cleanOptionLabel(cityValue);
+  const matchedCity = findExactMatch(getCityOptions(), typedCity) || typedCity;
+  const cityKey = normalizeText(matchedCity);
+
+  if (!cityKey) {
+    return mergeOptionLists(
+      Object.values(CITY_NEIGHBORHOODS).flat(),
+      dynamicNeighborhoodOptions
+    );
+  }
+
+  const defaultCityName = findExactMatch(CITIES, matchedCity);
+  const defaultNeighborhoods = defaultCityName ? CITY_NEIGHBORHOODS[defaultCityName] || [] : [];
+
+  const dynamicMatches = [];
+  Object.entries(dynamicNeighborhoodOptionsByCity).forEach(([key, neighborhoods]) => {
+    if (key === cityKey || key.includes(cityKey) || cityKey.includes(key)) {
+      dynamicMatches.push(...neighborhoods);
+    }
+  });
+
+  return mergeOptionLists(defaultNeighborhoods, dynamicMatches);
+}
+
 window.physioSearchOptions = {
   getCities: getCityOptions,
   getSpecialties: getSpecialtyAutocompleteOptions,
+  getNeighborhoods: getNeighborhoodOptions,
   loadDynamicOptions: loadDynamicSearchOptions,
 };
 
@@ -485,10 +528,10 @@ function setupCityNeighborhoodAutocomplete(cityInputId, cityListId, neighborhood
   if (!cityInput || !neighborhoodInput || !neighborhoodList) return;
 
   const getMatchedCity = () => findExactMatch(getCityOptions(), cityInput.value);
+  const getNeighborhoodsForCity = () => getNeighborhoodOptions(cityInput.value);
 
   const syncNeighborhoodState = () => {
-    const matchedCity = getMatchedCity();
-    const neighborhoods = matchedCity ? CITY_NEIGHBORHOODS[matchedCity] || [] : [];
+    const neighborhoods = getNeighborhoodsForCity();
 
     if (!cityInput.value.trim()) {
       neighborhoodInput.value = '';
@@ -500,10 +543,6 @@ function setupCityNeighborhoodAutocomplete(cityInputId, cityListId, neighborhood
 
     neighborhoodInput.disabled = false;
     neighborhoodInput.placeholder = `Ex.: ${neighborhoods[0] || 'Centro'}`;
-
-    if (neighborhoodInput.value && !findExactMatch(neighborhoods, neighborhoodInput.value)) {
-      neighborhoodInput.value = '';
-    }
   };
 
   setupAutocomplete({
@@ -521,8 +560,7 @@ function setupCityNeighborhoodAutocomplete(cityInputId, cityListId, neighborhood
     inputId: neighborhoodInputId,
     listId: neighborhoodListId,
     optionsProvider: () => {
-      const matchedCity = getMatchedCity();
-      return matchedCity ? CITY_NEIGHBORHOODS[matchedCity] || [] : [];
+      return getNeighborhoodsForCity();
     },
     minChars: 0,
     showOnFocus: true
@@ -537,10 +575,7 @@ function setupCityNeighborhoodAutocomplete(cityInputId, cityListId, neighborhood
   });
 
   neighborhoodInput.addEventListener('blur', () => {
-    const matchedCity = getMatchedCity();
-    if (!matchedCity) return;
-
-    const matchedNeighborhood = findExactMatch(CITY_NEIGHBORHOODS[matchedCity] || [], neighborhoodInput.value);
+    const matchedNeighborhood = findExactMatch(getNeighborhoodsForCity(), neighborhoodInput.value);
     if (matchedNeighborhood) {
       neighborhoodInput.value = matchedNeighborhood;
     }
