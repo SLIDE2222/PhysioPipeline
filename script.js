@@ -60,7 +60,7 @@ let dynamicNeighborhoodOptionsByCity = {};
 let dynamicOptionsLoaded = false;
 
 const DYNAMIC_OPTIONS_CACHE_KEY = 'physioDynamicOptions:v1';
-const DYNAMIC_OPTIONS_CACHE_MS = 5 * 60 * 1000;
+const DYNAMIC_OPTIONS_CACHE_MS = 0;
 const OPTION_SORTER = new Intl.Collator('pt-BR', {
   sensitivity: 'base',
   numeric: true,
@@ -186,7 +186,7 @@ function writeCachedDynamicOptions(options) {
 async function loadDynamicSearchOptions() {
   if (dynamicOptionsLoaded) return window.PhysioDynamicOptions;
 
-  const cachedOptions = readCachedDynamicOptions();
+  const cachedOptions = DYNAMIC_OPTIONS_CACHE_MS > 0 ? readCachedDynamicOptions() : null;
   if (cachedOptions) {
     applyDynamicOptions(cachedOptions);
     return window.PhysioDynamicOptions;
@@ -198,8 +198,8 @@ async function loadDynamicSearchOptions() {
   }
 
   try {
-    const options = await window.physioApi.fetchProfileOptions();
-    writeCachedDynamicOptions(options);
+    const options = await window.physioApi.fetchProfileOptions({ useCache: false });
+    if (DYNAMIC_OPTIONS_CACHE_MS > 0) writeCachedDynamicOptions(options);
     applyDynamicOptions(options);
   } catch (error) {
     console.warn('Não foi possível carregar opções dinâmicas:', error);
@@ -931,7 +931,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     resumo.textContent = 'Buscando profissionais...';
     renderResultsSkeleton();
 
-    const profiles = await window.physioApi.fetchProfiles();
+    const profiles = await window.physioApi.fetchProfiles({ useCache: false });
 
     const matchedProfiles = profiles.map((profile) => {
       const pEspecialidade = getSearchableSpecialties(profile);

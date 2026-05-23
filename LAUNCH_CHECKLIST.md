@@ -20,7 +20,7 @@
 - Contact form with honeypot anti-spam validation.
 - Claim form honeypot anti-spam validation.
 - Public trust labels for claimed and unclaimed profiles.
-- Dynamic city and specialty dropdown expansion from saved profile data through `GET /profiles/options`.
+- Dynamic city, neighborhood, and specialty dropdown expansion from saved profile data through Supabase public profiles or `GET /profiles/options`.
 - Frontend dropdowns now merge predefined options with database values, dedupe them, sort them, and keep defaults available.
 - Public profile browsing now tries Supabase first through `api.js`, caches safe public profile cards in `sessionStorage`, and falls back to Render if Supabase blocks the request.
 - Results page shows loading skeleton cards before profile data arrives.

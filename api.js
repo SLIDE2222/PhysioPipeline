@@ -461,9 +461,11 @@
         normalizeProfile(data.profile || data)
       );
     },
-    async fetchProfileOptions() {
+    async fetchProfileOptions(options = {}) {
       try {
-        const profiles = await fetchPublicProfilesFromSupabase();
+        const profiles = await fetchPublicProfilesFromSupabase({
+          useCache: options.useCache ?? false,
+        });
         return buildProfileOptionsFromProfiles(profiles);
       } catch (error) {
         console.warn('Using Render fallback for profile options:', error);
