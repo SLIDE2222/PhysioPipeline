@@ -487,6 +487,18 @@ textarea {
   margin-bottom: 1.4rem;
 }
 
+.search-advice {
+  margin: -0.25rem 0 1rem;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.search-advice--results {
+  margin: -2.25rem 0 2rem;
+  color: #415a7c;
+}
+
 .search-box input,
 .form-card input,
 .form-card textarea {
