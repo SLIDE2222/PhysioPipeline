@@ -164,6 +164,103 @@ const SYMPTOM_RELEVANCE_MAP = {
 
 const STOP_WORDS = new Set(['de', 'da', 'do', 'das', 'dos', 'em', 'no', 'na', 'nos', 'nas', 'com', 'para', 'por', 'um', 'uma', 'o', 'a', 'e']);
 
+const GENERIC_QUERY_TERMS = new Set([
+  'dor',
+  'tratamento',
+  'fisioterapia',
+  'problema',
+  'lesao',
+  'incomodo',
+  'consulta',
+  'dores',
+  'reabilitacao',
+  'sintoma',
+  'machucado',
+]);
+
+const INTENT_RULES = [
+  {
+    id: 'pelvica',
+    label: 'Fisioterapia Pélvica / Uroginecológica',
+    triggers: ['perereca', 'vagina', 'vaginal', 'perineo', 'pelvica', 'pelvico', 'assoalho pelvico', 'assoalho', 'xixi', 'incontinencia', 'urina', 'bexiga', 'escape de urina'],
+    specialtyKeywords: ['pelvica', 'uroginecologica', 'perineal'],
+    relatedTerms: ['assoalho pelvico', 'perineo', 'incontinencia urinaria', 'urgencia urinaria', 'saude da mulher', 'gestante', 'obstetrica', 'pos parto', 'parto'],
+    conflictKeywords: ['ortopedica', 'esportiva', 'traumato', 'quiropraxia', 'dermatofuncional'],
+  },
+  {
+    id: 'obstetrica',
+    label: 'Fisioterapia Obstétrica / Pós-parto',
+    triggers: ['gravidez', 'gestante', 'gestacao', 'parto', 'pos parto', 'pos-parto', 'puerperio'],
+    specialtyKeywords: ['obstetrica', 'pelvica', 'uroginecologica', 'saude da mulher'],
+    relatedTerms: ['gestante', 'parto', 'pos parto', 'perineo', 'assoalho pelvico', 'diastase'],
+    conflictKeywords: ['ortopedica', 'esportiva', 'quiropraxia', 'dermatofuncional'],
+  },
+  {
+    id: 'joelho',
+    label: 'Ortopedia / Esportiva / Traumato-ortopédica',
+    triggers: ['joelho', 'dor no joelho', 'menisco', 'ligamento', 'lca', 'acl', 'condromalacia'],
+    specialtyKeywords: ['ortopedica', 'esportiva', 'traumato', 'traumato ortopedica'],
+    relatedTerms: ['joelho', 'menisco', 'ligamento', 'condromalacia', 'pos operatorio', 'reabilitacao esportiva'],
+    conflictKeywords: ['pelvica', 'uroginecologica', 'respiratoria', 'dermatofuncional'],
+  },
+  {
+    id: 'coluna',
+    label: 'Coluna / Ortopedia / RPG / Quiropraxia',
+    triggers: ['coluna', 'lombar', 'dor lombar', 'costas', 'dor nas costas', 'lombalgia', 'cervical', 'hernia', 'hernia de disco', 'ciatica', 'nervo ciatico'],
+    specialtyKeywords: ['coluna', 'ortopedica', 'rpg', 'quiropraxia', 'pilates', 'traumato', 'terapia manual'],
+    relatedTerms: ['lombar', 'cervical', 'costas', 'ciatica', 'hernia de disco', 'postura', 'ergonomia'],
+    conflictKeywords: ['pelvica', 'uroginecologica', 'dermatofuncional'],
+  },
+  {
+    id: 'ombro',
+    label: 'Ortopedia / Esportiva',
+    triggers: ['ombro', 'dor no ombro', 'manguito', 'manguito rotador', 'bursite', 'tendinite no ombro'],
+    specialtyKeywords: ['ortopedica', 'esportiva', 'traumato', 'terapia manual'],
+    relatedTerms: ['ombro', 'manguito', 'bursite', 'tendinite', 'liberacao miofascial'],
+    conflictKeywords: ['pelvica', 'uroginecologica', 'respiratoria', 'dermatofuncional'],
+  },
+  {
+    id: 'neuro',
+    label: 'Fisioterapia Neurofuncional',
+    triggers: ['avc', 'derrame', 'parkinson', 'neurologico', 'neurologica', 'paralisia', 'atraso motor'],
+    specialtyKeywords: ['neurologica', 'neurofuncional', 'neuro', 'reabilitacao neurologica'],
+    relatedTerms: ['avc', 'parkinson', 'paralisia', 'treino de marcha', 'equilibrio', 'atraso motor'],
+    conflictKeywords: ['ortopedica', 'pelvica', 'dermatofuncional'],
+  },
+  {
+    id: 'respiratoria',
+    label: 'Fisioterapia Respiratória',
+    triggers: ['respirar', 'respiracao', 'respiratoria', 'pulmao', 'folego', 'asma', 'bronquite', 'dpoc'],
+    specialtyKeywords: ['respiratoria', 'cardiorrespiratoria', 'pulmonar', 'reabilitacao respiratoria'],
+    relatedTerms: ['respirar', 'pulmao', 'folego', 'asma', 'bronquite', 'dpoc'],
+    conflictKeywords: ['ortopedica', 'pelvica', 'dermatofuncional'],
+  },
+  {
+    id: 'geriatria',
+    label: 'Fisioterapia Geriátrica / Gerontologia',
+    triggers: ['idoso', 'idosa', 'geriatria', 'geriatrica', 'gerontologia', 'equilibrio', 'quedas', 'queda'],
+    specialtyKeywords: ['geriatrica', 'gerontologia', 'geriatria', 'prevencao de quedas'],
+    relatedTerms: ['idoso', 'equilibrio', 'quedas', 'mobilidade reduzida', 'marcha'],
+    conflictKeywords: ['pediatrica', 'pelvica', 'esportiva'],
+  },
+  {
+    id: 'pediatrica',
+    label: 'Fisioterapia Pediátrica',
+    triggers: ['bebe', 'crianca', 'infantil', 'pediatrica', 'pediatria', 'atraso motor'],
+    specialtyKeywords: ['pediatrica', 'pediatria', 'infantil'],
+    relatedTerms: ['bebe', 'crianca', 'infantil', 'atraso motor', 'desenvolvimento'],
+    conflictKeywords: ['geriatrica', 'pelvica', 'esportiva'],
+  },
+  {
+    id: 'pilates',
+    label: 'Pilates',
+    triggers: ['pilates'],
+    specialtyKeywords: ['pilates', 'pilates clinico'],
+    relatedTerms: ['pilates', 'postura', 'core'],
+    conflictKeywords: [],
+  },
+];
+
 function cleanOptionLabel(value) {
   return String(value || '')
     .replace(/\s+/g, ' ')
@@ -341,6 +438,12 @@ function uniqueTerms(terms) {
   return [...new Set(terms.filter(Boolean))];
 }
 
+function getMatchedTerms(text, terms) {
+  return uniqueTerms(
+    terms.filter((term) => textMatchesTerm(text, term))
+  );
+}
+
 function textMatchesTerm(text, term) {
   const normalizedText = normalizeText(text);
   const normalizedTerm = normalizeText(term);
@@ -353,72 +456,61 @@ function textMatchesTerm(text, term) {
   return normalizedText.includes(normalizedTerm);
 }
 
-function getSymptomIntent(query) {
-  const normalizedQuery = normalizeText(query);
-  const queryTokens = tokenizeSearch(query);
-  const matchedIntents = [];
+function analyzeSearchIntent(query) {
+  const originalQuery = String(query || '').trim();
+  const normalizedQuery = normalizeText(originalQuery);
+  const tokens = tokenizeSearch(originalQuery);
+  const genericTerms = tokens.filter((term) => GENERIC_QUERY_TERMS.has(term));
+  const specificTerms = tokens.filter((term) => !GENERIC_QUERY_TERMS.has(term));
 
-  Object.entries(SYMPTOM_RELEVANCE_MAP).forEach(([key, intent]) => {
-    const triggers = [key, ...(intent.triggers || [])];
-    const isMatch = triggers.some((trigger) => {
-      const normalizedTrigger = normalizeText(trigger);
-      return normalizedQuery.includes(normalizedTrigger) ||
-        queryTokens.some((token) => normalizedTrigger.includes(token) || token.includes(normalizedTrigger));
-    });
+  const matchedRules = INTENT_RULES
+    .map((rule) => {
+      const matchedTriggers = rule.triggers.filter((trigger) =>
+        normalizedQuery.includes(normalizeText(trigger))
+      );
 
-    if (isMatch) matchedIntents.push(intent);
-  });
+      if (!matchedTriggers.length) return null;
+
+      return {
+        ...rule,
+        matchedTriggers,
+        triggerStrength: matchedTriggers.reduce(
+          (total, trigger) => total + normalizeText(trigger).length,
+          0
+        ),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.triggerStrength - a.triggerStrength);
+
+  const primaryRule = matchedRules[0] || null;
+  const primaryIntent = primaryRule
+    ? [...primaryRule.matchedTriggers].sort((a, b) => b.length - a.length)[0]
+    : [...specificTerms].sort((a, b) => b.length - a.length)[0] || genericTerms[0] || '';
+
+  const expandedTerms = uniqueTerms([
+    ...specificTerms,
+    ...genericTerms,
+    ...matchedRules.flatMap((rule) => rule.triggers.map(normalizeText)),
+    ...matchedRules.flatMap((rule) => rule.specialtyKeywords.map(normalizeText)),
+    ...matchedRules.flatMap((rule) => rule.relatedTerms.map(normalizeText)),
+  ]);
 
   return {
-    keywords: uniqueTerms(matchedIntents.flatMap((intent) => intent.keywords || [])),
-    unrelated: uniqueTerms(matchedIntents.flatMap((intent) => intent.unrelated || [])),
+    originalQuery,
+    normalizedQuery,
+    tokens,
+    genericTerms,
+    specificTerms,
+    expandedTerms,
+    matchedRules,
+    primaryRule,
+    primaryIntent,
   };
 }
 
-function getSymptomKeywords(query, expandedTerms = []) {
-  const intent = getSymptomIntent(query);
-  return uniqueTerms([
-    ...tokenizeSearch(query),
-    ...expandedTerms,
-    ...intent.keywords.map(normalizeText),
-  ]);
-}
-
 function expandPatientSearch(query) {
-  const normalizedQuery = normalizeText(query);
-  const terms = tokenizeSearch(query);
-  const queryTokens = tokenizeSearch(query);
-  const taxonomy = window.PhysioTaxonomy || {};
-
-  getPatientSearchGroups().forEach((entry) => {
-    const matched = entry.triggers.some((trigger) =>
-      normalizedQuery.includes(normalizeText(trigger))
-    );
-
-    if (matched) {
-      terms.push(...entry.triggers.map(normalizeText));
-      terms.push(...entry.terms.map(normalizeText));
-    }
-  });
-
-  [
-    ...(taxonomy.treatmentTags || []),
-    ...(taxonomy.coreSpecialties || []),
-    ...(taxonomy.audienceTags || []),
-    ...(taxonomy.seoSearchCombinations || []),
-  ].forEach((value) => {
-    const normalizedValue = normalizeText(value);
-    const hasDirectMatch =
-      normalizedQuery && normalizedValue.includes(normalizedQuery);
-    const hasTokenMatch =
-      queryTokens.length && queryTokens.some((term) => normalizedValue.includes(term));
-
-    if (hasDirectMatch || hasTokenMatch) {
-      terms.push(...tokenizeSearch(value));
-    }
-  });
-
-  return uniqueTerms(terms);
+  return analyzeSearchIntent(query).expandedTerms;
 }
 
 function getProfileNameText(profile) {
@@ -473,41 +565,225 @@ function getProfileSearchText(profile) {
   ].filter(Boolean).join(' '));
 }
 
-function calculateRelevance(profile, query, expandedTerms = []) {
-  const keywords = getSymptomKeywords(query, expandedTerms);
-  if (!keywords.length) return 0;
+function getProfileSearchFields(profile) {
+  return {
+    specialtyText: getSearchableSpecialties(profile),
+    bioText: getProfileBioText(profile),
+    nameText: getProfileNameText(profile),
+    tagText: getProfileTagText(profile),
+    cityText: normalizeText(profile.cidade || profile.city),
+    neighborhoodText: normalizeText(profile.bairro || profile.neighborhood),
+    profileText: getProfileSearchText(profile),
+  };
+}
 
-  const specialtyText = getSearchableSpecialties(profile);
-  const bioText = getProfileBioText(profile);
-  const nameText = getProfileNameText(profile);
-  const tagText = getProfileTagText(profile);
-  const intent = getSymptomIntent(query);
-  let score = 0;
-  let directSpecialtyMatch = false;
+function scoreProfileRelevance(profile, analysis, options = {}) {
+  const {
+    city = '',
+    neighborhood = '',
+  } = options;
 
-  keywords.forEach((term) => {
-    if (textMatchesTerm(specialtyText, term)) {
-      score += 100;
-      directSpecialtyMatch = true;
+  const fields = getProfileSearchFields(profile);
+  const reasons = [];
+  let coreScore = 0;
+  let locationScore = 0;
+
+  if (analysis.normalizedQuery) {
+    if (fields.specialtyText.includes(analysis.normalizedQuery)) {
+      coreScore += 120;
+      reasons.push(`specialty exact query match: ${analysis.normalizedQuery}`);
+    } else if (fields.profileText.includes(analysis.normalizedQuery)) {
+      coreScore += 80;
+      reasons.push(`profile exact query match: ${analysis.normalizedQuery}`);
     }
-    if (textMatchesTerm(bioText, term)) score += 60;
-    if (textMatchesTerm(nameText, term)) score += 40;
-    if (textMatchesTerm(tagText, term)) score += 20;
-  });
+  }
 
-  // Penalize specialties that usually belong to a different patient intent.
-  // This keeps, for example, knee searches from ranking aesthetics-first profiles.
-  intent.unrelated.forEach((term) => {
-    if (textMatchesTerm(specialtyText, term)) score -= 80;
-  });
+  const specialtySpecificMatches = getMatchedTerms(fields.specialtyText, analysis.specificTerms);
+  const profileSpecificMatches = getMatchedTerms(fields.profileText, analysis.specificTerms);
+  const specialtyRuleMatches = analysis.primaryRule
+    ? getMatchedTerms(fields.specialtyText, analysis.primaryRule.specialtyKeywords)
+    : [];
+  const relatedTerms = analysis.primaryRule
+    ? uniqueTerms([
+      ...analysis.primaryRule.relatedTerms,
+      ...analysis.primaryRule.triggers,
+    ])
+    : [];
+  const relatedMatches = analysis.primaryRule
+    ? getMatchedTerms(`${fields.bioText} ${fields.tagText} ${fields.profileText}`, relatedTerms)
+    : [];
+  const genericMatches = getMatchedTerms(fields.profileText, analysis.genericTerms);
+  const conflictMatches =
+    analysis.primaryRule && !specialtyRuleMatches.length && !relatedMatches.length
+      ? getMatchedTerms(fields.specialtyText, analysis.primaryRule.conflictKeywords || [])
+      : [];
 
-  if (!directSpecialtyMatch && score > 0) score -= 20;
+  if (specialtyRuleMatches.length) {
+    coreScore += 100;
+    reasons.push(`mapped specialty match: ${specialtyRuleMatches.join(', ')}`);
+  }
 
-  return score;
+  if (specialtySpecificMatches.length) {
+    coreScore += 80;
+    reasons.push(`specific term in specialty: ${specialtySpecificMatches.join(', ')}`);
+  }
+
+  const nonSpecialtySpecificMatches = profileSpecificMatches.filter(
+    (term) => !specialtySpecificMatches.includes(term)
+  );
+
+  if (nonSpecialtySpecificMatches.length) {
+    coreScore += 80;
+    reasons.push(`specific term in bio/services: ${nonSpecialtySpecificMatches.join(', ')}`);
+  }
+
+  if (relatedMatches.length) {
+    coreScore += 50;
+    reasons.push(`related concept match: ${relatedMatches.join(', ')}`);
+  }
+
+  if (genericMatches.length) {
+    coreScore += Math.min(20, genericMatches.length * 10);
+    reasons.push(`generic symptom match: ${genericMatches.join(', ')}`);
+  }
+
+  if (city) {
+    if (fields.cityText === city) {
+      locationScore += 15;
+      reasons.push(`exact city match: ${city}`);
+    } else if (fields.cityText.includes(city)) {
+      locationScore += 8;
+      reasons.push(`partial city match: ${city}`);
+    }
+  }
+
+  if (neighborhood) {
+    if (fields.neighborhoodText === neighborhood) {
+      locationScore += 10;
+      reasons.push(`exact neighborhood match: ${neighborhood}`);
+    } else if (fields.neighborhoodText.includes(neighborhood)) {
+      locationScore += 5;
+      reasons.push(`partial neighborhood match: ${neighborhood}`);
+    }
+  }
+
+  if (
+    analysis.genericTerms.length &&
+    !analysis.specificTerms.length &&
+    genericMatches.length &&
+    !specialtyRuleMatches.length &&
+    !specialtySpecificMatches.length &&
+    !relatedMatches.length
+  ) {
+    coreScore -= 40;
+    reasons.push('only generic terms matched');
+  }
+
+  if (conflictMatches.length) {
+    coreScore -= 80;
+    reasons.push(`specialty conflicts with detected intent: ${conflictMatches.join(', ')}`);
+  }
+
+  const score = coreScore + locationScore;
+  let tier = 4;
+
+  if (
+    coreScore >= 160 ||
+    (specialtyRuleMatches.length && (specialtySpecificMatches.length || nonSpecialtySpecificMatches.length || relatedMatches.length))
+  ) {
+    tier = 1;
+  } else if (coreScore >= 80) {
+    tier = 2;
+  } else if (coreScore > 0) {
+    tier = 3;
+  }
+
+  return {
+    profile,
+    score,
+    coreScore,
+    tier,
+    reasons,
+    matchedSpecialty: specialtyRuleMatches[0] || specialtySpecificMatches[0] || '',
+  };
+}
+
+function calculateRelevance(profile, query, expandedTerms = []) {
+  const analysis = expandedTerms?.__analysis || analyzeSearchIntent(query);
+  return scoreProfileRelevance(profile, analysis).score;
 }
 
 function scorePatientMatch(profile, terms, query = '') {
   return calculateRelevance(profile, query, terms);
+}
+
+function shuffleArray(items) {
+  const copy = [...items];
+
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]];
+  }
+
+  return copy;
+}
+
+function rankProfilesByRelevance(profiles, analysis, options = {}) {
+  const tiers = {
+    1: [],
+    2: [],
+    3: [],
+    4: [],
+  };
+
+  const rankedProfiles = profiles.map((profile) =>
+    scoreProfileRelevance(profile, analysis, options)
+  );
+
+  rankedProfiles.forEach((item) => {
+    tiers[item.tier].push(item);
+  });
+
+  return {
+    rankedProfiles,
+    ordered: [
+      ...shuffleArray(tiers[1]),
+      ...shuffleArray(tiers[2]),
+      ...shuffleArray(tiers[3]),
+      ...shuffleArray(tiers[4]),
+    ],
+  };
+}
+
+function debugRankedResults(query, analysis, rankedResults) {
+  const params = new URLSearchParams(window.location.search);
+  const shouldDebug =
+    window.location.hostname === 'localhost' ||
+    params.get('debugSearch') === '1';
+
+  if (!shouldDebug) return;
+
+  console.groupCollapsed(`[search-debug] ${query || '(sem termo)'}`);
+  console.log('original query:', analysis.originalQuery);
+  console.log('normalized query terms:', analysis.expandedTerms);
+  console.log('detected primary intent:', analysis.primaryIntent || '(none)');
+  console.log(
+    'matched rules:',
+    analysis.matchedRules.map((rule) => ({
+      label: rule.label,
+      triggers: rule.matchedTriggers,
+    }))
+  );
+  console.table(
+    rankedResults.map((item) => ({
+      profile: item.profile.nome || item.profile.name || 'Fisioterapeuta',
+      matchedSpecialty: item.matchedSpecialty || '-',
+      score: item.score,
+      tier: item.tier,
+      reason: item.reasons.join(' | ') || 'no meaningful match',
+    }))
+  );
+  console.groupEnd();
 }
 
 
@@ -1054,7 +1330,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const modoBusca = params.get('modo') === 'leigo' ? 'leigo' : 'especialidade';
   const queixa = params.get('queixa') || '';
-  const patientTerms = expandPatientSearch(queixa);
+  const searchQuery = modoBusca === 'leigo'
+    ? queixa
+    : (params.get('especialidade') || '');
+  const searchAnalysis = analyzeSearchIntent(searchQuery);
+  const patientTerms = searchAnalysis.expandedTerms;
 
   const cidade = normalizeText(
     params.get('cidade') || ''
@@ -1085,13 +1365,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const profiles = await window.physioApi.fetchProfiles({ useCache: false });
 
-    const matchedProfiles = profiles.map((profile) => {
+    const locationMatchedProfiles = profiles.filter((profile) => {
       const pEspecialidade = getSearchableSpecialties(profile);
       const pCidade = normalizeText(profile.cidade || profile.city);
       const pBairro = normalizeText(profile.bairro || profile.neighborhood);
-      const relevanceScore = modoBusca === 'leigo'
-        ? calculateRelevance(profile, queixa, patientTerms)
-        : 0;
 
       const specialtyMatch =
         modoBusca === 'leigo'
@@ -1104,21 +1381,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       const neighborhoodMatch =
         !bairro || pBairro.includes(bairro);
 
-      return {
-        profile,
-        score: relevanceScore,
-        matched: specialtyMatch && cityMatch && neighborhoodMatch,
-      };
+      return specialtyMatch && cityMatch && neighborhoodMatch;
     });
 
-    const locationFiltered = matchedProfiles.filter((item) => item.matched);
-    const relevantPatientMatches = locationFiltered.filter((item) => item.score > 0);
+    const rankedResult = modoBusca === 'leigo'
+      ? rankProfilesByRelevance(
+        locationMatchedProfiles,
+        searchAnalysis,
+        {
+          city: cidade,
+          neighborhood: bairro,
+        }
+      )
+      : {
+        rankedProfiles: locationMatchedProfiles.map((profile) => ({ profile, score: 0, tier: 1, reasons: [] })),
+        ordered: locationMatchedProfiles.map((profile) => ({ profile, score: 0, tier: 1, reasons: [] })),
+      };
 
-    const filtered = (modoBusca === 'leigo' && relevantPatientMatches.length
-      ? relevantPatientMatches
-      : locationFiltered)
-      .sort((a, b) => b.score - a.score)
-      .map((item) => item.profile);
+    if (modoBusca === 'leigo') {
+      debugRankedResults(searchQuery, searchAnalysis, rankedResult.ordered);
+    }
+
+    const filtered = rankedResult.ordered.map((item) => item.profile);
 
     const resultLabel = filtered.length === 1
       ? '1 profissional encontrado'
@@ -1127,7 +1411,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     resumo.textContent = resultLabel;
 
     if (modoBusca === 'leigo' && queixa) {
-      const hintTerms = patientTerms.slice(0, 8);
+      const existingSummary = document.querySelector('.smart-search-summary');
+      if (existingSummary) existingSummary.remove();
+
+      const hintTerms = uniqueTerms([
+        ...(searchAnalysis.primaryRule?.specialtyKeywords || []),
+        ...(searchAnalysis.primaryRule?.relatedTerms || []),
+        ...searchAnalysis.specificTerms,
+      ])
+        .map(normalizeText)
+        .filter((term) => !GENERIC_QUERY_TERMS.has(term))
+        .slice(0, 8);
       resumo.textContent = `${resultLabel} para "${queixa}"`;
 
       if (hintTerms.length) {
@@ -1137,7 +1431,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <section class="smart-search-summary" aria-label="Resumo da busca inteligente">
               <div class="smart-search-summary__copy">
                 <span>Busca inteligente</span>
-                <strong>Tamb&eacute;m procuramos termos relacionados</strong>
+                <strong>Priorizamos a inten&ccedil;&atilde;o principal da busca</strong>
               </div>
               <div class="smart-search-tags">
                 ${hintTerms.map((term) => `<span>${escapeHtml(term)}</span>`).join('')}
