@@ -217,7 +217,7 @@ const INTENT_RULES = [
     triggers: ['ombro', 'dor no ombro', 'manguito', 'manguito rotador', 'bursite', 'tendinite no ombro'],
     specialtyKeywords: ['ortopedica', 'esportiva', 'traumato', 'terapia manual'],
     relatedTerms: ['ombro', 'manguito', 'bursite', 'tendinite', 'liberacao miofascial'],
-    conflictKeywords: ['pelvica', 'uroginecologica', 'respiratoria', 'dermatofuncional', 'ocupacional', 'fisioterapia do trabalho', 'ergonomia'],
+    conflictKeywords: ['pelvica', 'uroginecologica', 'respiratoria', 'dermatofuncional'],
   },
   {
     id: 'neuro',
@@ -1415,7 +1415,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const visibleResults = modoBusca === 'leigo'
       ? (strongResults.length
         ? [...strongResults, ...weakResults]
-        : (searchAnalysis.primaryRule ? [] : weakResults))
+        : weakResults)
       : rankedResult.ordered;
 
     const filtered = visibleResults.map((item) => item.profile);
