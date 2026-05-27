@@ -1402,7 +1402,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       debugRankedResults(searchQuery, searchAnalysis, rankedResult.ordered);
     }
 
-    const filtered = rankedResult.ordered.map((item) => item.profile);
+    const meaningfulResults = modoBusca === 'leigo'
+      ? rankedResult.ordered.filter((item) => item.tier < 4)
+      : rankedResult.ordered;
+
+    const visibleResults = meaningfulResults.length
+      ? meaningfulResults
+      : rankedResult.ordered;
+
+    const filtered = visibleResults.map((item) => item.profile);
 
     const resultLabel = filtered.length === 1
       ? '1 profissional encontrado'
