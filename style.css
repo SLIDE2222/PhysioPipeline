@@ -3601,7 +3601,8 @@ body {
 }
 
 .results-page-body .results-grid {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)) !important;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 360px)) !important;
+  justify-content: start !important;
   gap: 32px !important;
   margin-top: 24px !important;
 }
@@ -3609,7 +3610,9 @@ body {
 .results-page-body .result-card,
 .results-page-body .result-card:has(.bio.collapsed),
 .results-page-body .result-card:has(.bio:not(.collapsed)) {
-  max-width: none !important;
+  width: min(100%, 360px) !important;
+  max-width: 360px !important;
+  justify-self: start !important;
 }
 
 .result-card-skeleton {
