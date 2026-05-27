@@ -283,6 +283,9 @@ const GENERIC_SPECIALTY_TOKENS = new Set([
   'reabilitacao',
 ]);
 
+// This is the main intent catalog for patient-language searches.
+// Each entry describes how a clinical area can be discovered from body parts,
+// symptoms, informal language, and related specialties.
 const DEFAULT_INTENT_CATALOG = [
   {
     id: 'ortopedica',
@@ -641,12 +644,16 @@ function phraseMatchesText(text, phrase) {
   const normalizedPhrase = normalizeSearchText(phrase);
 
   if (!normalizedText || !normalizedPhrase) return false;
-  if (normalizedText.includes(normalizedPhrase)) return true;
 
   const phraseTokens = tokenizeSearch(normalizedPhrase);
   if (!phraseTokens.length) return false;
 
   const textTokens = tokenizeSearch(normalizedText);
+  if (phraseTokens.length === 1 && phraseTokens[0].length <= 3) {
+    return textTokens.includes(phraseTokens[0]);
+  }
+
+  if (normalizedText.includes(normalizedPhrase)) return true;
   return phraseTokens.every((token) => textTokens.includes(token));
 }
 
@@ -672,19 +679,22 @@ function getWordsFromLabel(value) {
 function buildCatalogEntry(definition) {
   const specialty = cleanOptionLabel(definition.specialty || definition.especialidade || '');
   const relatedSpecialties = (definition.relatedSpecialties || []).map(cleanOptionLabel).filter(Boolean);
-  const specialtyAliases = uniqueTerms([
+  const specialtyTerms = uniqueTerms([
     specialty,
-    ...relatedSpecialties,
     ...getWordsFromLabel(specialty),
-    ...relatedSpecialties.flatMap((value) => getWordsFromLabel(value)),
     ...(definition.specialtyAliases || []),
+  ].map(normalizeSearchText).filter(isMeaningfulIntentTerm));
+  const relatedSpecialtyTerms = uniqueTerms([
+    ...relatedSpecialties,
+    ...relatedSpecialties.flatMap((value) => getWordsFromLabel(value)),
   ].map(normalizeSearchText).filter(isMeaningfulIntentTerm));
 
   return {
     id: definition.id || normalizeSearchText(specialty) || `entry-${Math.random().toString(36).slice(2, 8)}`,
     specialty,
     relatedSpecialties,
-    specialtyAliases,
+    specialtyTerms,
+    relatedSpecialtyTerms,
     bodyRegions: uniqueTerms((definition.bodyRegions || []).map(normalizeSearchText).filter(isMeaningfulIntentTerm)),
     symptoms: uniqueTerms((definition.symptoms || []).map(normalizeSearchText).filter(isMeaningfulIntentTerm)),
     synonyms: uniqueTerms((definition.synonyms || []).map(normalizeSearchText).filter(isMeaningfulIntentTerm)),
@@ -724,7 +734,7 @@ function buildDynamicCatalogEntries() {
     });
   });
 
-  return built.filter((entry) => entry.specialtyAliases.length || entry.bodyRegions.length || entry.symptoms.length);
+  return built.filter((entry) => entry.specialtyTerms.length || entry.bodyRegions.length || entry.symptoms.length);
 }
 
 function buildSearchContext(profiles = []) {
@@ -765,7 +775,8 @@ function buildSearchContext(profiles = []) {
         ...existing,
         specialty: existing.specialty || entry.specialty,
         relatedSpecialties: uniqueTerms([...existing.relatedSpecialties, ...entry.relatedSpecialties]),
-        specialtyAliases: uniqueTerms([...existing.specialtyAliases, ...entry.specialtyAliases]),
+        specialtyTerms: uniqueTerms([...existing.specialtyTerms, ...entry.specialtyTerms]),
+        relatedSpecialtyTerms: uniqueTerms([...existing.relatedSpecialtyTerms, ...entry.relatedSpecialtyTerms]),
         bodyRegions: uniqueTerms([...existing.bodyRegions, ...entry.bodyRegions]),
         symptoms: uniqueTerms([...existing.symptoms, ...entry.symptoms]),
         synonyms: uniqueTerms([...existing.synonyms, ...entry.synonyms]),
@@ -783,7 +794,8 @@ function buildSearchContext(profiles = []) {
 
 function getIntentSignals(entry) {
   return uniqueTerms([
-    ...entry.specialtyAliases,
+    ...entry.specialtyTerms,
+    ...entry.relatedSpecialtyTerms,
     ...entry.bodyRegions,
     ...entry.symptoms,
     ...entry.synonyms,
@@ -799,17 +811,21 @@ function analyzeSearchIntent(query, context = buildSearchContext()) {
   const genericTerms = tokens.filter((term) => GENERIC_QUERY_TERMS.has(term));
   const significantTerms = tokens.filter((term) => !GENERIC_QUERY_TERMS.has(term));
 
+  // We score intent entries against the user query first, before touching profiles.
+  // This keeps body-part and condition terms more important than weak generic words.
   const matchedEntries = context.entries
     .map((entry) => {
       const matchedBodyRegions = entry.bodyRegions.filter((term) => phraseMatchesText(normalizedQuery, term));
       const matchedSymptoms = entry.symptoms.filter((term) => phraseMatchesText(normalizedQuery, term));
       const matchedSynonyms = entry.synonyms.filter((term) => phraseMatchesText(normalizedQuery, term));
       const matchedInformal = entry.informalTerms.filter((term) => phraseMatchesText(normalizedQuery, term));
-      const matchedSpecialties = entry.specialtyAliases.filter((term) => phraseMatchesText(normalizedQuery, term));
+      const matchedSpecialties = entry.specialtyTerms.filter((term) => phraseMatchesText(normalizedQuery, term));
+      const matchedRelatedSpecialties = entry.relatedSpecialtyTerms.filter((term) => phraseMatchesText(normalizedQuery, term));
       const matchedAssociated = entry.associatedKeywords.filter((term) => phraseMatchesText(normalizedQuery, term));
       const score =
         matchedBodyRegions.length * 100 +
         matchedSpecialties.length * 80 +
+        matchedRelatedSpecialties.length * 60 +
         matchedSymptoms.length * 70 +
         (matchedSynonyms.length + matchedInformal.length) * 50 +
         matchedAssociated.length * 40;
@@ -824,6 +840,7 @@ function analyzeSearchIntent(query, context = buildSearchContext()) {
         matchedSynonyms,
         matchedInformal,
         matchedSpecialties,
+        matchedRelatedSpecialties,
         matchedAssociated,
       };
     })
@@ -838,13 +855,15 @@ function analyzeSearchIntent(query, context = buildSearchContext()) {
       ...primaryEntry.matchedInformal,
       ...primaryEntry.matchedSynonyms,
       ...primaryEntry.matchedSpecialties,
+      ...primaryEntry.matchedRelatedSpecialties,
       ...primaryEntry.matchedAssociated,
     ]).sort((a, b) => b.length - a.length)[0]
     : significantTerms.sort((a, b) => b.length - a.length)[0] || genericTerms[0] || '';
 
   const relatedTerms = matchedEntries.flatMap((entry) => getIntentSignals(entry));
   const chips = uniqueTerms([
-    ...(primaryEntry ? primaryEntry.matchedSpecialties.filter((term) => !term.includes('fisioterapia')) : []),
+    ...(primaryEntry ? primaryEntry.specialtyTerms.filter((term) => !term.includes('fisioterapia')) : []),
+    ...(primaryEntry ? primaryEntry.relatedSpecialtyTerms.filter((term) => !term.includes('fisioterapia')) : []),
     ...(primaryEntry ? primaryEntry.synonyms : []),
     ...(primaryEntry ? primaryEntry.matchedBodyRegions : []),
     ...(primaryEntry ? primaryEntry.matchedSymptoms : []),
@@ -971,25 +990,48 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
 
   const seenMatches = new Set();
   const matchedSpecialties = [];
+  // Only the top detected intents are allowed to shape ranking.
+  // This prevents distant specialties from accumulating points through random overlap.
+  const intentEntries = (analysis.matchedEntries || []).slice(0, 3);
 
-  analysis.matchedEntries.forEach((entry) => {
-    const specialtyMatches = getMatchedTerms(fields.specialtyText, entry.specialtyAliases);
-    const bodyRegionMatches = getMatchedTerms(`${fields.specialtyText} ${fields.tagText}`, entry.bodyRegions);
-    const symptomMatches = getMatchedTerms(`${fields.specialtyText} ${fields.tagText} ${fields.profileText}`, entry.symptoms);
-    const synonymMatches = getMatchedTerms(`${fields.specialtyText} ${fields.tagText} ${fields.profileText}`, [...entry.synonyms, ...entry.informalTerms, ...entry.associatedKeywords]);
-    const bioMatches = getMatchedTerms(fields.bioText, getIntentSignals(entry));
-    const tagMatches = getMatchedTerms(fields.tagText, getIntentSignals(entry));
-    const nameMatches = getMatchedTerms(fields.nameText, getIntentSignals(entry));
+  intentEntries.forEach((entry) => {
+    const queryDrivenTerms = uniqueTerms([
+      ...entry.matchedBodyRegions,
+      ...entry.matchedSymptoms,
+      ...entry.matchedSynonyms,
+      ...entry.matchedInformal,
+      ...entry.matchedSpecialties,
+      ...entry.matchedRelatedSpecialties,
+      ...entry.matchedAssociated,
+    ]);
+    const supportTerms = uniqueTerms([
+      ...entry.bodyRegions,
+      ...entry.symptoms,
+      ...entry.synonyms,
+      ...entry.informalTerms,
+    ]).filter((term) => !queryDrivenTerms.includes(term));
+    const specialtyMatches = getMatchedTerms(fields.specialtyText, entry.specialtyTerms);
+    const relatedSpecialtyMatches = getMatchedTerms(fields.specialtyText, entry.relatedSpecialtyTerms);
+    const bodyRegionMatches = getMatchedTerms(`${fields.specialtyText} ${fields.tagText} ${fields.profileText}`, entry.matchedBodyRegions);
+    const symptomMatches = getMatchedTerms(`${fields.specialtyText} ${fields.tagText} ${fields.profileText}`, entry.matchedSymptoms);
+    const synonymMatches = getMatchedTerms(`${fields.specialtyText} ${fields.tagText} ${fields.profileText}`, [...entry.matchedSynonyms, ...entry.matchedInformal]);
+    const bioMatches = getMatchedTerms(fields.bioText, queryDrivenTerms);
+    const tagMatches = getMatchedTerms(fields.tagText, queryDrivenTerms);
+    const nameMatches = getMatchedTerms(fields.nameText, queryDrivenTerms);
     const unrelatedMatches = getMatchedTerms(fields.specialtyText, entry.unrelatedSpecialties);
 
-    specialtyMatches.forEach((term) => {
-      const key = `specialty:${term}`;
-      if (seenMatches.has(key)) return;
-      seenMatches.add(key);
+    if (specialtyMatches.length && !seenMatches.has(`specialty-group:${entry.id}`)) {
+      seenMatches.add(`specialty-group:${entry.id}`);
       score += 80;
-      matchedSpecialties.push(term);
-      reasons.push(`specialty match: ${term}`);
-    });
+      matchedSpecialties.push(specialtyMatches[0]);
+      reasons.push(`specialty match: ${specialtyMatches.join(', ')}`);
+    }
+
+    if (relatedSpecialtyMatches.length && !seenMatches.has(`related-specialty-group:${entry.id}`)) {
+      seenMatches.add(`related-specialty-group:${entry.id}`);
+      score += 40;
+      reasons.push(`related specialty match: ${relatedSpecialtyMatches.join(', ')}`);
+    }
 
     bodyRegionMatches.forEach((term) => {
       const key = `body:${term}`;
@@ -1014,6 +1056,33 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       score += 50;
       reasons.push(`related synonym match: ${term}`);
     });
+
+    const hasIntentAnchor =
+      specialtyMatches.length ||
+      relatedSpecialtyMatches.length ||
+      bodyRegionMatches.length ||
+      symptomMatches.length ||
+      synonymMatches.length ||
+      bioMatches.length ||
+      tagMatches.length ||
+      nameMatches.length;
+
+    // Support keywords only help after the profile has shown a real anchor match
+    // such as specialty, body region, symptom, or direct query-driven bio match.
+    if (hasIntentAnchor) {
+      const supportMatches = getMatchedTerms(
+        `${fields.specialtyText} ${fields.tagText} ${fields.profileText}`,
+        [...supportTerms, ...entry.associatedKeywords]
+      );
+
+      supportMatches.forEach((term) => {
+        const key = `support:${term}`;
+        if (seenMatches.has(key)) return;
+        seenMatches.add(key);
+        score += 25;
+        reasons.push(`support keyword match: ${term}`);
+      });
+    }
 
     bioMatches.forEach((term) => {
       const key = `bio:${term}`;
@@ -1134,7 +1203,13 @@ function rankProfilesByRelevance(profiles, analysis, options = {}) {
     .sort((a, b) => b.score - a.score);
 
   const ordered = shuffleWithinScoreBands(rankedProfiles);
-  const visible = ordered.filter((item) => item.score >= analysis.minimumScore);
+  // Visible results must pass both a base relevance floor and a relative floor
+  // based on the strongest match, so weak matches do not float beside strong ones.
+  const topScore = ordered[0]?.score || 0;
+  const dynamicMinimumScore = topScore
+    ? Math.max(analysis.minimumScore, Math.floor(topScore * 0.45))
+    : analysis.minimumScore;
+  const visible = ordered.filter((item) => item.score >= dynamicMinimumScore);
   const fallback = ordered.filter((item) => item.score >= analysis.fallbackScore);
 
   return {
