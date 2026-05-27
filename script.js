@@ -291,11 +291,11 @@ const DEFAULT_INTENT_CATALOG = [
     id: 'ortopedica',
     specialty: 'Fisioterapia Ortopedica',
     relatedSpecialties: ['Fisioterapia Esportiva', 'Traumato-Ortopedica', 'Terapia Manual', 'Quiropraxia', 'RPG', 'Pilates'],
-    bodyRegions: ['ombro', 'joelho', 'coluna', 'lombar', 'cervical', 'costas', 'quadril', 'tornozelo', 'cotovelo', 'punho', 'mao', 'pe', 'perna'],
-    symptoms: ['tendinite', 'bursite', 'manguito', 'manguito rotador', 'menisco', 'ligamento', 'lca', 'acl', 'condromalacia', 'hernia', 'hernia de disco', 'ciatica', 'lombalgia', 'cervicalgia'],
-    synonyms: ['ortopedia', 'ortopedica', 'traumato', 'traumato ortopedica', 'reabilitacao esportiva', 'terapia manual'],
-    informalTerms: ['dor nas costas', 'dor no ombro', 'dor no joelho', 'ombro travado', 'coluna travada'],
-    associatedKeywords: ['mobilidade', 'postura', 'liberacao miofascial', 'lesao', 'articulacao', 'pos operatorio'],
+    bodyRegions: ['ombro', 'joelho', 'coluna', 'lombar', 'cervical', 'pescoco', 'costas', 'quadril', 'tornozelo', 'cotovelo', 'punho', 'mao', 'pe', 'perna'],
+    symptoms: ['tendinite', 'bursite', 'manguito', 'manguito rotador', 'menisco', 'ligamento', 'lca', 'acl', 'condromalacia', 'hernia', 'hernia de disco', 'ciatica', 'lombalgia', 'cervicalgia', 'dor cervical', 'torcicolo'],
+    synonyms: ['ortopedia', 'ortopedica', 'traumato', 'traumato ortopedica', 'reabilitacao esportiva', 'terapia manual', 'musculoesqueletica', 'musculoesqueletico'],
+    informalTerms: ['dor nas costas', 'dor no ombro', 'dor no joelho', 'dor no pescoco', 'ombro travado', 'coluna travada', 'pescoco travado'],
+    associatedKeywords: ['mobilidade', 'postura', 'liberacao miofascial', 'lesao', 'articulacao', 'pos operatorio', 'rpg', 'reabilitacao'],
     unrelatedSpecialties: ['pelvica', 'uroginecologica', 'dermatofuncional', 'respiratoria', 'saude da mulher'],
   },
   {
@@ -389,12 +389,12 @@ const DEFAULT_INTENT_CATALOG = [
   {
     id: 'pilates',
     specialty: 'Pilates',
-    relatedSpecialties: ['RPG', 'Terapia Manual'],
-    bodyRegions: ['coluna', 'postura', 'core'],
-    symptoms: ['lombalgia', 'cervicalgia'],
+    relatedSpecialties: ['RPG', 'Terapia Manual', 'Quiropraxia'],
+    bodyRegions: ['coluna', 'postura', 'core', 'pescoco', 'cervical'],
+    symptoms: ['lombalgia', 'cervicalgia', 'dor cervical'],
     synonyms: ['pilates', 'pilates clinico'],
     informalTerms: [],
-    associatedKeywords: ['alongamento', 'estabilizacao'],
+    associatedKeywords: ['alongamento', 'estabilizacao', 'reabilitacao', 'postura'],
     unrelatedSpecialties: [],
   },
 ];
@@ -804,17 +804,87 @@ function getIntentSignals(entry) {
   ]);
 }
 
+function mergeIntentMatch(existingMatch, incomingMatch) {
+  if (!existingMatch) return incomingMatch;
+
+  return {
+    ...existingMatch,
+    score: existingMatch.score + incomingMatch.score,
+    matchedBodyRegions: uniqueTerms([...existingMatch.matchedBodyRegions, ...incomingMatch.matchedBodyRegions]),
+    matchedSymptoms: uniqueTerms([...existingMatch.matchedSymptoms, ...incomingMatch.matchedSymptoms]),
+    matchedSynonyms: uniqueTerms([...existingMatch.matchedSynonyms, ...incomingMatch.matchedSynonyms]),
+    matchedInformal: uniqueTerms([...existingMatch.matchedInformal, ...incomingMatch.matchedInformal]),
+    matchedSpecialties: uniqueTerms([...existingMatch.matchedSpecialties, ...incomingMatch.matchedSpecialties]),
+    matchedRelatedSpecialties: uniqueTerms([...existingMatch.matchedRelatedSpecialties, ...incomingMatch.matchedRelatedSpecialties]),
+    matchedAssociated: uniqueTerms([...existingMatch.matchedAssociated, ...incomingMatch.matchedAssociated]),
+    matchedFallbackTerms: uniqueTerms([...(existingMatch.matchedFallbackTerms || []), ...(incomingMatch.matchedFallbackTerms || [])]),
+  };
+}
+
+function getMatchedSearchGroups(queryText) {
+  return getPatientSearchGroups()
+    .map((group) => {
+      const matchedTriggers = (group.triggers || []).filter((trigger) => phraseMatchesText(queryText, trigger));
+      if (!matchedTriggers.length) return null;
+
+      return {
+        ...group,
+        matchedTriggers,
+        expansionTerms: uniqueTerms([
+          ...(group.triggers || []),
+          ...(group.terms || []),
+        ].map(normalizeSearchText).filter(isMeaningfulIntentTerm)),
+      };
+    })
+    .filter(Boolean);
+}
+
+function buildExpansionIntentMatch(entry, expansionTerms, matchedTriggers = []) {
+  const matchedBodyRegions = entry.bodyRegions.filter((term) => expansionTerms.includes(term));
+  const matchedSymptoms = entry.symptoms.filter((term) => expansionTerms.includes(term));
+  const matchedSynonyms = entry.synonyms.filter((term) => expansionTerms.includes(term));
+  const matchedInformal = entry.informalTerms.filter((term) => expansionTerms.includes(term));
+  const matchedSpecialties = entry.specialtyTerms.filter((term) => expansionTerms.includes(term));
+  const matchedRelatedSpecialties = entry.relatedSpecialtyTerms.filter((term) => expansionTerms.includes(term));
+  const matchedAssociated = entry.associatedKeywords.filter((term) => expansionTerms.includes(term));
+  const score =
+    matchedSpecialties.length * 50 +
+    matchedRelatedSpecialties.length * 40 +
+    matchedBodyRegions.length * 40 +
+    matchedSymptoms.length * 30 +
+    (matchedSynonyms.length + matchedInformal.length) * 25 +
+    matchedAssociated.length * 20 +
+    (matchedTriggers.length ? 15 : 0);
+
+  if (!score) return null;
+
+  return {
+    ...entry,
+    score,
+    matchedBodyRegions,
+    matchedSymptoms,
+    matchedSynonyms,
+    matchedInformal,
+    matchedSpecialties,
+    matchedRelatedSpecialties,
+    matchedAssociated,
+    matchedFallbackTerms: expansionTerms,
+  };
+}
+
 function analyzeSearchIntent(query, context = buildSearchContext()) {
   const originalQuery = String(query || '').trim();
   const normalizedQuery = normalizeSearchText(originalQuery);
   const tokens = tokenizeSearch(originalQuery);
   const genericTerms = tokens.filter((term) => GENERIC_QUERY_TERMS.has(term));
   const significantTerms = tokens.filter((term) => !GENERIC_QUERY_TERMS.has(term));
+  const matchedSearchGroups = getMatchedSearchGroups(normalizedQuery);
+  const matchedEntryMap = new Map();
 
   // We score intent entries against the user query first, before touching profiles.
   // This keeps body-part and condition terms more important than weak generic words.
-  const matchedEntries = context.entries
-    .map((entry) => {
+  context.entries.forEach((entry) => {
+    const directMatch = (() => {
       const matchedBodyRegions = entry.bodyRegions.filter((term) => phraseMatchesText(normalizedQuery, term));
       const matchedSymptoms = entry.symptoms.filter((term) => phraseMatchesText(normalizedQuery, term));
       const matchedSynonyms = entry.synonyms.filter((term) => phraseMatchesText(normalizedQuery, term));
@@ -843,13 +913,37 @@ function analyzeSearchIntent(query, context = buildSearchContext()) {
         matchedRelatedSpecialties,
         matchedAssociated,
       };
-    })
-    .filter(Boolean)
+    })();
+
+    if (directMatch) {
+      matchedEntryMap.set(entry.id, directMatch);
+    }
+  });
+
+  matchedSearchGroups.forEach((group) => {
+    context.entries.forEach((entry) => {
+      const expansionMatch = buildExpansionIntentMatch(entry, group.expansionTerms, group.matchedTriggers);
+      if (!expansionMatch) return;
+
+      matchedEntryMap.set(
+        entry.id,
+        mergeIntentMatch(matchedEntryMap.get(entry.id), expansionMatch)
+      );
+    });
+  });
+
+  const matchedEntries = Array.from(matchedEntryMap.values())
     .sort((a, b) => b.score - a.score);
 
   const primaryEntry = matchedEntries[0] || null;
-  const primaryIntent = primaryEntry
+  const primaryIntentCandidates = primaryEntry
     ? uniqueTerms([
+      ...significantTerms.filter((term) =>
+        primaryEntry.matchedBodyRegions.includes(term) ||
+        primaryEntry.matchedSymptoms.includes(term) ||
+        primaryEntry.matchedInformal.includes(term) ||
+        primaryEntry.matchedSynonyms.includes(term)
+      ),
       ...primaryEntry.matchedBodyRegions,
       ...primaryEntry.matchedSymptoms,
       ...primaryEntry.matchedInformal,
@@ -857,18 +951,26 @@ function analyzeSearchIntent(query, context = buildSearchContext()) {
       ...primaryEntry.matchedSpecialties,
       ...primaryEntry.matchedRelatedSpecialties,
       ...primaryEntry.matchedAssociated,
-    ]).sort((a, b) => b.length - a.length)[0]
-    : significantTerms.sort((a, b) => b.length - a.length)[0] || genericTerms[0] || '';
+    ])
+    : [];
+  const primaryIntent = primaryIntentCandidates[0]
+    || significantTerms.sort((a, b) => b.length - a.length)[0]
+    || genericTerms[0]
+    || '';
 
-  const relatedTerms = matchedEntries.flatMap((entry) => getIntentSignals(entry));
+  const relatedTerms = uniqueTerms([
+    ...matchedEntries.flatMap((entry) => getIntentSignals(entry)),
+    ...matchedSearchGroups.flatMap((group) => group.expansionTerms),
+  ]);
   const chips = uniqueTerms([
-    ...(primaryEntry ? primaryEntry.specialtyTerms.filter((term) => !term.includes('fisioterapia')) : []),
-    ...(primaryEntry ? primaryEntry.relatedSpecialtyTerms.filter((term) => !term.includes('fisioterapia')) : []),
-    ...(primaryEntry ? primaryEntry.synonyms : []),
+    ...matchedSearchGroups.flatMap((group) => group.expansionTerms),
     ...(primaryEntry ? primaryEntry.matchedBodyRegions : []),
     ...(primaryEntry ? primaryEntry.matchedSymptoms : []),
     ...(primaryEntry ? primaryEntry.symptoms : []),
     ...(primaryEntry ? primaryEntry.associatedKeywords : []),
+    ...(primaryEntry ? primaryEntry.specialtyTerms.filter((term) => !term.includes('fisioterapia')) : []),
+    ...(primaryEntry ? primaryEntry.relatedSpecialtyTerms.filter((term) => !term.includes('fisioterapia')) : []),
+    ...(primaryEntry ? primaryEntry.synonyms : []),
     ...significantTerms,
   ])
     .filter((term) => term && !GENERIC_QUERY_TERMS.has(term))
@@ -888,11 +990,12 @@ function analyzeSearchIntent(query, context = buildSearchContext()) {
     significantTerms,
     expandedTerms,
     matchedEntries,
+    matchedSearchGroups,
     primaryEntry,
     primaryIntent,
     chips,
-    minimumScore: significantTerms.length ? 45 : 8,
-    fallbackScore: significantTerms.length ? 20 : 3,
+    minimumScore: significantTerms.length ? 30 : 8,
+    fallbackScore: significantTerms.length ? 10 : 3,
   };
 }
 
@@ -981,10 +1084,10 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
   let score = 0;
 
   if (analysis.normalizedQuery && fields.specialtyText.includes(analysis.normalizedQuery)) {
-    score += 120;
+    score += 100;
     reasons.push(`specialty exact query match: ${analysis.normalizedQuery}`);
   } else if (analysis.normalizedQuery && fields.profileText.includes(analysis.normalizedQuery)) {
-    score += 90;
+    score += 70;
     reasons.push(`profile exact query match: ${analysis.normalizedQuery}`);
   }
 
@@ -1022,14 +1125,14 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
 
     if (specialtyMatches.length && !seenMatches.has(`specialty-group:${entry.id}`)) {
       seenMatches.add(`specialty-group:${entry.id}`);
-      score += 80;
+      score += 100;
       matchedSpecialties.push(specialtyMatches[0]);
       reasons.push(`specialty match: ${specialtyMatches.join(', ')}`);
     }
 
     if (relatedSpecialtyMatches.length && !seenMatches.has(`related-specialty-group:${entry.id}`)) {
       seenMatches.add(`related-specialty-group:${entry.id}`);
-      score += 40;
+      score += 60;
       reasons.push(`related specialty match: ${relatedSpecialtyMatches.join(', ')}`);
     }
 
@@ -1037,7 +1140,7 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `body:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 100;
+      score += 50;
       reasons.push(`body-region match: ${term}`);
     });
 
@@ -1045,7 +1148,7 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `symptom:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 70;
+      score += 30;
       reasons.push(`symptom match: ${term}`);
     });
 
@@ -1053,7 +1156,7 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `synonym:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 50;
+      score += 60;
       reasons.push(`related synonym match: ${term}`);
     });
 
@@ -1079,7 +1182,7 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
         const key = `support:${term}`;
         if (seenMatches.has(key)) return;
         seenMatches.add(key);
-        score += 25;
+        score += 20;
         reasons.push(`support keyword match: ${term}`);
       });
     }
@@ -1088,7 +1191,7 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `bio:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 25;
+      score += 20;
       reasons.push(`bio match: ${term}`);
     });
 
@@ -1096,7 +1199,7 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `tag:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 25;
+      score += 20;
       reasons.push(`tag match: ${term}`);
     });
 
@@ -1119,7 +1222,7 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
 
   const genericMatches = getMatchedTerms(fields.profileText, analysis.genericTerms);
   genericMatches.forEach((term) => {
-    score += 3;
+    score += 5;
     reasons.push(`generic term match: ${term}`);
   });
 
@@ -1206,7 +1309,7 @@ function rankProfilesByRelevance(profiles, analysis, options = {}) {
   // Visible results must pass both a base relevance floor and a relative floor
   // based on the strongest match, so weak matches do not float beside strong ones.
   const topScore = ordered[0]?.score || 0;
-  const dynamicMinimumScore = topScore
+  const dynamicMinimumScore = topScore >= 160
     ? Math.max(analysis.minimumScore, Math.floor(topScore * 0.45))
     : analysis.minimumScore;
   const visible = ordered.filter((item) => item.score >= dynamicMinimumScore);
@@ -1231,6 +1334,13 @@ function debugRankedResults(query, analysis, rankedResults) {
   console.log('original query:', analysis.originalQuery);
   console.log('normalized query terms:', analysis.expandedTerms);
   console.log('detected primary intent:', analysis.primaryIntent || '(none)');
+  console.log(
+    'matched fallback groups:',
+    (analysis.matchedSearchGroups || []).map((group) => ({
+      triggers: group.matchedTriggers,
+      expansionTerms: group.expansionTerms,
+    }))
+  );
   console.log(
     'matched specialties:',
     analysis.matchedEntries.map((entry) => ({

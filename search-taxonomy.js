@@ -135,6 +135,10 @@
       terms: ['dor lombar', 'lombar', 'coluna', 'costas', 'ciatica', 'hernia de disco', 'ortopedica', 'quiropraxia', 'pilates clinico', 'rpg', 'ocupacional', 'ergonomia'],
     },
     {
+      triggers: ['pescoco', 'pescoço', 'dor no pescoco', 'dor no pescoço', 'cervical', 'dor cervical', 'torcicolo'],
+      terms: ['pescoco', 'cervical', 'dor cervical', 'coluna', 'ortopedica', 'rpg', 'postura', 'terapia manual', 'quiropraxia', 'musculoesqueletica', 'reabilitacao'],
+    },
+    {
       triggers: ['dor no joelho', 'joelho', 'menisco', 'ligamento', 'acl', 'lca', 'condromalacia'],
       terms: ['joelho', 'menisco', 'ligamento', 'condromalacia', 'ortopedica', 'esportiva', 'pos-operatorio', 'reabilitacao esportiva'],
     },
