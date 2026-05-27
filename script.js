@@ -217,7 +217,7 @@ const INTENT_RULES = [
     triggers: ['ombro', 'dor no ombro', 'manguito', 'manguito rotador', 'bursite', 'tendinite no ombro'],
     specialtyKeywords: ['ortopedica', 'esportiva', 'traumato', 'terapia manual'],
     relatedTerms: ['ombro', 'manguito', 'bursite', 'tendinite', 'liberacao miofascial'],
-    conflictKeywords: ['pelvica', 'uroginecologica', 'respiratoria', 'dermatofuncional'],
+    conflictKeywords: ['pelvica', 'uroginecologica', 'respiratoria', 'dermatofuncional', 'ocupacional', 'fisioterapia do trabalho', 'ergonomia'],
   },
   {
     id: 'neuro',
@@ -609,8 +609,11 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       ...analysis.primaryRule.triggers,
     ])
     : [];
+  const nonSpecificRelatedTerms = relatedTerms.filter(
+    (term) => !analysis.specificTerms.includes(normalizeText(term))
+  );
   const relatedMatches = analysis.primaryRule
-    ? getMatchedTerms(`${fields.bioText} ${fields.tagText} ${fields.profileText}`, relatedTerms)
+    ? getMatchedTerms(`${fields.bioText} ${fields.tagText} ${fields.profileText}`, nonSpecificRelatedTerms)
     : [];
   const genericMatches = getMatchedTerms(fields.profileText, analysis.genericTerms);
   const conflictMatches =
@@ -633,7 +636,7 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
   );
 
   if (nonSpecialtySpecificMatches.length) {
-    coreScore += 80;
+    coreScore += 50;
     reasons.push(`specific term in bio/services: ${nonSpecialtySpecificMatches.join(', ')}`);
   }
 
@@ -1402,12 +1405,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       debugRankedResults(searchQuery, searchAnalysis, rankedResult.ordered);
     }
 
-    const meaningfulResults = modoBusca === 'leigo'
-      ? rankedResult.ordered.filter((item) => item.tier < 4)
+    const strongResults = modoBusca === 'leigo'
+      ? rankedResult.ordered.filter((item) => item.tier <= 2)
       : rankedResult.ordered;
+    const weakResults = modoBusca === 'leigo'
+      ? rankedResult.ordered.filter((item) => item.tier === 3)
+      : [];
 
-    const visibleResults = meaningfulResults.length
-      ? meaningfulResults
+    const visibleResults = modoBusca === 'leigo'
+      ? (strongResults.length
+        ? [...strongResults, ...weakResults]
+        : (searchAnalysis.primaryRule ? [] : weakResults))
       : rankedResult.ordered;
 
     const filtered = visibleResults.map((item) => item.profile);
