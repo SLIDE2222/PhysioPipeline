@@ -506,7 +506,7 @@ async function loadDynamicSearchOptions() {
   }
 
   try {
-    const options = await window.physioApi.fetchProfileOptions({ useCache: false });
+    const options = await window.physioApi.fetchProfileOptions({ useCache: true });
     if (DYNAMIC_OPTIONS_CACHE_MS > 0) writeCachedDynamicOptions(options);
     applyDynamicOptions(options);
   } catch (error) {
@@ -1286,18 +1286,18 @@ function shuffleArray(items) {
   return copy;
 }
 
-function shuffleWithinScoreBands(items, bandSize = 8) {
-  const byBand = new Map();
+function shuffleWithinScoreBands(items) {
+  const byScore = new Map();
 
   items.forEach((item) => {
-    const bandKey = Math.floor(item.score / bandSize);
-    if (!byBand.has(bandKey)) byBand.set(bandKey, []);
-    byBand.get(bandKey).push(item);
+    const scoreKey = item.score;
+    if (!byScore.has(scoreKey)) byScore.set(scoreKey, []);
+    byScore.get(scoreKey).push(item);
   });
 
-  return Array.from(byBand.entries())
+  return Array.from(byScore.entries())
     .sort((a, b) => b[0] - a[0])
-    .flatMap(([, bandItems]) => shuffleArray(bandItems));
+    .flatMap(([, sameScoreItems]) => shuffleArray(sameScoreItems));
 }
 
 function rankProfilesByRelevance(profiles, analysis, options = {}) {
@@ -1460,7 +1460,7 @@ function setupAutocomplete({
     renderSuggestionList(listElement, inputElement, getFilteredOptions(), onSelect);
   };
 
-  const debouncedRefreshSuggestions = debounce(refreshSuggestions, 350);
+  const debouncedRefreshSuggestions = debounce(refreshSuggestions, 400);
 
   inputElement.addEventListener('input', debouncedRefreshSuggestions);
 
@@ -1939,7 +1939,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     resumo.textContent = 'Buscando profissionais...';
     renderResultsSkeleton();
 
-    const profiles = await window.physioApi.fetchProfiles({ useCache: false });
+    const profiles = await window.physioApi.fetchProfiles({ useCache: true });
 
     const locationMatchedProfiles = profiles.filter((profile) => {
       const pEspecialidade = getSearchableSpecialties(profile);

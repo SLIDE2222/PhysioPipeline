@@ -212,8 +212,7 @@ async function renderProfilePage() {
 
     const showClaimButton =
       !isOwner &&
-      !profissional.isClaimed &&
-      !profissional.ownerUserId;
+      !profissional.isClaimed;
 
     if (!isOwner) {
       recordProfileLeadEvent(profissional, 'PROFILE_VIEW');

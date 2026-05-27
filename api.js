@@ -13,13 +13,24 @@
   const PUBLIC_PROFILE_CACHE_KEY = 'physioPublicProfiles:v1';
   const DYNAMIC_OPTIONS_CACHE_KEY = 'physioDynamicOptions:v1';
   const PUBLIC_PROFILE_CACHE_TTL_MS = 1000 * 60 * 3;
+  const PUBLIC_PROFILE_LIST_LIMIT = 500;
   const SUPABASE_URL =
     window.PHYSIO_SUPABASE_URL ||
     'https://epptihpvgwzrodfsukpr.supabase.co';
   const SUPABASE_ANON_KEY =
     window.PHYSIO_SUPABASE_ANON_KEY ||
     'sb_publishable_QNqv1waCxDu2z2vprYM62w_zkhrafGH';
-  const PUBLIC_PROFILE_SELECT = [
+  const PUBLIC_PROFILE_CARD_SELECT = [
+    'id',
+    'name',
+    'specialty',
+    'secondarySpecialty',
+    'city',
+    'neighborhood',
+    'bio',
+    'photoUrl',
+  ].join(',');
+  const PUBLIC_PROFILE_DETAIL_SELECT = [
     'id',
     'name',
     'specialty',
@@ -31,12 +42,14 @@
     'instagram',
     'linkedin',
     'photoUrl',
+    'publicEmail',
     'attendance',
     'isClaimed',
-    'createdAt',
-    'updatedAt',
   ].join(',');
-  const PUBLIC_PROFILE_SOURCES = ['public_profiles', 'Profile'];
+  const PUBLIC_PROFILE_CARD_SOURCES = ['public_profile_cards', 'public_profiles', 'Profile'];
+  const PUBLIC_PROFILE_DETAIL_SOURCES = ['public_profile_details', 'public_profiles', 'Profile'];
+  let publicProfileListMemoryCache = null;
+  let publicProfileListInflight = null;
 
   function getStoredAuth() {
     try {
@@ -64,6 +77,10 @@
   }
 
   function readPublicProfileCache() {
+    if (publicProfileListMemoryCache?.profiles?.length) {
+      return publicProfileListMemoryCache.profiles;
+    }
+
     try {
       const cached = JSON.parse(sessionStorage.getItem(PUBLIC_PROFILE_CACHE_KEY) || 'null');
       if (!cached?.profiles || !cached?.savedAt) return null;
@@ -80,6 +97,11 @@
   }
 
   function writePublicProfileCache(profiles) {
+    publicProfileListMemoryCache = {
+      savedAt: Date.now(),
+      profiles,
+    };
+
     try {
       sessionStorage.setItem(
         PUBLIC_PROFILE_CACHE_KEY,
@@ -94,6 +116,9 @@
   }
 
   function clearPublicProfileCache() {
+    publicProfileListMemoryCache = null;
+    publicProfileListInflight = null;
+
     try {
       sessionStorage.removeItem(PUBLIC_PROFILE_CACHE_KEY);
       sessionStorage.removeItem(DYNAMIC_OPTIONS_CACHE_KEY);
@@ -124,32 +149,44 @@
     return response.json();
   }
 
-  async function fetchPublicProfilesFromSupabase({ useCache = true } = {}) {
+  async function fetchPublicProfilesFromSupabase({ useCache = true, limit = PUBLIC_PROFILE_LIST_LIMIT } = {}) {
     if (useCache) {
       const cached = readPublicProfileCache();
       if (cached) return cached.map(normalizeProfile);
-    }
 
-    const query = [
-      `select=${encodeURIComponent(PUBLIC_PROFILE_SELECT)}`,
-      'order=createdAt.desc',
-      'limit=1000',
-    ].join('&');
-
-    let lastError = null;
-
-    for (const source of PUBLIC_PROFILE_SOURCES) {
-      try {
-        const rows = await supabasePublicRequest(source, query);
-        const profiles = (rows || []).map(normalizeProfile).filter(Boolean);
-        writePublicProfileCache(profiles);
-        return profiles;
-      } catch (error) {
-        lastError = error;
+      if (publicProfileListInflight) {
+        return publicProfileListInflight.then((profiles) => profiles.map(normalizeProfile));
       }
     }
 
-    throw lastError || new Error('Could not load public profiles from Supabase.');
+    const query = [
+      `select=${encodeURIComponent(PUBLIC_PROFILE_CARD_SELECT)}`,
+      'order=createdAt.desc',
+      `limit=${encodeURIComponent(String(limit))}`,
+    ].join('&');
+
+    const requestProfiles = async () => {
+      let lastError = null;
+
+      for (const source of PUBLIC_PROFILE_CARD_SOURCES) {
+        try {
+          const rows = await supabasePublicRequest(source, query);
+          const profiles = (rows || []).map(normalizeProfile).filter(Boolean);
+          writePublicProfileCache(profiles);
+          return profiles;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      throw lastError || new Error('Could not load public profiles from Supabase.');
+    };
+
+    publicProfileListInflight = requestProfiles().finally(() => {
+      publicProfileListInflight = null;
+    });
+
+    return publicProfileListInflight;
   }
 
   async function fetchPublicProfileFromSupabase(id) {
@@ -157,14 +194,14 @@
 
     const safeId = String(id).replace(/"/g, '');
     const query = [
-      `select=${encodeURIComponent(PUBLIC_PROFILE_SELECT)}`,
+      `select=${encodeURIComponent(PUBLIC_PROFILE_DETAIL_SELECT)}`,
       `id=eq.${encodeURIComponent(safeId)}`,
       'limit=1',
     ].join('&');
 
     let lastError = null;
 
-    for (const source of PUBLIC_PROFILE_SOURCES) {
+    for (const source of PUBLIC_PROFILE_DETAIL_SOURCES) {
       try {
         const rows = await supabasePublicRequest(source, query);
         return normalizeProfile(rows?.[0] || null);
@@ -335,14 +372,18 @@
       id: profile.id,
       nome: profile.name ?? profile.nome ?? '',
       especialidade: profile.specialty ?? profile.especialidade ?? '',
-      especialidadeSecundaria: profile.secondarySpecialty ?? profile.especialidadeSecundaria ?? '',
+      especialidadeSecundaria:
+        profile.secondarySpecialty ??
+        profile.secondary_specialties ??
+        profile.especialidadeSecundaria ??
+        '',
       cidade: profile.city ?? profile.cidade ?? '',
       bairro: profile.neighborhood ?? profile.bairro ?? '',
       telefone: profile.phone ?? profile.telefone ?? '',
       descricao: profile.bio ?? profile.descricao ?? '',
       instagram: profile.instagram ?? '',
       linkedin: profile.linkedin ?? '',
-      foto: profile.photoUrl ?? profile.foto ?? '',
+      foto: profile.photoUrl ?? profile.photo_url ?? profile.avatar_url ?? profile.foto ?? '',
       email: profile.publicEmail ?? profile.email ?? '',
       atendimento: profile.attendance ?? profile.atendimento ?? '',
       isClaimed: Boolean(profile.isClaimed),
@@ -464,7 +505,7 @@
     async fetchProfileOptions(options = {}) {
       try {
         const profiles = await fetchPublicProfilesFromSupabase({
-          useCache: options.useCache ?? false,
+          useCache: options.useCache ?? true,
         });
         return buildProfileOptionsFromProfiles(profiles);
       } catch (error) {

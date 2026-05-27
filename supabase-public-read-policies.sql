@@ -2,8 +2,39 @@
 -- Run this in the Supabase SQL editor when Vercel pages should read public
 -- profile cards directly from Supabase without waiting for Render.
 --
--- The frontend first tries public.public_profiles, then public."Profile",
--- and finally falls back to Render if Supabase blocks the request.
+-- The frontend first tries public.public_profile_cards for listings/search,
+-- public.public_profile_details for profile pages, then older fallbacks.
+
+create or replace view public.public_profile_cards as
+select
+  id,
+  name,
+  specialty,
+  "secondarySpecialty",
+  city,
+  neighborhood,
+  left(coalesce(bio, ''), 360) as bio,
+  "photoUrl",
+  "createdAt"
+from public."Profile";
+
+create or replace view public.public_profile_details as
+select
+  id,
+  name,
+  specialty,
+  "secondarySpecialty",
+  city,
+  neighborhood,
+  phone,
+  bio,
+  instagram,
+  linkedin,
+  "photoUrl",
+  "publicEmail",
+  attendance,
+  "isClaimed"
+from public."Profile";
 
 create or replace view public.public_profiles as
 select
@@ -25,6 +56,8 @@ select
 from public."Profile";
 
 grant usage on schema public to anon, authenticated;
+grant select on public.public_profile_cards to anon, authenticated;
+grant select on public.public_profile_details to anon, authenticated;
 grant select on public.public_profiles to anon, authenticated;
 
 -- Keep direct table reads private if you expose the view above.
