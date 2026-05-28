@@ -277,11 +277,33 @@ const GENERIC_SPECIALTY_TOKENS = new Set([
   'saude',
   'clinica',
   'clinico',
-  'funcional',
   'especialista',
   'especialidade',
   'reabilitacao',
 ]);
+
+const SPECIALTY_RELATIONSHIP_MAP = {
+  neurologica: ['Geriatrica', 'Reabilitacao', 'Funcional', 'Pilates', 'Pediatrica'],
+  neurofuncional: ['Neurologica', 'Geriatrica', 'Reabilitacao', 'Funcional'],
+  ortopedica: ['Traumato-Ortopedica', 'Esportiva', 'Reabilitacao', 'Funcional', 'Pilates', 'RPG'],
+  traumato: ['Ortopedica', 'Esportiva', 'Reabilitacao', 'Funcional', 'Pilates'],
+  'traumato ortopedica': ['Ortopedica', 'Esportiva', 'Reabilitacao', 'Funcional', 'Pilates'],
+  esportiva: ['Ortopedica', 'Traumato-Ortopedica', 'Funcional', 'Pilates'],
+  pelvica: ['Uroginecologica', 'Obstetrica', 'Saude da Mulher', 'Pilates'],
+  uroginecologica: ['Pelvica', 'Saude da Mulher', 'Obstetrica'],
+  obstetrica: ['Pelvica', 'Saude da Mulher', 'Pilates'],
+  'saude da mulher': ['Pelvica', 'Uroginecologica', 'Obstetrica', 'Pilates'],
+  respiratoria: ['Cardiorrespiratoria', 'Hospitalar', 'Geriatrica'],
+  cardiorrespiratoria: ['Respiratoria', 'Hospitalar', 'Geriatrica'],
+  pediatrica: ['Neurologica', 'Respiratoria', 'Desenvolvimento Infantil'],
+  geriatrica: ['Neurologica', 'Ortopedica', 'Reabilitacao', 'Pilates', 'Funcional'],
+  dermatofuncional: ['Estetica', 'Drenagem', 'Pos-operatorio'],
+  estetica: ['Dermatofuncional', 'Drenagem'],
+  rpg: ['Ortopedica', 'Pilates', 'Funcional'],
+  pilates: ['Ortopedica', 'Funcional', 'RPG', 'Geriatrica', 'Pelvica'],
+  funcional: ['Ortopedica', 'Esportiva', 'Pilates', 'Reabilitacao'],
+  hospitalar: ['Respiratoria', 'Cardiorrespiratoria', 'Geriatrica'],
+};
 
 // This is the main intent catalog for patient-language searches.
 // Each entry describes how a clinical area can be discovered from body parts,
@@ -290,20 +312,20 @@ const DEFAULT_INTENT_CATALOG = [
   {
     id: 'ortopedica',
     specialty: 'Fisioterapia Ortopedica',
-    relatedSpecialties: ['Fisioterapia Esportiva', 'Traumato-Ortopedica', 'Terapia Manual', 'Quiropraxia', 'RPG', 'Pilates'],
-    bodyRegions: ['ombro', 'joelho', 'coluna', 'lombar', 'cervical', 'pescoco', 'costas', 'quadril', 'tornozelo', 'cotovelo', 'punho', 'mao', 'pe', 'perna'],
+    relatedSpecialties: ['Fisioterapia Esportiva', 'Traumato-Ortopedica', 'Terapia Manual', 'Quiropraxia', 'RPG', 'Pilates', 'Funcional', 'Reabilitacao'],
+    bodyRegions: ['ombro', 'joelho', 'coluna', 'lombar', 'cervical', 'pescoco', 'costas', 'quadril', 'tornozelo', 'calcanhar', 'cotovelo', 'punho', 'mao', 'pe', 'perna'],
     symptoms: ['tendinite', 'bursite', 'manguito', 'manguito rotador', 'menisco', 'ligamento', 'lca', 'acl', 'condromalacia', 'hernia', 'hernia de disco', 'ciatica', 'lombalgia', 'cervicalgia', 'dor cervical', 'torcicolo'],
-    synonyms: ['ortopedia', 'ortopedica', 'traumato', 'traumato ortopedica', 'reabilitacao esportiva', 'terapia manual', 'musculoesqueletica', 'musculoesqueletico'],
-    informalTerms: ['dor nas costas', 'dor no ombro', 'dor no joelho', 'dor no pescoco', 'ombro travado', 'coluna travada', 'pescoco travado'],
-    associatedKeywords: ['mobilidade', 'postura', 'liberacao miofascial', 'lesao', 'articulacao', 'pos operatorio', 'rpg', 'reabilitacao'],
+    synonyms: ['ortopedia', 'ortopedica', 'traumato', 'traumato ortopedica', 'reabilitacao esportiva', 'terapia manual', 'musculoesqueletica', 'musculoesqueletico', 'funcional'],
+    informalTerms: ['dor nas costas', 'dor no ombro', 'dor no joelho', 'lesao no joelho', 'dor no pescoco', 'ombro travado', 'coluna travada', 'pescoco travado'],
+    associatedKeywords: ['mobilidade', 'postura', 'liberacao miofascial', 'lesao', 'articulacao', 'pos operatorio', 'rpg', 'reabilitacao', 'pilates'],
     unrelatedSpecialties: ['pelvica', 'uroginecologica', 'dermatofuncional', 'respiratoria', 'saude da mulher'],
   },
   {
     id: 'pelvica',
     specialty: 'Fisioterapia Pelvica',
-    relatedSpecialties: ['Uroginecologica', 'Saude da Mulher', 'Obstetrica'],
+    relatedSpecialties: ['Uroginecologica', 'Saude da Mulher', 'Obstetrica', 'Pilates'],
     bodyRegions: ['pelvica', 'pelvico', 'perineo', 'perinio', 'vagina', 'vaginal', 'assoalho pelvico', 'utero'],
-    symptoms: ['incontinencia', 'incontinencia urinaria', 'urgencia urinaria', 'dor pelvica', 'dor na relacao', 'constipacao'],
+    symptoms: ['incontinencia', 'incontinencia urinaria', 'urgencia urinaria', 'urina', 'urinaria', 'dor pelvica', 'dor na relacao', 'constipacao', 'pos parto', 'gravidez', 'gestante'],
     synonyms: ['uroginecologica', 'uroginecologia', 'pelvica', 'saude da mulher'],
     informalTerms: ['perereca', 'xixi escapando', 'escape de urina', 'xixi', 'bexiga solta'],
     associatedKeywords: ['gestante', 'pos parto', 'parto', 'diastase', 'perda urinaria'],
@@ -323,10 +345,10 @@ const DEFAULT_INTENT_CATALOG = [
   {
     id: 'neurologica',
     specialty: 'Fisioterapia Neurologica',
-    relatedSpecialties: ['Neurofuncional'],
-    bodyRegions: ['marcha', 'equilibrio', 'tronco'],
-    symptoms: ['avc', 'derrame', 'parkinson', 'paralisia', 'atraso motor', 'neurologico', 'neurologica'],
-    synonyms: ['neuro', 'neurofuncional', 'neurologica'],
+    relatedSpecialties: ['Neurofuncional', 'Geriatrica', 'Reabilitacao', 'Funcional', 'Pilates', 'Pediatrica'],
+    bodyRegions: ['marcha', 'equilibrio', 'tronco', 'coordenacao'],
+    symptoms: ['avc', 'derrame', 'parkinson', 'alzheimer', 'paralisia', 'atraso motor', 'neurologico', 'neurologica', 'coordenacao', 'equilibrio'],
+    synonyms: ['neuro', 'neurofuncional', 'neurologica', 'reabilitacao neurologica'],
     informalTerms: ['derrame', 'fraqueza de um lado'],
     associatedKeywords: ['treino de marcha', 'coordenacao', 'controle motor'],
     unrelatedSpecialties: ['dermatofuncional', 'pelvica', 'estetica'],
@@ -334,7 +356,7 @@ const DEFAULT_INTENT_CATALOG = [
   {
     id: 'respiratoria',
     specialty: 'Fisioterapia Respiratoria',
-    relatedSpecialties: ['Cardiorrespiratoria'],
+    relatedSpecialties: ['Cardiorrespiratoria', 'Hospitalar', 'Geriatrica'],
     bodyRegions: ['pulmao', 'torax'],
     symptoms: ['respiracao', 'respirar', 'asma', 'bronquite', 'dpoc', 'falta de ar', 'folego'],
     synonyms: ['respiratoria', 'cardiorrespiratoria', 'pulmonar'],
@@ -345,9 +367,9 @@ const DEFAULT_INTENT_CATALOG = [
   {
     id: 'pediatrica',
     specialty: 'Fisioterapia Pediatrica',
-    relatedSpecialties: ['Fisioterapia Infantil'],
+    relatedSpecialties: ['Fisioterapia Infantil', 'Neurologica', 'Respiratoria', 'Desenvolvimento Infantil'],
     bodyRegions: ['crianca', 'bebe', 'infantil'],
-    symptoms: ['atraso motor', 'desenvolvimento motor', 'torcicolo congenito'],
+    symptoms: ['atraso motor', 'desenvolvimento motor', 'desenvolvimento infantil', 'torcicolo congenito'],
     synonyms: ['pediatrica', 'pediatria', 'infantil'],
     informalTerms: ['bebe', 'crianca'],
     associatedKeywords: ['desenvolvimento', 'marcos motores'],
@@ -356,7 +378,7 @@ const DEFAULT_INTENT_CATALOG = [
   {
     id: 'geriatrica',
     specialty: 'Fisioterapia Geriatrica',
-    relatedSpecialties: ['Gerontologia'],
+    relatedSpecialties: ['Gerontologia', 'Neurologica', 'Ortopedica', 'Reabilitacao', 'Pilates', 'Funcional'],
     bodyRegions: ['idoso', 'idosa'],
     symptoms: ['equilibrio', 'quedas', 'queda', 'marcha', 'mobilidade reduzida'],
     synonyms: ['geriatrica', 'geriatria', 'gerontologia'],
@@ -378,19 +400,19 @@ const DEFAULT_INTENT_CATALOG = [
   {
     id: 'dermatofuncional',
     specialty: 'Fisioterapia Dermatofuncional',
-    relatedSpecialties: ['Estetica'],
+    relatedSpecialties: ['Estetica', 'Drenagem', 'Pos-operatorio'],
     bodyRegions: ['pele', 'face', 'abdomen'],
-    symptoms: ['cicatriz', 'fibrose', 'drenagem', 'linfedema'],
+    symptoms: ['cicatriz', 'fibrose', 'drenagem', 'linfedema', 'celulite', 'gordura', 'pele'],
     synonyms: ['dermatofuncional', 'estetica'],
-    informalTerms: ['pos lipo', 'pos cirurgia plastica'],
+    informalTerms: ['pos lipo', 'pos cirurgia plastica', 'pos operatorio estetico'],
     associatedKeywords: ['drenagem linfatica', 'pos operatorio estetico'],
     unrelatedSpecialties: ['ortopedica', 'esportiva', 'neurologica'],
   },
   {
     id: 'pilates',
     specialty: 'Pilates',
-    relatedSpecialties: ['RPG', 'Terapia Manual', 'Quiropraxia'],
-    bodyRegions: ['coluna', 'postura', 'core', 'pescoco', 'cervical'],
+    relatedSpecialties: ['RPG', 'Terapia Manual', 'Quiropraxia', 'Ortopedica', 'Funcional', 'Geriatrica', 'Pelvica'],
+    bodyRegions: ['coluna', 'postura', 'postural', 'core', 'pescoco', 'cervical'],
     symptoms: ['lombalgia', 'cervicalgia', 'dor cervical'],
     synonyms: ['pilates', 'pilates clinico'],
     informalTerms: [],
@@ -417,12 +439,19 @@ const SPECIALTY_ALIAS_MAP = {
   pediatria: 'pediatrica',
   pediatrica: 'pediatrica',
   infantil: 'pediatrica',
+  crianca: 'pediatrica',
+  bebe: 'pediatrica',
   ocupacional: 'ocupacional',
   ergonomia: 'ergonomia',
   dermatofuncional: 'dermatofuncional',
   estetica: 'estetica',
   quiropraxia: 'quiropraxia',
   rpg: 'rpg',
+  funcional: 'funcional',
+  reabilitacao: 'reabilitacao',
+  hospitalar: 'hospitalar',
+  cardiorrespiratoria: 'cardiorrespiratoria',
+  obstetrica: 'obstetrica',
 };
 
 function mergeOptionLists(...lists) {
@@ -649,7 +678,7 @@ function phraseMatchesText(text, phrase) {
   if (!phraseTokens.length) return false;
 
   const textTokens = tokenizeSearch(normalizedText);
-  if (phraseTokens.length === 1 && phraseTokens[0].length <= 3) {
+  if (phraseTokens.length === 1) {
     return textTokens.includes(phraseTokens[0]);
   }
 
@@ -660,11 +689,13 @@ function phraseMatchesText(text, phrase) {
 function textMatchesTerm(text, term) {
   const normalizedText = normalizeSearchText(text);
   if (!normalizedText) return false;
+  const textTokens = tokenizeSearch(normalizedText);
 
   return getTokenForms(term).some((form) => {
     if (!form) return false;
-    if (form.length <= 3) return tokenizeSearch(normalizedText).includes(form);
-    return normalizedText.includes(form);
+    const formTokens = tokenizeSearch(form);
+    if (formTokens.length <= 1) return textTokens.includes(form);
+    return normalizedText.includes(form) || formTokens.every((token) => textTokens.includes(token));
   });
 }
 
@@ -676,17 +707,43 @@ function getWordsFromLabel(value) {
   return tokenizeSearch(value).filter((token) => !GENERIC_SPECIALTY_TOKENS.has(token));
 }
 
+function getSpecialtyAliases(value) {
+  return uniqueTerms(getWordsFromLabel(value).flatMap((token) => [
+    token,
+    SPECIALTY_ALIAS_MAP[token] || token,
+  ]));
+}
+
+function getRelatedSpecialties(value) {
+  const normalized = normalizeSearchText(value);
+  const words = getWordsFromLabel(value);
+  const related = [];
+
+  [normalized, ...words, ...words.map((token) => SPECIALTY_ALIAS_MAP[token] || token)]
+    .filter(Boolean)
+    .forEach((key) => {
+      if (SPECIALTY_RELATIONSHIP_MAP[key]) related.push(...SPECIALTY_RELATIONSHIP_MAP[key]);
+    });
+
+  return uniqueTerms(related);
+}
+
 function buildCatalogEntry(definition) {
   const specialty = cleanOptionLabel(definition.specialty || definition.especialidade || '');
-  const relatedSpecialties = (definition.relatedSpecialties || []).map(cleanOptionLabel).filter(Boolean);
+  const relatedSpecialties = uniqueTerms([
+    ...(definition.relatedSpecialties || []),
+    ...getRelatedSpecialties(specialty),
+  ].map(cleanOptionLabel).filter(Boolean));
   const specialtyTerms = uniqueTerms([
     specialty,
     ...getWordsFromLabel(specialty),
+    ...getSpecialtyAliases(specialty),
     ...(definition.specialtyAliases || []),
   ].map(normalizeSearchText).filter(isMeaningfulIntentTerm));
   const relatedSpecialtyTerms = uniqueTerms([
     ...relatedSpecialties,
     ...relatedSpecialties.flatMap((value) => getWordsFromLabel(value)),
+    ...relatedSpecialties.flatMap((value) => getSpecialtyAliases(value)),
   ].map(normalizeSearchText).filter(isMeaningfulIntentTerm));
 
   return {
@@ -892,13 +949,14 @@ function analyzeSearchIntent(query, context = buildSearchContext()) {
       const matchedSpecialties = entry.specialtyTerms.filter((term) => phraseMatchesText(normalizedQuery, term));
       const matchedRelatedSpecialties = entry.relatedSpecialtyTerms.filter((term) => phraseMatchesText(normalizedQuery, term));
       const matchedAssociated = entry.associatedKeywords.filter((term) => phraseMatchesText(normalizedQuery, term));
-      const score =
-        matchedBodyRegions.length * 100 +
-        matchedSpecialties.length * 80 +
-        matchedRelatedSpecialties.length * 60 +
-        matchedSymptoms.length * 70 +
-        (matchedSynonyms.length + matchedInformal.length) * 50 +
-        matchedAssociated.length * 40;
+    const score =
+      matchedBodyRegions.length * 100 +
+      matchedSpecialties.length * 80 +
+      matchedRelatedSpecialties.length * 60 +
+      matchedSymptoms.length * 70 +
+      (matchedSynonyms.length + matchedInformal.length) * 50 +
+      matchedAssociated.length * 40 +
+      (matchedSpecialties.length || matchedRelatedSpecialties.length ? 70 : 0);
 
       if (!score) return null;
 
@@ -1082,12 +1140,19 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
   const fields = getProfileSearchFields(profile);
   const reasons = [];
   let score = 0;
+  let hasStrongRelevance = false;
+  let hasSearchRelevance = !analysis.significantTerms.length && !analysis.normalizedQuery;
+  const hasPhoto = Boolean(profile.foto || profile.photoUrl || profile.photo_url || profile.avatar_url);
+  const hasBio = Boolean(profile.descricao || profile.bio);
 
   if (analysis.normalizedQuery && fields.specialtyText.includes(analysis.normalizedQuery)) {
     score += 100;
+    hasStrongRelevance = true;
+    hasSearchRelevance = true;
     reasons.push(`specialty exact query match: ${analysis.normalizedQuery}`);
   } else if (analysis.normalizedQuery && fields.profileText.includes(analysis.normalizedQuery)) {
-    score += 70;
+    score += 15;
+    hasSearchRelevance = true;
     reasons.push(`profile exact query match: ${analysis.normalizedQuery}`);
   }
 
@@ -1097,7 +1162,7 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
   // This prevents distant specialties from accumulating points through random overlap.
   const intentEntries = (analysis.matchedEntries || []).slice(0, 3);
 
-  intentEntries.forEach((entry) => {
+  intentEntries.forEach((entry, entryIndex) => {
     const queryDrivenTerms = uniqueTerms([
       ...entry.matchedBodyRegions,
       ...entry.matchedSymptoms,
@@ -1107,6 +1172,16 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       ...entry.matchedRelatedSpecialties,
       ...entry.matchedAssociated,
     ]);
+    // The primary detected intent can use its related specialties for fallback.
+    // Secondary intents should not expand again into their own related lists,
+    // otherwise one search can drift too far from the patient's real need.
+    const canUseRelatedSpecialties =
+      entryIndex === 0 ||
+      entry.matchedSpecialties.length ||
+      entry.matchedBodyRegions.length ||
+      entry.matchedSymptoms.length ||
+      entry.matchedSynonyms.length ||
+      entry.matchedInformal.length;
     const supportTerms = uniqueTerms([
       ...entry.bodyRegions,
       ...entry.symptoms,
@@ -1114,7 +1189,9 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       ...entry.informalTerms,
     ]).filter((term) => !queryDrivenTerms.includes(term));
     const specialtyMatches = getMatchedTerms(fields.specialtyText, entry.specialtyTerms);
-    const relatedSpecialtyMatches = getMatchedTerms(fields.specialtyText, entry.relatedSpecialtyTerms);
+    const relatedSpecialtyMatches = canUseRelatedSpecialties
+      ? getMatchedTerms(fields.specialtyText, entry.relatedSpecialtyTerms)
+      : [];
     const bodyRegionMatches = getMatchedTerms(`${fields.specialtyText} ${fields.tagText} ${fields.profileText}`, entry.matchedBodyRegions);
     const symptomMatches = getMatchedTerms(`${fields.specialtyText} ${fields.tagText} ${fields.profileText}`, entry.matchedSymptoms);
     const synonymMatches = getMatchedTerms(`${fields.specialtyText} ${fields.tagText} ${fields.profileText}`, [...entry.matchedSynonyms, ...entry.matchedInformal]);
@@ -1126,13 +1203,17 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
     if (specialtyMatches.length && !seenMatches.has(`specialty-group:${entry.id}`)) {
       seenMatches.add(`specialty-group:${entry.id}`);
       score += 100;
+      hasStrongRelevance = true;
+      hasSearchRelevance = true;
       matchedSpecialties.push(specialtyMatches[0]);
       reasons.push(`specialty match: ${specialtyMatches.join(', ')}`);
     }
 
     if (relatedSpecialtyMatches.length && !seenMatches.has(`related-specialty-group:${entry.id}`)) {
       seenMatches.add(`related-specialty-group:${entry.id}`);
-      score += 60;
+      score += 65;
+      hasStrongRelevance = true;
+      hasSearchRelevance = true;
       reasons.push(`related specialty match: ${relatedSpecialtyMatches.join(', ')}`);
     }
 
@@ -1140,7 +1221,9 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `body:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 50;
+      score += 80;
+      hasStrongRelevance = true;
+      hasSearchRelevance = true;
       reasons.push(`body-region match: ${term}`);
     });
 
@@ -1148,7 +1231,9 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `symptom:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 30;
+      score += 80;
+      hasStrongRelevance = true;
+      hasSearchRelevance = true;
       reasons.push(`symptom match: ${term}`);
     });
 
@@ -1156,7 +1241,9 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `synonym:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 60;
+      score += 80;
+      hasStrongRelevance = true;
+      hasSearchRelevance = true;
       reasons.push(`related synonym match: ${term}`);
     });
 
@@ -1182,7 +1269,8 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
         const key = `support:${term}`;
         if (seenMatches.has(key)) return;
         seenMatches.add(key);
-        score += 20;
+        score += 15;
+        hasSearchRelevance = true;
         reasons.push(`support keyword match: ${term}`);
       });
     }
@@ -1191,7 +1279,8 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `bio:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 20;
+      score += 15;
+      hasSearchRelevance = true;
       reasons.push(`bio match: ${term}`);
     });
 
@@ -1199,7 +1288,8 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `tag:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 20;
+      score += 15;
+      hasSearchRelevance = true;
       reasons.push(`tag match: ${term}`);
     });
 
@@ -1207,7 +1297,8 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `name:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 15;
+      score += 10;
+      hasSearchRelevance = true;
       reasons.push(`name match: ${term}`);
     });
 
@@ -1215,41 +1306,45 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `unrelated:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score -= 40;
+      const penalty = term === 'dermatofuncional' && entry.id !== 'dermatofuncional' ? 80 : 30;
+      score -= penalty;
       reasons.push(`unrelated specialty penalty: ${term}`);
     });
   });
 
   const genericMatches = getMatchedTerms(fields.profileText, analysis.genericTerms);
   genericMatches.forEach((term) => {
-    score += 5;
+    score += 2;
     reasons.push(`generic term match: ${term}`);
   });
 
-  if (!analysis.significantTerms.length && genericMatches.length && score <= genericMatches.length * 3) {
+  if (!hasStrongRelevance && genericMatches.length && score <= genericMatches.length * 3) {
     score -= 40;
     reasons.push('only generic terms matched');
   }
 
   if (city) {
     if (fields.cityText === city) {
-      score += 15;
+      score += 40;
       reasons.push(`exact city match: ${city}`);
     } else if (fields.cityText.includes(city)) {
-      score += 8;
+      score += 20;
       reasons.push(`partial city match: ${city}`);
     }
   }
 
   if (neighborhood) {
     if (fields.neighborhoodText === neighborhood) {
-      score += 10;
+      score += 25;
       reasons.push(`exact neighborhood match: ${neighborhood}`);
     } else if (fields.neighborhoodText.includes(neighborhood)) {
-      score += 5;
+      score += 12;
       reasons.push(`partial neighborhood match: ${neighborhood}`);
     }
   }
+
+  if (hasPhoto) score += 3;
+  if (hasBio) score += 3;
 
   let tier = 4;
   if (score >= 140) tier = 1;
@@ -1262,6 +1357,7 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
     tier,
     reasons,
     matchedSpecialty: matchedSpecialties[0] || '',
+    hasSearchRelevance,
   };
 }
 
@@ -1301,6 +1397,8 @@ function shuffleWithinScoreBands(items) {
 }
 
 function rankProfilesByRelevance(profiles, analysis, options = {}) {
+  const requiresSearchRelevance = Boolean(analysis.normalizedQuery || analysis.significantTerms.length);
+  const requestedCity = normalizeSearchText(options.city || '');
   const rankedProfiles = profiles
     .map((profile) => scoreProfileRelevance(profile, analysis, options))
     .sort((a, b) => b.score - a.score);
@@ -1312,14 +1410,90 @@ function rankProfilesByRelevance(profiles, analysis, options = {}) {
   const dynamicMinimumScore = topScore >= 160
     ? Math.max(analysis.minimumScore, Math.floor(topScore * 0.45))
     : analysis.minimumScore;
-  const visible = ordered.filter((item) => item.score >= dynamicMinimumScore);
-  const fallback = ordered.filter((item) => item.score >= analysis.fallbackScore);
+  const visible = ordered.filter((item) =>
+    item.score >= dynamicMinimumScore &&
+    (!requiresSearchRelevance || item.hasSearchRelevance)
+  );
+  const fallback = ordered.filter((item) =>
+    item.score >= analysis.fallbackScore &&
+    (!requiresSearchRelevance || item.hasSearchRelevance)
+  );
+
+  if (requestedCity) {
+    const isRequestedCity = (item) =>
+      normalizeSearchText(item.profile.cidade || item.profile.city) === requestedCity;
+    const isExactSpecialty = (item) =>
+      item.reasons.some((reason) =>
+        reason.startsWith('specialty exact query match') ||
+        reason.startsWith('specialty match')
+      );
+    const relevant = ordered.filter((item) =>
+      item.score >= analysis.fallbackScore &&
+      (!requiresSearchRelevance || item.hasSearchRelevance)
+    );
+    const exactInCity = relevant.filter((item) => isRequestedCity(item) && isExactSpecialty(item));
+    const relatedInCity = relevant.filter((item) => isRequestedCity(item) && !exactInCity.includes(item));
+    const exactOtherCities = relevant.filter((item) => !isRequestedCity(item) && isExactSpecialty(item));
+    const relatedOtherCities = relevant.filter((item) =>
+      !isRequestedCity(item) &&
+      !exactOtherCities.includes(item)
+    );
+    const locationAwareVisible = [
+      ...exactInCity,
+      ...relatedInCity,
+      ...exactOtherCities,
+      ...relatedOtherCities,
+    ];
+
+    if (locationAwareVisible.length) {
+      return {
+        rankedProfiles,
+        ordered: locationAwareVisible,
+        visible: locationAwareVisible,
+      };
+    }
+  }
 
   return {
     rankedProfiles,
     ordered,
     visible: visible.length ? visible : fallback,
   };
+}
+
+function getFallbackMessage({ mode, requestedCity, visibleItems, hasExactInRequestedCity }) {
+  const relevantItems = visibleItems.filter((item) => item.score >= 30);
+  if (!relevantItems.length) {
+    return 'Nenhum profissional encontrado. Tente pesquisar outra especialidade ou sintoma.';
+  }
+
+  const hasRelevantInCity = requestedCity
+    ? relevantItems.some((item) => normalizeSearchText(item.profile.cidade || item.profile.city) === requestedCity)
+    : false;
+
+  if (requestedCity && !hasRelevantInCity) {
+    return 'Nenhum profissional encontrado nessa cidade. Mostrando op&ccedil;&otilde;es relacionadas em outras cidades.';
+  }
+
+  if (!hasExactInRequestedCity && mode === 'especialidade') {
+    return 'Nenhum profissional exato encontrado. Mostrando profissionais relacionados que talvez possam ajudar.';
+  }
+
+  return '';
+}
+
+function renderFallbackMessage(message) {
+  const existing = document.querySelector('.search-fallback-message');
+  if (existing) existing.remove();
+  if (!message) return;
+
+  const resumo = document.getElementById('resultadoResumo');
+  if (!resumo) return;
+
+  resumo.insertAdjacentHTML(
+    'afterend',
+    `<p class="search-fallback-message">${message}</p>`
+  );
 }
 
 function debugRankedResults(query, analysis, rankedResults) {
@@ -1940,48 +2114,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderResultsSkeleton();
 
     const profiles = await window.physioApi.fetchProfiles({ useCache: true });
+    searchAnalysis = analyzeSearchIntent(searchQuery, buildSearchContext(profiles));
 
-    const locationMatchedProfiles = profiles.filter((profile) => {
-      const pEspecialidade = getSearchableSpecialties(profile);
-      const pCidade = normalizeText(profile.cidade || profile.city);
-      const pBairro = normalizeText(profile.bairro || profile.neighborhood);
-
-      const specialtyMatch =
-        modoBusca === 'leigo'
-          ? true
-          : (!especialidade || pEspecialidade.includes(especialidade));
-
-      const cityMatch =
-        !cidade || pCidade.includes(cidade);
-
-      const neighborhoodMatch =
-        !bairro || pBairro.includes(bairro);
-
-      return specialtyMatch && cityMatch && neighborhoodMatch;
+    const rankedResult = rankProfilesByRelevance(profiles, searchAnalysis, {
+      city: cidade,
+      neighborhood: bairro,
     });
 
-    if (modoBusca === 'leigo') {
-      searchAnalysis = analyzeSearchIntent(searchQuery, buildSearchContext(locationMatchedProfiles));
-    }
+    debugRankedResults(searchQuery, searchAnalysis, rankedResult.ordered);
 
-    const rankedResult = modoBusca === 'leigo'
-      ? rankProfilesByRelevance(locationMatchedProfiles, searchAnalysis, {
-        city: cidade,
-        neighborhood: bairro,
-      })
-      : {
-        rankedProfiles: locationMatchedProfiles.map((profile) => ({ profile, score: 0, tier: 1, reasons: [] })),
-        ordered: locationMatchedProfiles.map((profile) => ({ profile, score: 0, tier: 1, reasons: [] })),
-        visible: locationMatchedProfiles.map((profile) => ({ profile, score: 0, tier: 1, reasons: [] })),
-      };
-
-    if (modoBusca === 'leigo') {
-      debugRankedResults(searchQuery, searchAnalysis, rankedResult.ordered);
-    }
-
-    const visibleResults = modoBusca === 'leigo'
-      ? rankedResult.visible
-      : rankedResult.ordered;
+    const visibleResults = rankedResult.visible;
+    const isExactMatch = (item) =>
+      item.reasons.some((reason) =>
+        reason.startsWith('specialty exact query match') ||
+        reason.startsWith('specialty match')
+      );
+    const isInRequestedCity = (item) =>
+      !cidade || normalizeText(item.profile.cidade || item.profile.city) === cidade;
+    const hasExactInRequestedCity = visibleResults.some((item) =>
+      isExactMatch(item) && isInRequestedCity(item)
+    );
+    const fallbackMessage = getFallbackMessage({
+      mode: modoBusca,
+      requestedCity: cidade,
+      visibleItems: visibleResults,
+      hasExactInRequestedCity,
+    });
 
     const filtered = visibleResults.map((item) => item.profile);
 
@@ -1990,6 +2148,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       : `${filtered.length} profissionais encontrados`;
 
     resumo.textContent = resultLabel;
+    renderFallbackMessage(fallbackMessage);
 
     if (modoBusca === 'leigo' && queixa) {
       const existingSummary = document.querySelector('.smart-search-summary');

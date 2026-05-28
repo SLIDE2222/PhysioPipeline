@@ -499,6 +499,20 @@ textarea {
   color: #415a7c;
 }
 
+.search-fallback-message {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0.7rem 0 1.25rem;
+  padding: 0.72rem 0.95rem;
+  border: 1px solid rgba(37, 99, 235, 0.20);
+  border-radius: 999px;
+  background: rgba(239, 246, 255, 0.86);
+  color: #1e3a8a;
+  font-size: 0.93rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .search-box input,
 .form-card input,
 .form-card textarea {
