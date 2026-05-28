@@ -1,26 +1,26 @@
 let cachedMyProfile = null;
 
 const EXISTING_SPECIALTIES = [
-  'Fisioterapia Ortopédica',
+  'Fisioterapia OrtopÃ©dica',
   'Fisioterapia Esportiva',
-  'Fisioterapia Neurológica',
-  'Fisioterapia Geriátrica',
-  'Fisioterapia Respiratória',
+  'Fisioterapia NeurolÃ³gica',
+  'Fisioterapia GeriÃ¡trica',
+  'Fisioterapia RespiratÃ³ria',
   'Pilates',
   'Domicilar',
   'Fisioterapia Ocupacional',
   'Quiropraxia',
-  'Fisioterapia Pediátrica',
+  'Fisioterapia PediÃ¡trica',
   'Ventosaterapia',
-  'Pós-operatório'
+  'PÃ³s-operatÃ³rio'
 ];
 
 const SPECIALTIES = window.PhysioTaxonomy?.profileSpecialtyOptions || EXISTING_SPECIALTIES;
 
 const CITY_NEIGHBORHOODS = {
-  'São Paulo': [
+  'SÃ£o Paulo': [
     'Bela Vista',
-    'Butantã',
+    'ButantÃ£',
     'Ipiranga',
     'Lapa',
     'Mooca',
@@ -28,23 +28,23 @@ const CITY_NEIGHBORHOODS = {
     'Santana',
     'Santo Amaro',
     'Campo Belo',
-    'Tatuapé',
+    'TatuapÃ©',
     'Vila Mariana'
   ],
   'Sorocaba': [
     'Campolim',
     'Centro',
-    'Éden',
+    'Ã‰den',
     'Jardim Europa',
-    'Santa Rosália',
+    'Santa RosÃ¡lia',
     'Vila Haro',
     'Wanel Ville'
   ],
   'Itapetininga': [
     'Centro',
     'Chapada Grande',
-    'Jardim Fogaça',
-    'Jardim Marabá',
+    'Jardim FogaÃ§a',
+    'Jardim MarabÃ¡',
     'Vila Aparecida',
     'Vila Nastri',
     'Vila Rio Branco'
@@ -185,7 +185,7 @@ const GENERIC_QUERY_TERMS = new Set([
 const INTENT_RULES = [
   {
     id: 'pelvica',
-    label: 'Fisioterapia Pélvica / Uroginecológica',
+    label: 'Fisioterapia PÃ©lvica / UroginecolÃ³gica',
     triggers: ['perereca', 'vagina', 'vaginal', 'perineo', 'pelvica', 'pelvico', 'assoalho pelvico', 'assoalho', 'xixi', 'incontinencia', 'urina', 'bexiga', 'escape de urina'],
     specialtyKeywords: ['pelvica', 'uroginecologica', 'perineal'],
     relatedTerms: ['assoalho pelvico', 'perineo', 'incontinencia urinaria', 'urgencia urinaria', 'saude da mulher', 'gestante', 'obstetrica', 'pos parto', 'parto'],
@@ -193,7 +193,7 @@ const INTENT_RULES = [
   },
   {
     id: 'obstetrica',
-    label: 'Fisioterapia Obstétrica / Pós-parto',
+    label: 'Fisioterapia ObstÃ©trica / PÃ³s-parto',
     triggers: ['gravidez', 'gestante', 'gestacao', 'parto', 'pos parto', 'pos-parto', 'puerperio'],
     specialtyKeywords: ['obstetrica', 'pelvica', 'uroginecologica', 'saude da mulher'],
     relatedTerms: ['gestante', 'parto', 'pos parto', 'perineo', 'assoalho pelvico', 'diastase'],
@@ -201,7 +201,7 @@ const INTENT_RULES = [
   },
   {
     id: 'joelho',
-    label: 'Ortopedia / Esportiva / Traumato-ortopédica',
+    label: 'Ortopedia / Esportiva / Traumato-ortopÃ©dica',
     triggers: ['joelho', 'dor no joelho', 'menisco', 'ligamento', 'lca', 'acl', 'condromalacia'],
     specialtyKeywords: ['ortopedica', 'esportiva', 'traumato', 'traumato ortopedica'],
     relatedTerms: ['joelho', 'menisco', 'ligamento', 'condromalacia', 'pos operatorio', 'reabilitacao esportiva'],
@@ -233,7 +233,7 @@ const INTENT_RULES = [
   },
   {
     id: 'respiratoria',
-    label: 'Fisioterapia Respiratória',
+    label: 'Fisioterapia RespiratÃ³ria',
     triggers: ['respirar', 'respiracao', 'respiratoria', 'pulmao', 'folego', 'asma', 'bronquite', 'dpoc'],
     specialtyKeywords: ['respiratoria', 'cardiorrespiratoria', 'pulmonar', 'reabilitacao respiratoria'],
     relatedTerms: ['respirar', 'pulmao', 'folego', 'asma', 'bronquite', 'dpoc'],
@@ -241,7 +241,7 @@ const INTENT_RULES = [
   },
   {
     id: 'geriatria',
-    label: 'Fisioterapia Geriátrica / Gerontologia',
+    label: 'Fisioterapia GeriÃ¡trica / Gerontologia',
     triggers: ['idoso', 'idosa', 'geriatria', 'geriatrica', 'gerontologia', 'equilibrio', 'quedas', 'queda'],
     specialtyKeywords: ['geriatrica', 'gerontologia', 'geriatria', 'prevencao de quedas'],
     relatedTerms: ['idoso', 'equilibrio', 'quedas', 'mobilidade reduzida', 'marcha'],
@@ -249,7 +249,7 @@ const INTENT_RULES = [
   },
   {
     id: 'pediatrica',
-    label: 'Fisioterapia Pediátrica',
+    label: 'Fisioterapia PediÃ¡trica',
     triggers: ['bebe', 'crianca', 'infantil', 'pediatrica', 'pediatria', 'atraso motor'],
     specialtyKeywords: ['pediatrica', 'pediatria', 'infantil'],
     relatedTerms: ['bebe', 'crianca', 'infantil', 'atraso motor', 'desenvolvimento'],
@@ -632,7 +632,7 @@ async function loadDynamicSearchOptions() {
     if (DYNAMIC_OPTIONS_CACHE_MS > 0) writeCachedDynamicOptions(options);
     applyDynamicOptions(options);
   } catch (error) {
-    console.warn('Não foi possível carregar opções dinâmicas:', error);
+    console.warn('NÃ£o foi possÃ­vel carregar opÃ§Ãµes dinÃ¢micas:', error);
     applyDynamicOptions({});
   }
 
@@ -703,7 +703,7 @@ function normalizeText(value) {
   return String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/['’`]/g, ' ')
+    .replace(/['â€™`]/g, ' ')
     .replace(/\s+/g, ' ')
     .toLowerCase()
     .trim();
@@ -2231,7 +2231,7 @@ async function renderAuthArea() {
   const profileHref = getUserProfileHref(user);
 
   authArea.innerHTML = `
-    <span class="user-greeting">Olá, ${escapeHtml(firstName)}</span>
+    <span class="user-greeting">OlÃ¡, ${escapeHtml(firstName)}</span>
     <div class="account-menu" data-account-menu>
       <button
         class="account-menu__button"
@@ -2310,6 +2310,28 @@ function getDisplaySpecialties(profile) {
     .join(' • ');
 }
 
+function getProfileImageUrl(profile = {}) {
+  return [
+    profile.foto,
+    profile.photoUrl,
+    profile.photo_url,
+    profile.avatar_url,
+    profile.avatarUrl,
+    profile.imageUrl,
+    profile.profileImage,
+    profile.profile_image,
+  ].find((value) => typeof value === 'string' && value.trim()) || '';
+}
+
+function getProfileInitials(name = '') {
+  const words = String(name || 'Fisioterapeuta')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  return ((words[0]?.[0] || 'P') + (words.length > 1 ? words[words.length - 1][0] : '')).toUpperCase();
+}
+
 // ===============================
 // RESULTADOS DA BUSCA
 // ===============================
@@ -2319,7 +2341,7 @@ const RESULTS_PER_PAGE = 12;
 document.addEventListener('DOMContentLoaded', async () => {
   const resultsGrid = document.getElementById('resultsGrid');
 
-  // Só executa em resultados.html
+  // SÃ³ executa em resultados.html
   if (!resultsGrid) return;
 
   const resumo = document.getElementById('resultadoResumo');
@@ -2329,13 +2351,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const renderResultsSkeleton = (count = 6) => {
     resultsGrid.innerHTML = Array.from({ length: count }, () => `
       <article class="result-card result-card-skeleton" aria-hidden="true">
-        <span class="skeleton-line skeleton-title"></span>
-        <span class="skeleton-pill"></span>
-        <span class="skeleton-pill skeleton-pill-short"></span>
-        <span class="skeleton-pill skeleton-pill-shorter"></span>
-        <span class="skeleton-line"></span>
-        <span class="skeleton-line"></span>
-        <span class="skeleton-button"></span>
+        <div class="result-card__layout">
+          <div class="result-card__content">
+            <span class="skeleton-line skeleton-title"></span>
+            <span class="skeleton-pill"></span>
+            <span class="skeleton-pill skeleton-pill-short"></span>
+            <span class="skeleton-pill skeleton-pill-shorter"></span>
+            <span class="skeleton-line"></span>
+            <span class="skeleton-line"></span>
+            <span class="skeleton-button"></span>
+          </div>
+          <span class="result-card__avatar result-card__avatar--fallback skeleton-avatar"></span>
+        </div>
       </article>
     `).join('');
   };
@@ -2517,7 +2544,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               type="button"
               class="pagination-page ${item === currentPage ? 'is-active' : ''}"
               data-page="${item}"
-              aria-label="Ir para a página ${item}"
+              aria-label="Ir para a pÃ¡gina ${item}"
               ${item === currentPage ? 'aria-current="page"' : ''}
             >
               ${item}
@@ -2546,7 +2573,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           data-page="${currentPage + 1}"
           ${currentPage === totalPages ? 'disabled' : ''}
         >
-          Próxima
+          PrÃ³xima
         </button>
       `;
 
@@ -2564,45 +2591,74 @@ document.addEventListener('DOMContentLoaded', async () => {
       const endIndex = Math.min(startIndex + RESULTS_PER_PAGE, filtered.length);
       const pageProfiles = filtered.slice(startIndex, endIndex);
 
-   resultsGrid.innerHTML = pageProfiles.map((profile) => `
+   resultsGrid.innerHTML = pageProfiles.map((profile) => {
+    const displayName = profile.nome || profile.name || 'Fisioterapeuta';
+    const displaySpecialty = getDisplaySpecialties(profile) || 'Não informado';
+    const displayCity = profile.cidade || profile.city || 'Não informado';
+    const displayNeighborhood = profile.bairro || profile.neighborhood || 'Não informado';
+    const photoUrl = getProfileImageUrl(profile);
+    const initials = getProfileInitials(displayName);
+
+    return `
   <article class="result-card">
-    <h3>
-      ${escapeHtml(profile.nome || profile.name || 'Fisioterapeuta')}
-    </h3>
+    <div class="result-card__layout">
+      <div class="result-card__content">
+        <div class="result-card__mobile-header">
+          ${photoUrl
+            ? `<img class="result-card__avatar result-card__avatar--mobile" src="${escapeHtml(photoUrl)}" alt="Foto de ${escapeHtml(displayName)}" loading="lazy" decoding="async" />`
+            : `<span class="result-card__avatar result-card__avatar--mobile result-card__avatar--fallback" aria-hidden="true">${escapeHtml(initials)}</span>`
+          }
+          <div>
+            <h3>
+              ${escapeHtml(displayName)}
+            </h3>
+            <p class="result-card__mobile-meta">${escapeHtml(displaySpecialty)} • ${escapeHtml(displayCity)}</p>
+          </div>
+        </div>
 
-    <p>
-      <strong>Especialidade:</strong>
-      ${escapeHtml(getDisplaySpecialties(profile) || 'Não informado')}
-    </p>
+        <p>
+          <strong>Especialidade:</strong>
+          ${escapeHtml(displaySpecialty)}
+        </p>
 
-    <p>
-      <strong>Cidade:</strong>
-      ${escapeHtml(profile.cidade || profile.city || 'Não informado')}
-    </p>
+        <p>
+          <strong>Cidade:</strong>
+          ${escapeHtml(displayCity)}
+        </p>
 
-    <p>
-      <strong>Bairro:</strong>
-      ${escapeHtml(profile.bairro || profile.neighborhood || 'Não informado')}
-    </p>
+        <p>
+          <strong>Bairro:</strong>
+          ${escapeHtml(displayNeighborhood)}
+        </p>
 
-    <div class="bio-wrapper">
-  <p class="bio collapsed">
-    ${escapeHtml(profile.bio || profile.descricao || 'Sem descrição.')}
-  </p>
+        <div class="bio-wrapper">
+          <p class="bio collapsed">
+            ${escapeHtml(profile.bio || profile.descricao || 'Sem descrição.')}
+          </p>
 
-  <button class="toggle-bio-btn" type="button">
-    Veja mais
-  </button>
-</div>
+          <button class="toggle-bio-btn" type="button">
+            Veja mais
+          </button>
+        </div>
 
-    <a
-      href="profile.html?id=${encodeURIComponent(profile.id)}"
-      class="btn btn-primary"
-    >
-      Ver perfil
-    </a>
+        <a
+          href="profile.html?id=${encodeURIComponent(profile.id)}"
+          class="btn btn-primary"
+        >
+          Ver perfil
+        </a>
+      </div>
+
+      <div class="result-card__media" aria-hidden="true">
+        ${photoUrl
+          ? `<img class="result-card__avatar" src="${escapeHtml(photoUrl)}" alt="" loading="lazy" decoding="async" />`
+          : `<span class="result-card__avatar result-card__avatar--fallback">${escapeHtml(initials)}</span>`
+        }
+      </div>
+    </div>
   </article>
-`).join('');
+`;
+   }).join('');
 
 document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
   button.addEventListener('click', () => {
