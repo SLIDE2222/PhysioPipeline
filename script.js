@@ -305,6 +305,99 @@ const SPECIALTY_RELATIONSHIP_MAP = {
   hospitalar: ['Respiratoria', 'Cardiorrespiratoria', 'Geriatrica'],
 };
 
+const CANONICAL_SPECIALTY_DEFINITIONS = {
+  ortopedica: {
+    label: 'Fisioterapia Ortopedica',
+    aliases: ['fisioterapia ortopedica', 'ortopedica', 'ortopedia', 'traumato ortopedica', 'traumato-ortopedica', 'musculoesqueletica'],
+    related: ['esportiva', 'pilates', 'rpg', 'funcional', 'pos_operatorio', 'domiciliar'],
+    tags: ['joelho', 'ombro', 'coluna', 'lombar', 'cervical', 'quadril', 'tornozelo', 'calcanhar', 'mao', 'punho', 'cotovelo', 'lesao', 'dor', 'reabilitacao', 'esporte', 'menisco', 'ligamento', 'lca', 'acl'],
+  },
+  esportiva: {
+    label: 'Fisioterapia Esportiva',
+    aliases: ['fisioterapia esportiva', 'esportiva', 'esporte', 'atleta', 'corrida', 'musculacao', 'performance esportiva'],
+    related: ['ortopedica', 'pilates', 'funcional', 'pos_operatorio'],
+    tags: ['joelho', 'ombro', 'tornozelo', 'lesao esportiva', 'corrida', 'atleta', 'academia', 'reabilitacao', 'menisco', 'ligamento'],
+  },
+  pelvica: {
+    label: 'Fisioterapia Pelvica',
+    aliases: ['fisioterapia pelvica', 'pelvica', 'uroginecologica', 'uroginecologia', 'saude da mulher', 'obstetrica'],
+    related: ['pilates'],
+    tags: ['pelve', 'pelvica', 'urinaria', 'incontinencia', 'pos-parto', 'pos parto', 'gestante', 'gravidez', 'vagina', 'saude da mulher', 'dor pelvica', 'perineo', 'assoalho pelvico', 'urina', 'perereca'],
+  },
+  neurologica: {
+    label: 'Fisioterapia Neurologica',
+    aliases: ['fisioterapia neurologica', 'neurologica', 'neurofuncional', 'neuro', 'reabilitacao neurologica'],
+    related: ['geriatrica', 'pilates', 'funcional', 'pediatrica', 'domiciliar'],
+    tags: ['avc', 'derrame', 'parkinson', 'alzheimer', 'equilibrio', 'coordenacao', 'neurologico', 'paralisia', 'marcha', 'reabilitacao'],
+  },
+  respiratoria: {
+    label: 'Fisioterapia Respiratoria',
+    aliases: ['fisioterapia respiratoria', 'respiratoria', 'cardiorrespiratoria', 'pulmonar', 'hospitalar respiratoria'],
+    related: ['hospitalar', 'geriatrica', 'domiciliar'],
+    tags: ['respiracao', 'respirar', 'falta de ar', 'asma', 'bronquite', 'dpoc', 'pulmonar', 'pulmao', 'folego', 'cansaco'],
+  },
+  pediatrica: {
+    label: 'Fisioterapia Pediatrica',
+    aliases: ['fisioterapia pediatrica', 'pediatrica', 'pediatria', 'infantil', 'crianca', 'bebe'],
+    related: ['neurologica', 'respiratoria'],
+    tags: ['crianca', 'bebe', 'infantil', 'desenvolvimento infantil', 'atraso motor', 'marcos motores', 'torcicolo congenito'],
+  },
+  geriatrica: {
+    label: 'Fisioterapia Geriatrica',
+    aliases: ['fisioterapia geriatrica', 'geriatrica', 'geriatria', 'gerontologia', 'idoso', 'idosa'],
+    related: ['neurologica', 'ortopedica', 'pilates', 'funcional', 'domiciliar'],
+    tags: ['idoso', 'idosa', 'queda', 'quedas', 'risco de queda', 'equilibrio', 'marcha', 'mobilidade', 'fortalecimento'],
+  },
+  pilates: {
+    label: 'Pilates',
+    aliases: ['pilates', 'pilates clinico', 'pilates terapeutico'],
+    related: ['ortopedica', 'rpg', 'funcional', 'geriatrica', 'pelvica'],
+    tags: ['postura', 'coluna', 'lombar', 'cervical', 'fortalecimento', 'mobilidade', 'dor', 'qualidade de vida', 'alongamento', 'core'],
+  },
+  rpg: {
+    label: 'RPG',
+    aliases: ['rpg', 'reeducacao postural global', 'postural'],
+    related: ['ortopedica', 'pilates', 'funcional'],
+    tags: ['postura', 'postural', 'coluna', 'lombar', 'cervical', 'escoliose', 'dor nas costas'],
+  },
+  funcional: {
+    label: 'Funcional',
+    aliases: ['funcional', 'fisioterapia funcional', 'treinamento funcional'],
+    related: ['ortopedica', 'esportiva', 'pilates', 'geriatrica'],
+    tags: ['mobilidade', 'fortalecimento', 'equilibrio', 'funcao', 'reabilitacao', 'movimento'],
+  },
+  domiciliar: {
+    label: 'Fisioterapia Domiciliar',
+    aliases: ['domiciliar', 'domicilar', 'home care', 'atendimento domiciliar', 'atendimento em casa', 'fisioterapia domiciliar'],
+    related: ['geriatrica', 'neurologica', 'ortopedica', 'pos_operatorio'],
+    tags: ['home care', 'casa', 'atendimento em casa', 'idoso', 'mobilidade', 'pos-operatorio', 'pos operatorio', 'acamado'],
+  },
+  pos_operatorio: {
+    label: 'Pos-operatorio',
+    aliases: ['pos-operatorio', 'pos operatorio', 'pos cirurgia', 'pos-cirurgico', 'reabilitacao pos operatoria', 'reabilitacao pos-operatoria'],
+    related: ['ortopedica', 'dermatofuncional', 'domiciliar', 'hospitalar'],
+    tags: ['cirurgia', 'recuperacao', 'reabilitacao', 'pos-cirurgico', 'hospitalar', 'lca', 'menisco', 'protese'],
+  },
+  dermatofuncional: {
+    label: 'Fisioterapia Dermatofuncional',
+    aliases: ['dermatofuncional', 'estetica', 'drenagem', 'drenagem linfatica', 'fisioterapia dermatofuncional'],
+    related: ['pos_operatorio'],
+    tags: ['pele', 'celulite', 'gordura', 'drenagem', 'linfedema', 'fibrose', 'cicatriz', 'pos operatorio estetico', 'pos lipo'],
+  },
+  acupuntura: {
+    label: 'Acupuntura',
+    aliases: ['acupuntura', 'agulhamento', 'agulhamento seco'],
+    related: ['ortopedica', 'funcional'],
+    tags: ['dor', 'agulhamento', 'alivio', 'tensao', 'bem-estar', 'bem estar', 'contratura'],
+  },
+  hospitalar: {
+    label: 'Fisioterapia Hospitalar',
+    aliases: ['hospitalar', 'fisioterapia hospitalar', 'uti'],
+    related: ['respiratoria', 'cardiorrespiratoria', 'pos_operatorio', 'geriatrica'],
+    tags: ['hospital', 'uti', 'internacao', 'pos operatorio', 'respiratoria', 'mobilidade'],
+  },
+};
+
 // This is the main intent catalog for patient-language searches.
 // Each entry describes how a clinical area can be discovered from body parts,
 // symptoms, informal language, and related specialties.
@@ -714,10 +807,47 @@ function getSpecialtyAliases(value) {
   ]));
 }
 
+function getCanonicalSpecialty(value = '') {
+  const normalized = normalizeSearchText(value);
+  if (!normalized) return '';
+
+  const aliasMatches = Object.entries(CANONICAL_SPECIALTY_DEFINITIONS)
+    .flatMap(([slug, definition]) => (definition.aliases || []).map((alias) => ({
+      slug,
+      alias: normalizeSearchText(alias),
+    })))
+    .filter(({ alias }) => alias && phraseMatchesText(normalized, alias))
+    .sort((a, b) => b.alias.length - a.alias.length);
+
+  return aliasMatches[0]?.slug || '';
+}
+
+function getSpecialtySlug(value = '') {
+  return getCanonicalSpecialty(value) || normalizeSearchText(value).replace(/[\s-]+/g, '_');
+}
+
+function getCanonicalRelatedSpecialties(slug = '') {
+  const definition = CANONICAL_SPECIALTY_DEFINITIONS[slug];
+  if (!definition) return [];
+  return uniqueTerms([...(definition.related || [])]);
+}
+
+function getCanonicalSpecialtyTags(slug = '') {
+  const definition = CANONICAL_SPECIALTY_DEFINITIONS[slug];
+  if (!definition) return [];
+  return uniqueTerms([
+    slug,
+    definition.label,
+    ...(definition.aliases || []),
+    ...(definition.tags || []),
+    ...(definition.related || []),
+  ].map(normalizeSearchText).filter(isMeaningfulIntentTerm));
+}
+
 function getRelatedSpecialties(value) {
   const normalized = normalizeSearchText(value);
   const words = getWordsFromLabel(value);
-  const related = [];
+  const related = getCanonicalRelatedSpecialties(getCanonicalSpecialty(value));
 
   [normalized, ...words, ...words.map((token) => SPECIALTY_ALIAS_MAP[token] || token)]
     .filter(Boolean)
@@ -807,6 +937,20 @@ function buildSearchContext(profiles = []) {
 
   const entries = [
     ...DEFAULT_INTENT_CATALOG,
+    ...Object.entries(CANONICAL_SPECIALTY_DEFINITIONS).map(([slug, definition]) => ({
+      id: slug,
+      specialty: definition.label,
+      specialtyAliases: [slug, ...(definition.aliases || [])],
+      relatedSpecialties: (definition.related || []).map((relatedSlug) =>
+        CANONICAL_SPECIALTY_DEFINITIONS[relatedSlug]?.label || relatedSlug
+      ),
+      bodyRegions: [],
+      symptoms: definition.tags || [],
+      synonyms: definition.aliases || [],
+      informalTerms: [],
+      associatedKeywords: [...(definition.tags || []), ...(definition.related || [])],
+      unrelatedSpecialties: [],
+    })),
     ...buildDynamicCatalogEntries(),
     ...profileSpecialties.map((specialty) => ({
       specialty,
@@ -1103,6 +1247,68 @@ function collectSearchableValues(value, bucket = []) {
   return bucket;
 }
 
+function getProfileSpecialtyValues(profile) {
+  return [
+    profile.especialidade,
+    profile.specialty,
+    profile.especialidadeSecundaria,
+    profile.secondarySpecialty,
+    profile.specialization,
+    profile.specialty2,
+    profile.extraSpecialty,
+  ].flat().filter(Boolean);
+}
+
+function getProfileCanonicalSlugs(profile) {
+  const specialtySlugs = getProfileSpecialtyValues(profile)
+    .map(getCanonicalSpecialty)
+    .filter(Boolean);
+  const bioText = getProfileBioText(profile);
+  const serviceText = normalizeSearchText([
+    profile.atendimento,
+    profile.attendance,
+    profile.serviceType,
+    profile.service_type,
+    profile.modalidade,
+  ].filter(Boolean).join(' '));
+  const detectedFromBio = Object.entries(CANONICAL_SPECIALTY_DEFINITIONS)
+    .filter(([, definition]) =>
+      (definition.aliases || []).some((alias) => {
+        const term = normalizeSearchText(alias);
+        return term.length > 4 && (phraseMatchesText(bioText, term) || phraseMatchesText(serviceText, term));
+      })
+    )
+    .map(([slug]) => slug);
+
+  return uniqueTerms([...specialtySlugs, ...detectedFromBio]);
+}
+
+function getProfileSearchTags(profile) {
+  const canonicalSlugs = getProfileCanonicalSlugs(profile);
+  const profileTags = [
+    profile.keywords,
+    profile.tags,
+    profile.searchKeywords,
+    profile.searchTags,
+    profile.treatments,
+    profile.treatmentTags,
+  ].flat().filter(Boolean);
+
+  return uniqueTerms([
+    ...canonicalSlugs,
+    ...canonicalSlugs.flatMap(getCanonicalSpecialtyTags),
+    ...profileTags.map(normalizeSearchText),
+  ].filter(Boolean));
+}
+
+function getProfileSearchKeywords(profile) {
+  return uniqueTerms([
+    ...getProfileSearchTags(profile),
+    ...getProfileSpecialtyValues(profile).flatMap(getWordsFromLabel),
+    ...tokenizeSearch(getProfileBioText(profile)),
+  ].filter(isMeaningfulIntentTerm));
+}
+
 function getProfileTagText(profile) {
   return normalizeSearchText([
     profile.keywords,
@@ -1116,6 +1322,7 @@ function getProfileTagText(profile) {
     profile.specialization,
     profile.specialty2,
     profile.extraSpecialty,
+    getProfileSearchTags(profile),
   ].flat().filter(Boolean).join(' '));
 }
 
@@ -1124,11 +1331,17 @@ function getProfileSearchText(profile) {
 }
 
 function getProfileSearchFields(profile) {
+  const canonicalSlugs = getProfileCanonicalSlugs(profile);
+  const searchTags = getProfileSearchTags(profile);
   return {
     specialtyText: getSearchableSpecialties(profile),
     bioText: getProfileBioText(profile),
     nameText: getProfileNameText(profile),
     tagText: getProfileTagText(profile),
+    canonicalSlugs,
+    canonicalText: normalizeSearchText(canonicalSlugs.join(' ')),
+    keywordText: normalizeSearchText(getProfileSearchKeywords(profile).join(' ')),
+    searchTags,
     cityText: normalizeSearchText(profile.cidade || profile.city),
     neighborhoodText: normalizeSearchText(profile.bairro || profile.neighborhood),
     profileText: getProfileSearchText(profile),
@@ -1144,12 +1357,18 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
   let hasSearchRelevance = !analysis.significantTerms.length && !analysis.normalizedQuery;
   const hasPhoto = Boolean(profile.foto || profile.photoUrl || profile.photo_url || profile.avatar_url);
   const hasBio = Boolean(profile.descricao || profile.bio);
+  const queryCanonicalSlug = getCanonicalSpecialty(analysis.normalizedQuery);
 
   if (analysis.normalizedQuery && fields.specialtyText.includes(analysis.normalizedQuery)) {
     score += 100;
     hasStrongRelevance = true;
     hasSearchRelevance = true;
     reasons.push(`specialty exact query match: ${analysis.normalizedQuery}`);
+  } else if (queryCanonicalSlug && fields.canonicalSlugs.includes(queryCanonicalSlug)) {
+    score += 90;
+    hasStrongRelevance = true;
+    hasSearchRelevance = true;
+    reasons.push(`canonical specialty match: ${queryCanonicalSlug}`);
   } else if (analysis.normalizedQuery && fields.profileText.includes(analysis.normalizedQuery)) {
     score += 15;
     hasSearchRelevance = true;
@@ -1189,6 +1408,14 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       ...entry.informalTerms,
     ]).filter((term) => !queryDrivenTerms.includes(term));
     const specialtyMatches = getMatchedTerms(fields.specialtyText, entry.specialtyTerms);
+    const entryCanonicalSlug = CANONICAL_SPECIALTY_DEFINITIONS[entry.id]
+      ? entry.id
+      : getCanonicalSpecialty(entry.specialty);
+    const canonicalSpecialtyMatch =
+      entryCanonicalSlug && fields.canonicalSlugs.includes(entryCanonicalSlug);
+    const canonicalRelatedMatches = entryCanonicalSlug
+      ? fields.canonicalSlugs.filter((slug) => getCanonicalRelatedSpecialties(entryCanonicalSlug).includes(slug))
+      : [];
     const relatedSpecialtyMatches = canUseRelatedSpecialties
       ? getMatchedTerms(fields.specialtyText, entry.relatedSpecialtyTerms)
       : [];
@@ -1196,9 +1423,12 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
     const symptomMatches = getMatchedTerms(`${fields.specialtyText} ${fields.tagText} ${fields.profileText}`, entry.matchedSymptoms);
     const synonymMatches = getMatchedTerms(`${fields.specialtyText} ${fields.tagText} ${fields.profileText}`, [...entry.matchedSynonyms, ...entry.matchedInformal]);
     const bioMatches = getMatchedTerms(fields.bioText, queryDrivenTerms);
-    const tagMatches = getMatchedTerms(fields.tagText, queryDrivenTerms);
+    const tagMatches = getMatchedTerms(`${fields.tagText} ${fields.keywordText}`, queryDrivenTerms);
     const nameMatches = getMatchedTerms(fields.nameText, queryDrivenTerms);
-    const unrelatedMatches = getMatchedTerms(fields.specialtyText, entry.unrelatedSpecialties);
+    const unrelatedMatches = uniqueTerms([
+      ...getMatchedTerms(fields.specialtyText, entry.unrelatedSpecialties),
+      ...fields.canonicalSlugs.filter((slug) => entry.unrelatedSpecialties.includes(slug)),
+    ]);
 
     if (specialtyMatches.length && !seenMatches.has(`specialty-group:${entry.id}`)) {
       seenMatches.add(`specialty-group:${entry.id}`);
@@ -1209,12 +1439,29 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       reasons.push(`specialty match: ${specialtyMatches.join(', ')}`);
     }
 
+    if (canonicalSpecialtyMatch && !specialtyMatches.length && !seenMatches.has(`canonical-group:${entry.id}`)) {
+      seenMatches.add(`canonical-group:${entry.id}`);
+      score += 90;
+      hasStrongRelevance = true;
+      hasSearchRelevance = true;
+      matchedSpecialties.push(entryCanonicalSlug);
+      reasons.push(`canonical specialty match: ${entryCanonicalSlug}`);
+    }
+
     if (relatedSpecialtyMatches.length && !seenMatches.has(`related-specialty-group:${entry.id}`)) {
       seenMatches.add(`related-specialty-group:${entry.id}`);
-      score += 65;
+      score += 60;
       hasStrongRelevance = true;
       hasSearchRelevance = true;
       reasons.push(`related specialty match: ${relatedSpecialtyMatches.join(', ')}`);
+    }
+
+    if (canonicalRelatedMatches.length && !relatedSpecialtyMatches.length && !seenMatches.has(`canonical-related-group:${entry.id}`)) {
+      seenMatches.add(`canonical-related-group:${entry.id}`);
+      score += 60;
+      hasStrongRelevance = true;
+      hasSearchRelevance = true;
+      reasons.push(`canonical related specialty match: ${canonicalRelatedMatches.join(', ')}`);
     }
 
     bodyRegionMatches.forEach((term) => {
@@ -1288,7 +1535,7 @@ function scoreProfileRelevance(profile, analysis, options = {}) {
       const key = `tag:${term}`;
       if (seenMatches.has(key)) return;
       seenMatches.add(key);
-      score += 15;
+      score += 20;
       hasSearchRelevance = true;
       reasons.push(`tag match: ${term}`);
     });
@@ -1367,6 +1614,14 @@ function calculateRelevance(profile, query, expandedTerms = []) {
   return scoreProfileRelevance(profile, analysis).score;
 }
 
+function calculateProfileRelevance(profile, analysisOrQuery, options = {}) {
+  const analysis = typeof analysisOrQuery === 'string'
+    ? analyzeSearchIntent(analysisOrQuery, buildSearchContext([profile]))
+    : analysisOrQuery;
+
+  return scoreProfileRelevance(profile, analysis, options);
+}
+
 function scorePatientMatch(profile, terms, query = '') {
   return calculateRelevance(profile, query, terms);
 }
@@ -1431,11 +1686,24 @@ function rankProfilesByRelevance(profiles, analysis, options = {}) {
       item.score >= analysis.fallbackScore &&
       (!requiresSearchRelevance || item.hasSearchRelevance)
     );
+    const topRelevantScore = relevant[0]?.score || 0;
+    const locationStrongFloor = topRelevantScore >= 160
+      ? Math.max(analysis.minimumScore, Math.floor(topRelevantScore * 0.18))
+      : analysis.fallbackScore;
     const exactInCity = relevant.filter((item) => isRequestedCity(item) && isExactSpecialty(item));
-    const relatedInCity = relevant.filter((item) => isRequestedCity(item) && !exactInCity.includes(item));
-    const exactOtherCities = relevant.filter((item) => !isRequestedCity(item) && isExactSpecialty(item));
+    const relatedInCity = relevant.filter((item) =>
+      isRequestedCity(item) &&
+      item.score >= locationStrongFloor &&
+      !exactInCity.includes(item)
+    );
+    const exactOtherCities = relevant.filter((item) =>
+      !isRequestedCity(item) &&
+      item.score >= locationStrongFloor &&
+      isExactSpecialty(item)
+    );
     const relatedOtherCities = relevant.filter((item) =>
       !isRequestedCity(item) &&
+      item.score >= locationStrongFloor &&
       !exactOtherCities.includes(item)
     );
     const locationAwareVisible = [
@@ -2018,14 +2286,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function getSearchableSpecialties(profile) {
+  const specialtyValues = getProfileSpecialtyValues(profile);
+  const canonicalSlugs = getProfileCanonicalSlugs(profile);
+
   return [
-    profile.especialidade,
-    profile.specialty,
-    profile.especialidadeSecundaria,
-    profile.secondarySpecialty,
-    profile.specialization,
-    profile.specialty2,
-    profile.extraSpecialty,
+    ...specialtyValues,
+    ...canonicalSlugs,
+    ...canonicalSlugs.map((slug) => CANONICAL_SPECIALTY_DEFINITIONS[slug]?.label),
+    ...canonicalSlugs.flatMap((slug) => CANONICAL_SPECIALTY_DEFINITIONS[slug]?.aliases || []),
   ]
     .filter(Boolean)
     .map(normalizeText)
