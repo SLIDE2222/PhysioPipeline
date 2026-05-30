@@ -150,11 +150,17 @@
   }
 
   async function fetchPublicProfilesFromSupabase({ useCache = true, limit = PUBLIC_PROFILE_LIST_LIMIT } = {}) {
+    const startedAt = performance.now();
+
     if (useCache) {
       const cached = readPublicProfileCache();
-      if (cached) return cached.map(normalizeProfile);
+      if (cached) {
+        console.info(`PhysioPipeline profiles: cache hit em ${Math.round(performance.now() - startedAt)}ms`);
+        return cached.map(normalizeProfile);
+      }
 
       if (publicProfileListInflight) {
+        console.info('PhysioPipeline profiles: reutilizando busca em andamento');
         return publicProfileListInflight.then((profiles) => profiles.map(normalizeProfile));
       }
     }
@@ -170,12 +176,16 @@
 
       for (const source of PUBLIC_PROFILE_CARD_SOURCES) {
         try {
+          const sourceStartedAt = performance.now();
           const rows = await supabasePublicRequest(source, query);
+          console.info(`PhysioPipeline profiles: ${source} carregou ${rows?.length || 0} perfis em ${Math.round(performance.now() - sourceStartedAt)}ms`);
           const profiles = (rows || []).map(normalizeProfile).filter(Boolean);
           writePublicProfileCache(profiles);
+          console.info(`PhysioPipeline profiles: fetch total em ${Math.round(performance.now() - startedAt)}ms`);
           return profiles;
         } catch (error) {
           lastError = error;
+          console.warn(`PhysioPipeline profiles: fonte ${source} falhou`, error);
         }
       }
 
@@ -444,13 +454,16 @@
       return request('/profiles/me').then((data) => normalizeProfile(data.profile));
     },
     async fetchProfiles(options = {}) {
+      const startedAt = performance.now();
       try {
         return await fetchPublicProfilesFromSupabase(options);
       } catch (error) {
         console.warn('Using Render fallback for public profiles:', error);
-        return request('/profiles').then((data) =>
-          (data.profiles || data || []).map(normalizeProfile)
-        );
+        return request('/profiles').then((data) => {
+          const profiles = (data.profiles || data || []).map(normalizeProfile);
+          console.info(`PhysioPipeline profiles: Render fallback carregou ${profiles.length} perfis em ${Math.round(performance.now() - startedAt)}ms`);
+          return profiles;
+        });
       }
     },
     createProfile(payload) {

@@ -2060,15 +2060,18 @@ function setupSearchModeSwitches() {
 async function getLoggedUser(force = false) {
   if (!force && cachedMyProfile) return cachedMyProfile;
 
+  const authStart = performance.now();
+
   try {
     const auth =
       window.physioApi.getStoredAuth?.() ||
       await waitForAuthStorage();
 
-    console.log('Stored auth:', auth);
+    console.info(`PhysioPipeline auth/session: storage lido em ${Math.round(performance.now() - authStart)}ms`);
 
     if (!auth?.token) {
       cachedMyProfile = null;
+      console.info(`PhysioPipeline auth/session: sem sessão em ${Math.round(performance.now() - authStart)}ms`);
       return null;
     }
 
@@ -2082,6 +2085,7 @@ async function getLoggedUser(force = false) {
       try {
         const meData = await window.physioApi.me();
         rawUser = meData?.user ?? meData ?? rawUser;
+        console.info(`PhysioPipeline auth/session: /auth/me concluído em ${Math.round(performance.now() - authStart)}ms`);
       } catch (error) {
         console.warn('Using stored auth fallback because /auth/me failed:', error);
       }
@@ -2116,6 +2120,7 @@ async function getLoggedUser(force = false) {
       profile,
     };
 
+    console.info(`PhysioPipeline auth/session: carregado em ${Math.round(performance.now() - authStart)}ms`);
     return cachedMyProfile;
   } catch (error) {
     console.warn('Auth UI init failed:', error);
@@ -2332,28 +2337,30 @@ function getProfileInitials(name = '') {
   return ((words[0]?.[0] || 'P') + (words.length > 1 ? words[words.length - 1][0] : '')).toUpperCase();
 }
 
-function renderResultAvatar({ photoUrl, initials, displayName, mobile = false, decorative = false }) {
-  const modifier = mobile ? ' result-card__avatar--mobile' : '';
-  const fallback = `<span class="result-card__avatar${modifier} result-card__avatar--fallback result-card__avatar-fallback" ${mobile ? '' : 'aria-hidden="true"'}>${escapeHtml(initials)}</span>`;
+function renderResultAvatar({ photoUrl, initials, displayName, decorative = false }) {
+  const fallback = `<span class="result-card__avatar result-card__avatar--fallback result-card__avatar-fallback" aria-hidden="true">${escapeHtml(initials)}</span>`;
 
   if (!photoUrl) return fallback;
 
   return `
     <img
-      class="result-card__avatar${modifier} result-card__avatar-img"
+      class="result-card__avatar result-card__avatar-img"
       src="${escapeHtml(photoUrl)}"
       alt="${decorative ? '' : `Foto de ${escapeHtml(displayName)}`}"
-      width="${mobile ? '72' : '112'}"
-      height="${mobile ? '72' : '112'}"
+      width="112"
+      height="112"
       loading="lazy"
       decoding="async"
     />
-    <span class="result-card__avatar${modifier} result-card__avatar--fallback result-card__avatar-fallback is-hidden" ${mobile ? '' : 'aria-hidden="true"'}>${escapeHtml(initials)}</span>
+    <span class="result-card__avatar result-card__avatar--fallback result-card__avatar-fallback is-hidden" aria-hidden="true">${escapeHtml(initials)}</span>
   `;
 }
 
 function attachResultAvatarFallbacks(container = document) {
-  container.querySelectorAll('.result-card__avatar-img').forEach((image) => {
+  const images = container.querySelectorAll('.result-card__avatar-img');
+  console.info(`PhysioPipeline resultados: image handling preparado para ${images.length} imagem(ns)`);
+
+  images.forEach((image) => {
     const useFallback = (reason) => {
       if (image.dataset.fallbackApplied === 'true') return;
 
@@ -2392,13 +2399,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   const resumo = document.getElementById('resultadoResumo');
   const resultsShowingSummary = document.getElementById('resultsShowingSummary');
   const paginationControls = document.getElementById('paginationControls');
+  const resultPerfStart = performance.now();
+  let resultsLoaded = false;
+  let loadingTimeoutId = null;
+  const logResultsTiming = (label) => {
+    console.info(`PhysioPipeline resultados: ${label} em ${Math.round(performance.now() - resultPerfStart)}ms`);
+  };
 
   const renderResultsSkeleton = (count = 6) => {
     resultsGrid.innerHTML = Array.from({ length: count }, () => `
       <article class="result-card result-card-skeleton" aria-hidden="true">
         <div class="result-card__layout">
-          <div class="result-card__content">
+          <div class="result-card__title">
             <span class="skeleton-line skeleton-title"></span>
+          </div>
+          <span class="result-card__avatar result-card__avatar--fallback skeleton-avatar result-card__media"></span>
+          <div class="result-card__content">
             <span class="skeleton-pill"></span>
             <span class="skeleton-pill skeleton-pill-short"></span>
             <span class="skeleton-pill skeleton-pill-shorter"></span>
@@ -2406,7 +2422,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             <span class="skeleton-line"></span>
             <span class="skeleton-button"></span>
           </div>
-          <span class="result-card__avatar result-card__avatar--fallback skeleton-avatar"></span>
         </div>
       </article>
     `).join('');
@@ -2450,18 +2465,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   try {
-    console.info('PhysioPipeline resultados: iniciando busca de profissionais');
+    logResultsTiming('iniciando busca de profissionais');
     resumo.textContent = 'Buscando profissionais...';
     renderResultsSkeleton();
+    loadingTimeoutId = window.setTimeout(() => {
+      if (resultsLoaded) return;
+
+      resumo.textContent = 'A busca demorou mais que o esperado.';
+      resultsGrid.innerHTML = `
+        <div class="empty-results">
+          <h3>Não foi possível carregar os profissionais agora.</h3>
+          <p>Tente atualizar a página em alguns segundos.</p>
+        </div>
+      `;
+      if (resultsShowingSummary) resultsShowingSummary.textContent = '';
+      if (paginationControls) paginationControls.innerHTML = '';
+      console.warn('PhysioPipeline resultados: timeout de carregamento acionado');
+    }, 20000);
 
     const profiles = await window.physioApi.fetchProfiles({ useCache: true });
-    console.info(`PhysioPipeline resultados: busca finalizada com ${profiles.length} perfis`);
+    resultsLoaded = true;
+    if (loadingTimeoutId) window.clearTimeout(loadingTimeoutId);
+    logResultsTiming(`professional fetch finalizado com ${profiles.length} perfis`);
+    resultsGrid.innerHTML = '';
+
     searchAnalysis = analyzeSearchIntent(searchQuery, buildSearchContext(profiles));
+    logResultsTiming('análise de busca concluída');
 
     const rankedResult = rankProfilesByRelevance(profiles, searchAnalysis, {
       city: cidade,
       neighborhood: bairro,
     });
+    logResultsTiming('search/filter processing concluído');
 
     debugRankedResults(searchQuery, searchAnalysis, rankedResult.ordered);
 
@@ -2632,6 +2667,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const renderPage = (page, shouldScroll = false) => {
+      const renderStart = performance.now();
       currentPage = clampPage(page);
 
       const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
@@ -2646,20 +2682,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const photoUrl = getProfileImageUrl(profile);
     const initials = getProfileInitials(displayName);
 
-    return `
+  return `
   <article class="result-card">
     <div class="result-card__layout">
-      <div class="result-card__content">
-        <div class="result-card__mobile-header">
-          ${renderResultAvatar({ photoUrl, initials, displayName, mobile: true })}
-          <div>
-            <h3>
-              ${escapeHtml(displayName)}
-            </h3>
-            <p class="result-card__mobile-meta">${escapeHtml(displaySpecialty)} • ${escapeHtml(displayCity)}</p>
-          </div>
-        </div>
+      <div class="result-card__title">
+        <h3>
+          ${escapeHtml(displayName)}
+        </h3>
+        <p class="result-card__mobile-meta">${escapeHtml(displaySpecialty)} • ${escapeHtml(displayCity)}</p>
+      </div>
 
+      <div class="result-card__media" aria-hidden="true">
+        ${renderResultAvatar({ photoUrl, initials, displayName, decorative: true })}
+      </div>
+
+      <div class="result-card__content">
         <p>
           <strong>Especialidade:</strong>
           ${escapeHtml(displaySpecialty)}
@@ -2692,16 +2729,13 @@ document.addEventListener('DOMContentLoaded', async () => {
           Ver perfil
         </a>
       </div>
-
-      <div class="result-card__media" aria-hidden="true">
-        ${renderResultAvatar({ photoUrl, initials, displayName, decorative: true })}
-      </div>
     </div>
   </article>
 `;
    }).join('');
 
 attachResultAvatarFallbacks(resultsGrid);
+logResultsTiming(`renderResults página ${currentPage} concluído (${Math.round(performance.now() - renderStart)}ms)`);
 
 document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
   button.addEventListener('click', () => {
@@ -2733,6 +2767,8 @@ document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
 
 } catch (error) {
   console.error(error);
+  resultsLoaded = true;
+  if (loadingTimeoutId) window.clearTimeout(loadingTimeoutId);
 
   resumo.textContent = 'Erro ao carregar resultados.';
   if (resultsShowingSummary) resultsShowingSummary.textContent = '';
