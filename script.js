@@ -2260,6 +2260,17 @@ async function renderAuthArea() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  if (document.getElementById('resultsGrid')) {
+    console.time('PhysioPipeline header/menu setup');
+    setupAccountMenuEvents();
+    renderAuthArea().finally(() => console.timeEnd('PhysioPipeline header/menu setup'));
+    window.setTimeout(() => {
+      cachedMyProfile = null;
+      renderAuthArea();
+    }, 1200);
+    return;
+  }
+
   setupAccountMenuEvents();
   await renderAuthArea();
   await loadDynamicSearchOptions();
@@ -2357,6 +2368,7 @@ function renderResultAvatar({ photoUrl, initials, displayName, decorative = fals
 }
 
 function attachResultAvatarFallbacks(container = document) {
+  console.time('PhysioPipeline image handling');
   const images = container.querySelectorAll('.result-card__avatar-img');
   console.info(`PhysioPipeline resultados: image handling preparado para ${images.length} imagem(ns)`);
 
@@ -2382,6 +2394,7 @@ function attachResultAvatarFallbacks(container = document) {
       if (!image.complete) useFallback('demorou para carregar');
     }, 8000);
   });
+  console.timeEnd('PhysioPipeline image handling');
 }
 
 // ===============================
@@ -2391,17 +2404,22 @@ function attachResultAvatarFallbacks(container = document) {
 const RESULTS_PER_PAGE = 12;
 
 document.addEventListener('DOMContentLoaded', async () => {
+  console.time('PhysioPipeline resultados page init');
   const resultsGrid = document.getElementById('resultsGrid');
 
   // Só executa em resultados.html
-  if (!resultsGrid) return;
+  if (!resultsGrid) {
+    console.timeEnd('PhysioPipeline resultados page init');
+    return;
+  }
 
   const resumo = document.getElementById('resultadoResumo');
   const resultsShowingSummary = document.getElementById('resultsShowingSummary');
   const paginationControls = document.getElementById('paginationControls');
   const resultPerfStart = performance.now();
   let resultsLoaded = false;
-  let loadingTimeoutId = null;
+  let slowLoadingTimeoutId = null;
+  let failedLoadingTimeoutId = null;
   const logResultsTiming = (label) => {
     console.info(`PhysioPipeline resultados: ${label} em ${Math.round(performance.now() - resultPerfStart)}ms`);
   };
@@ -2458,6 +2476,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (patientInput) patientInput.value = queixa;
   if (cityInput) cityInput.value = params.get('cidade') || '';
   if (bairroInput) bairroInput.value = params.get('bairro') || '';
+  setupSpecialtyAutocomplete('specialtyInput', 'specialtySuggestions');
+  setupCityNeighborhoodAutocomplete(
+    'cityIndexSelect',
+    'cityIndexSuggestions',
+    'buscarBairroIndex',
+    'bairroIndexSuggestions'
+  );
   setupSearchModeSwitches();
   document.querySelectorAll('input[name="modo"]').forEach((input) => {
     input.checked = input.value === modoBusca;
@@ -2468,27 +2493,47 @@ document.addEventListener('DOMContentLoaded', async () => {
     logResultsTiming('iniciando busca de profissionais');
     resumo.textContent = 'Buscando profissionais...';
     renderResultsSkeleton();
-    loadingTimeoutId = window.setTimeout(() => {
+    slowLoadingTimeoutId = window.setTimeout(() => {
       if (resultsLoaded) return;
 
-      resumo.textContent = 'A busca demorou mais que o esperado.';
+      resumo.textContent = 'Ainda carregando profissionais...';
+      console.warn('PhysioPipeline resultados: busca ainda pendente após 5s');
+    }, 5000);
+
+    failedLoadingTimeoutId = window.setTimeout(() => {
+      if (resultsLoaded) return;
+
+      resultsLoaded = true;
+      resumo.textContent = 'Não foi possível carregar os profissionais agora.';
       resultsGrid.innerHTML = `
         <div class="empty-results">
-          <h3>Não foi possível carregar os profissionais agora.</h3>
+          <h3>A busca demorou demais.</h3>
           <p>Tente atualizar a página em alguns segundos.</p>
         </div>
       `;
       if (resultsShowingSummary) resultsShowingSummary.textContent = '';
       if (paginationControls) paginationControls.innerHTML = '';
-      console.warn('PhysioPipeline resultados: timeout de carregamento acionado');
-    }, 20000);
+      console.warn('PhysioPipeline resultados: timeout de 10s acionado');
+    }, 10000);
 
-    const profiles = await window.physioApi.fetchProfiles({ useCache: true });
+    console.time('PhysioPipeline fetching professionals');
+    let profiles = [];
+    try {
+      profiles = await window.physioApi.fetchProfiles({
+        useCache: true,
+        allowBackendFallback: false,
+      });
+    } finally {
+      console.timeEnd('PhysioPipeline fetching professionals');
+    }
+    if (resultsLoaded && failedLoadingTimeoutId) return;
     resultsLoaded = true;
-    if (loadingTimeoutId) window.clearTimeout(loadingTimeoutId);
+    if (slowLoadingTimeoutId) window.clearTimeout(slowLoadingTimeoutId);
+    if (failedLoadingTimeoutId) window.clearTimeout(failedLoadingTimeoutId);
     logResultsTiming(`professional fetch finalizado com ${profiles.length} perfis`);
     resultsGrid.innerHTML = '';
 
+    console.time('PhysioPipeline filtering/search ranking');
     searchAnalysis = analyzeSearchIntent(searchQuery, buildSearchContext(profiles));
     logResultsTiming('análise de busca concluída');
 
@@ -2497,6 +2542,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       neighborhood: bairro,
     });
     logResultsTiming('search/filter processing concluído');
+    console.timeEnd('PhysioPipeline filtering/search ranking');
 
     debugRankedResults(searchQuery, searchAnalysis, rankedResult.ordered);
 
@@ -2667,6 +2713,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const renderPage = (page, shouldScroll = false) => {
+      console.time('PhysioPipeline renderResults');
       const renderStart = performance.now();
       currentPage = clampPage(page);
 
@@ -2736,6 +2783,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 attachResultAvatarFallbacks(resultsGrid);
 logResultsTiming(`renderResults página ${currentPage} concluído (${Math.round(performance.now() - renderStart)}ms)`);
+console.timeEnd('PhysioPipeline renderResults');
 
 document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
   button.addEventListener('click', () => {
@@ -2764,11 +2812,16 @@ document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
     };
 
     renderPage(currentPage);
+    loadDynamicSearchOptions().catch((error) => {
+      console.warn('Opções dinâmicas carregando em segundo plano falharam:', error);
+    });
+    console.timeEnd('PhysioPipeline resultados page init');
 
 } catch (error) {
   console.error(error);
   resultsLoaded = true;
-  if (loadingTimeoutId) window.clearTimeout(loadingTimeoutId);
+  if (slowLoadingTimeoutId) window.clearTimeout(slowLoadingTimeoutId);
+  if (failedLoadingTimeoutId) window.clearTimeout(failedLoadingTimeoutId);
 
   resumo.textContent = 'Erro ao carregar resultados.';
   if (resultsShowingSummary) resultsShowingSummary.textContent = '';
@@ -2777,7 +2830,9 @@ document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
   resultsGrid.innerHTML = `
     <div class="empty-results">
       <h3>Erro ao buscar profissionais.</h3>
+      <p>Tente atualizar a página. A busca pública não depende do backend privado.</p>
     </div>
   `;
+  console.timeEnd('PhysioPipeline resultados page init');
 }
 });

@@ -46,8 +46,8 @@
     'attendance',
     'isClaimed',
   ].join(',');
-  const PUBLIC_PROFILE_CARD_SOURCES = ['public_profile_cards', 'public_profiles', 'Profile'];
-  const PUBLIC_PROFILE_DETAIL_SOURCES = ['public_profile_details', 'public_profiles', 'Profile'];
+  const PUBLIC_PROFILE_CARD_SOURCES = ['Profile', 'public_profiles', 'public_profile_cards'];
+  const PUBLIC_PROFILE_DETAIL_SOURCES = ['Profile', 'public_profiles', 'public_profile_details'];
   let publicProfileListMemoryCache = null;
   let publicProfileListInflight = null;
 
@@ -151,44 +151,54 @@
 
   async function fetchPublicProfilesFromSupabase({ useCache = true, limit = PUBLIC_PROFILE_LIST_LIMIT } = {}) {
     const startedAt = performance.now();
+    const timingLabel = `PhysioPipeline public profiles fetch ${Math.round(startedAt)}`;
+    console.time(timingLabel);
 
     if (useCache) {
       const cached = readPublicProfileCache();
       if (cached) {
         console.info(`PhysioPipeline profiles: cache hit em ${Math.round(performance.now() - startedAt)}ms`);
+        console.timeEnd(timingLabel);
         return cached.map(normalizeProfile);
       }
 
       if (publicProfileListInflight) {
         console.info('PhysioPipeline profiles: reutilizando busca em andamento');
-        return publicProfileListInflight.then((profiles) => profiles.map(normalizeProfile));
+        return publicProfileListInflight.then((profiles) => {
+          console.timeEnd(timingLabel);
+          return profiles.map(normalizeProfile);
+        });
       }
     }
 
-    const query = [
+    const baseQuery = [
       `select=${encodeURIComponent(PUBLIC_PROFILE_CARD_SELECT)}`,
-      'order=createdAt.desc',
       `limit=${encodeURIComponent(String(limit))}`,
     ].join('&');
+    const orderedQuery = `${baseQuery}&order=createdAt.desc`;
 
     const requestProfiles = async () => {
       let lastError = null;
 
       for (const source of PUBLIC_PROFILE_CARD_SOURCES) {
-        try {
-          const sourceStartedAt = performance.now();
-          const rows = await supabasePublicRequest(source, query);
-          console.info(`PhysioPipeline profiles: ${source} carregou ${rows?.length || 0} perfis em ${Math.round(performance.now() - sourceStartedAt)}ms`);
-          const profiles = (rows || []).map(normalizeProfile).filter(Boolean);
-          writePublicProfileCache(profiles);
-          console.info(`PhysioPipeline profiles: fetch total em ${Math.round(performance.now() - startedAt)}ms`);
-          return profiles;
-        } catch (error) {
-          lastError = error;
-          console.warn(`PhysioPipeline profiles: fonte ${source} falhou`, error);
+        for (const query of [orderedQuery, baseQuery]) {
+          try {
+            const sourceStartedAt = performance.now();
+            const rows = await supabasePublicRequest(source, query);
+            console.info(`PhysioPipeline profiles: ${source} carregou ${rows?.length || 0} perfis em ${Math.round(performance.now() - sourceStartedAt)}ms`);
+            const profiles = (rows || []).map(normalizeProfile).filter(Boolean);
+            writePublicProfileCache(profiles);
+            console.info(`PhysioPipeline profiles: fetch total em ${Math.round(performance.now() - startedAt)}ms`);
+            console.timeEnd(timingLabel);
+            return profiles;
+          } catch (error) {
+            lastError = error;
+            console.warn(`PhysioPipeline profiles: fonte ${source} falhou`, error);
+          }
         }
       }
 
+      console.timeEnd(timingLabel);
       throw lastError || new Error('Could not load public profiles from Supabase.');
     };
 
@@ -458,6 +468,11 @@
       try {
         return await fetchPublicProfilesFromSupabase(options);
       } catch (error) {
+        if (options.allowBackendFallback === false) {
+          console.warn('Supabase public profiles failed and backend fallback is disabled:', error);
+          throw error;
+        }
+
         console.warn('Using Render fallback for public profiles:', error);
         return request('/profiles').then((data) => {
           const profiles = (data.profiles || data || []).map(normalizeProfile);
