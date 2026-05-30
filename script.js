@@ -1,26 +1,26 @@
 let cachedMyProfile = null;
 
 const EXISTING_SPECIALTIES = [
-  'Fisioterapia OrtopÃ©dica',
+  'Fisioterapia Ortopédica',
   'Fisioterapia Esportiva',
-  'Fisioterapia NeurolÃ³gica',
-  'Fisioterapia GeriÃ¡trica',
-  'Fisioterapia RespiratÃ³ria',
+  'Fisioterapia Neurológica',
+  'Fisioterapia Geriátrica',
+  'Fisioterapia Respiratória',
   'Pilates',
   'Domicilar',
   'Fisioterapia Ocupacional',
   'Quiropraxia',
-  'Fisioterapia PediÃ¡trica',
+  'Fisioterapia Pediátrica',
   'Ventosaterapia',
-  'PÃ³s-operatÃ³rio'
+  'Pós-operatório'
 ];
 
 const SPECIALTIES = window.PhysioTaxonomy?.profileSpecialtyOptions || EXISTING_SPECIALTIES;
 
 const CITY_NEIGHBORHOODS = {
-  'SÃ£o Paulo': [
+  'São Paulo': [
     'Bela Vista',
-    'ButantÃ£',
+    'Butantã',
     'Ipiranga',
     'Lapa',
     'Mooca',
@@ -28,23 +28,23 @@ const CITY_NEIGHBORHOODS = {
     'Santana',
     'Santo Amaro',
     'Campo Belo',
-    'TatuapÃ©',
+    'Tatuapé',
     'Vila Mariana'
   ],
   'Sorocaba': [
     'Campolim',
     'Centro',
-    'Ã‰den',
+    'Éden',
     'Jardim Europa',
-    'Santa RosÃ¡lia',
+    'Santa Rosália',
     'Vila Haro',
     'Wanel Ville'
   ],
   'Itapetininga': [
     'Centro',
     'Chapada Grande',
-    'Jardim FogaÃ§a',
-    'Jardim MarabÃ¡',
+    'Jardim Fogaça',
+    'Jardim Marabá',
     'Vila Aparecida',
     'Vila Nastri',
     'Vila Rio Branco'
@@ -185,7 +185,7 @@ const GENERIC_QUERY_TERMS = new Set([
 const INTENT_RULES = [
   {
     id: 'pelvica',
-    label: 'Fisioterapia PÃ©lvica / UroginecolÃ³gica',
+    label: 'Fisioterapia Pélvica / Uroginecológica',
     triggers: ['perereca', 'vagina', 'vaginal', 'perineo', 'pelvica', 'pelvico', 'assoalho pelvico', 'assoalho', 'xixi', 'incontinencia', 'urina', 'bexiga', 'escape de urina'],
     specialtyKeywords: ['pelvica', 'uroginecologica', 'perineal'],
     relatedTerms: ['assoalho pelvico', 'perineo', 'incontinencia urinaria', 'urgencia urinaria', 'saude da mulher', 'gestante', 'obstetrica', 'pos parto', 'parto'],
@@ -193,7 +193,7 @@ const INTENT_RULES = [
   },
   {
     id: 'obstetrica',
-    label: 'Fisioterapia ObstÃ©trica / PÃ³s-parto',
+    label: 'Fisioterapia Obstétrica / Pós-parto',
     triggers: ['gravidez', 'gestante', 'gestacao', 'parto', 'pos parto', 'pos-parto', 'puerperio'],
     specialtyKeywords: ['obstetrica', 'pelvica', 'uroginecologica', 'saude da mulher'],
     relatedTerms: ['gestante', 'parto', 'pos parto', 'perineo', 'assoalho pelvico', 'diastase'],
@@ -201,7 +201,7 @@ const INTENT_RULES = [
   },
   {
     id: 'joelho',
-    label: 'Ortopedia / Esportiva / Traumato-ortopÃ©dica',
+    label: 'Ortopedia / Esportiva / Traumato-ortopédica',
     triggers: ['joelho', 'dor no joelho', 'menisco', 'ligamento', 'lca', 'acl', 'condromalacia'],
     specialtyKeywords: ['ortopedica', 'esportiva', 'traumato', 'traumato ortopedica'],
     relatedTerms: ['joelho', 'menisco', 'ligamento', 'condromalacia', 'pos operatorio', 'reabilitacao esportiva'],
@@ -233,7 +233,7 @@ const INTENT_RULES = [
   },
   {
     id: 'respiratoria',
-    label: 'Fisioterapia RespiratÃ³ria',
+    label: 'Fisioterapia Respiratória',
     triggers: ['respirar', 'respiracao', 'respiratoria', 'pulmao', 'folego', 'asma', 'bronquite', 'dpoc'],
     specialtyKeywords: ['respiratoria', 'cardiorrespiratoria', 'pulmonar', 'reabilitacao respiratoria'],
     relatedTerms: ['respirar', 'pulmao', 'folego', 'asma', 'bronquite', 'dpoc'],
@@ -241,7 +241,7 @@ const INTENT_RULES = [
   },
   {
     id: 'geriatria',
-    label: 'Fisioterapia GeriÃ¡trica / Gerontologia',
+    label: 'Fisioterapia Geriátrica / Gerontologia',
     triggers: ['idoso', 'idosa', 'geriatria', 'geriatrica', 'gerontologia', 'equilibrio', 'quedas', 'queda'],
     specialtyKeywords: ['geriatrica', 'gerontologia', 'geriatria', 'prevencao de quedas'],
     relatedTerms: ['idoso', 'equilibrio', 'quedas', 'mobilidade reduzida', 'marcha'],
@@ -249,7 +249,7 @@ const INTENT_RULES = [
   },
   {
     id: 'pediatrica',
-    label: 'Fisioterapia PediÃ¡trica',
+    label: 'Fisioterapia Pediátrica',
     triggers: ['bebe', 'crianca', 'infantil', 'pediatrica', 'pediatria', 'atraso motor'],
     specialtyKeywords: ['pediatrica', 'pediatria', 'infantil'],
     relatedTerms: ['bebe', 'crianca', 'infantil', 'atraso motor', 'desenvolvimento'],
@@ -632,7 +632,7 @@ async function loadDynamicSearchOptions() {
     if (DYNAMIC_OPTIONS_CACHE_MS > 0) writeCachedDynamicOptions(options);
     applyDynamicOptions(options);
   } catch (error) {
-    console.warn('NÃ£o foi possÃ­vel carregar opÃ§Ãµes dinÃ¢micas:', error);
+    console.warn('Não foi possível carregar opções dinâmicas:', error);
     applyDynamicOptions({});
   }
 
@@ -703,7 +703,7 @@ function normalizeText(value) {
   return String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/['â€™`]/g, ' ')
+    .replace(/['’`]/g, ' ')
     .replace(/\s+/g, ' ')
     .toLowerCase()
     .trim();
@@ -2231,7 +2231,7 @@ async function renderAuthArea() {
   const profileHref = getUserProfileHref(user);
 
   authArea.innerHTML = `
-    <span class="user-greeting">OlÃ¡, ${escapeHtml(firstName)}</span>
+    <span class="user-greeting">Olá, ${escapeHtml(firstName)}</span>
     <div class="account-menu" data-account-menu>
       <button
         class="account-menu__button"
@@ -2332,6 +2332,51 @@ function getProfileInitials(name = '') {
   return ((words[0]?.[0] || 'P') + (words.length > 1 ? words[words.length - 1][0] : '')).toUpperCase();
 }
 
+function renderResultAvatar({ photoUrl, initials, displayName, mobile = false, decorative = false }) {
+  const modifier = mobile ? ' result-card__avatar--mobile' : '';
+  const fallback = `<span class="result-card__avatar${modifier} result-card__avatar--fallback result-card__avatar-fallback" ${mobile ? '' : 'aria-hidden="true"'}>${escapeHtml(initials)}</span>`;
+
+  if (!photoUrl) return fallback;
+
+  return `
+    <img
+      class="result-card__avatar${modifier} result-card__avatar-img"
+      src="${escapeHtml(photoUrl)}"
+      alt="${decorative ? '' : `Foto de ${escapeHtml(displayName)}`}"
+      width="${mobile ? '72' : '112'}"
+      height="${mobile ? '72' : '112'}"
+      loading="lazy"
+      decoding="async"
+    />
+    <span class="result-card__avatar${modifier} result-card__avatar--fallback result-card__avatar-fallback is-hidden" ${mobile ? '' : 'aria-hidden="true"'}>${escapeHtml(initials)}</span>
+  `;
+}
+
+function attachResultAvatarFallbacks(container = document) {
+  container.querySelectorAll('.result-card__avatar-img').forEach((image) => {
+    const useFallback = (reason) => {
+      if (image.dataset.fallbackApplied === 'true') return;
+
+      const fallback = image.nextElementSibling;
+      image.dataset.fallbackApplied = 'true';
+      console.warn(`Imagem de perfil ${reason}; usando avatar padrão:`, image.currentSrc || image.src);
+      image.classList.add('is-hidden');
+      if (fallback?.classList.contains('result-card__avatar-fallback')) {
+        fallback.classList.remove('is-hidden');
+      }
+    };
+
+    image.addEventListener('error', () => useFallback('falhou'), { once: true });
+    image.addEventListener('load', () => {
+      if (!image.naturalWidth) useFallback('inválida');
+    }, { once: true });
+
+    window.setTimeout(() => {
+      if (!image.complete) useFallback('demorou para carregar');
+    }, 8000);
+  });
+}
+
 // ===============================
 // RESULTADOS DA BUSCA
 // ===============================
@@ -2341,7 +2386,7 @@ const RESULTS_PER_PAGE = 12;
 document.addEventListener('DOMContentLoaded', async () => {
   const resultsGrid = document.getElementById('resultsGrid');
 
-  // SÃ³ executa em resultados.html
+  // Só executa em resultados.html
   if (!resultsGrid) return;
 
   const resumo = document.getElementById('resultadoResumo');
@@ -2405,10 +2450,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   try {
+    console.info('PhysioPipeline resultados: iniciando busca de profissionais');
     resumo.textContent = 'Buscando profissionais...';
     renderResultsSkeleton();
 
     const profiles = await window.physioApi.fetchProfiles({ useCache: true });
+    console.info(`PhysioPipeline resultados: busca finalizada com ${profiles.length} perfis`);
     searchAnalysis = analyzeSearchIntent(searchQuery, buildSearchContext(profiles));
 
     const rankedResult = rankProfilesByRelevance(profiles, searchAnalysis, {
@@ -2544,7 +2591,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               type="button"
               class="pagination-page ${item === currentPage ? 'is-active' : ''}"
               data-page="${item}"
-              aria-label="Ir para a pÃ¡gina ${item}"
+              aria-label="Ir para a página ${item}"
               ${item === currentPage ? 'aria-current="page"' : ''}
             >
               ${item}
@@ -2573,7 +2620,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           data-page="${currentPage + 1}"
           ${currentPage === totalPages ? 'disabled' : ''}
         >
-          PrÃ³xima
+          Próxima
         </button>
       `;
 
@@ -2604,10 +2651,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     <div class="result-card__layout">
       <div class="result-card__content">
         <div class="result-card__mobile-header">
-          ${photoUrl
-            ? `<img class="result-card__avatar result-card__avatar--mobile" src="${escapeHtml(photoUrl)}" alt="Foto de ${escapeHtml(displayName)}" loading="lazy" decoding="async" />`
-            : `<span class="result-card__avatar result-card__avatar--mobile result-card__avatar--fallback" aria-hidden="true">${escapeHtml(initials)}</span>`
-          }
+          ${renderResultAvatar({ photoUrl, initials, displayName, mobile: true })}
           <div>
             <h3>
               ${escapeHtml(displayName)}
@@ -2650,15 +2694,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       </div>
 
       <div class="result-card__media" aria-hidden="true">
-        ${photoUrl
-          ? `<img class="result-card__avatar" src="${escapeHtml(photoUrl)}" alt="" loading="lazy" decoding="async" />`
-          : `<span class="result-card__avatar result-card__avatar--fallback">${escapeHtml(initials)}</span>`
-        }
+        ${renderResultAvatar({ photoUrl, initials, displayName, decorative: true })}
       </div>
     </div>
   </article>
 `;
    }).join('');
+
+attachResultAvatarFallbacks(resultsGrid);
 
 document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
   button.addEventListener('click', () => {

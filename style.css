@@ -4073,6 +4073,8 @@ body {
 .result-card__avatar {
   width: 112px !important;
   height: 112px !important;
+  min-width: 112px !important;
+  aspect-ratio: 1 / 1 !important;
   border-radius: 50% !important;
   border: 3px solid rgba(255, 255, 255, 0.92) !important;
   box-shadow:
@@ -4083,6 +4085,10 @@ body {
   color: #ffffff !important;
 }
 
+img.result-card__avatar {
+  display: block !important;
+}
+
 .result-card__avatar--fallback {
   display: inline-flex !important;
   align-items: center !important;
@@ -4091,6 +4097,11 @@ body {
   font-weight: 900 !important;
   letter-spacing: 0 !important;
   text-transform: uppercase !important;
+}
+
+.result-card__avatar.is-hidden,
+.result-card__avatar-fallback.is-hidden {
+  display: none !important;
 }
 
 .result-card__avatar--mobile,
@@ -4166,6 +4177,7 @@ body {
     display: inline-flex !important;
     width: 72px !important;
     height: 72px !important;
+    min-width: 72px !important;
     border-width: 2px !important;
     font-size: 1.3rem !important;
   }
