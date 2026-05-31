@@ -4880,3 +4880,73 @@ img.result-card__avatar {
     padding: 0 10px !important;
   }
 }
+
+
+/* Codex results filter rows */
+.results-page-body .results-search-inline {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 16px !important;
+  align-items: stretch !important;
+}
+
+.results-page-body .results-search-inline__mode-row {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.results-page-body .results-search-inline__fields-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: end;
+  width: 100%;
+}
+
+.results-page-body .results-search-inline .results-mode-toggle {
+  width: min(100%, 520px) !important;
+  max-width: 520px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+.results-page-body .results-search-inline .autocomplete-wrapper,
+.results-page-body .results-search-inline .patient-search-field {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.results-page-body .results-search-inline .patient-search-field input {
+  width: 100%;
+}
+
+.results-page-body .results-search-inline button[type="submit"] {
+  min-width: 170px;
+  height: 58px;
+}
+
+.results-page-body .results-search-inline .patient-search-field[hidden],
+.results-page-body .results-search-inline .specialty-search-field[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .results-page-body .results-search-inline__fields-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .results-page-body .results-search-inline__mode-row {
+    justify-content: stretch;
+  }
+
+  .results-page-body .results-search-inline .results-mode-toggle {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .results-page-body .results-search-inline button[type="submit"] {
+    width: 100%;
+    min-width: 0;
+  }
+}

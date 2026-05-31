@@ -3120,7 +3120,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   resultsGrid.innerHTML = `
     <div class="empty-results">
-      <h3>${modoBusca === 'clinica' ? 'Erro ao buscar clinicas.' : modoBusca === 'especialidade' ? 'Erro ao buscar resultados.' : 'Erro ao buscar profissionais.'}</h3>
+      <h3>${modoBusca === 'clinica' ? 'Erro ao buscar clínicas.' : 'Erro ao buscar resultados.'}</h3>
       <p>Tente atualizar a página e pesquisar novamente.</p>
     </div>
   `;
