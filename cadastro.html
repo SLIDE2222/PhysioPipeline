@@ -103,17 +103,19 @@
           <input type="text" id="telefone" name="telefone" placeholder="(11) 99999-9999" required />
           <div id="physioRegistrationFields">
           <label for="especialidadeCadastro">Especialidades</label>
-          <div class="tag-input-shell" id="physioSpecialtiesEditor">
-            <div class="tag-pill-list" id="physioSpecialtiesTags"></div>
-            <input
-              type="text"
-              id="especialidadeCadastro"
-              name="especialidade"
-              placeholder="Digite uma especialidade e pressione Enter"
-              autocomplete="off"
-            />
+          <div class="tag-autocomplete-wrapper">
+            <div class="tag-input-shell" id="physioSpecialtiesEditor">
+              <div class="tag-pill-list" id="physioSpecialtiesTags"></div>
+              <input
+                type="text"
+                id="especialidadeCadastro"
+                name="especialidade"
+                placeholder="Digite uma especialidade e pressione Enter"
+                autocomplete="off"
+              />
+            </div>
+            <ul id="especialidadeCadastroSuggestions" class="suggestions-list"></ul>
           </div>
-          <ul id="especialidadeCadastroSuggestions" class="suggestions-list"></ul>
           <div class="tag-editor-actions">
             <button type="button" class="btn btn-outline tag-editor-add-btn" id="addPhysioSpecialty">
               + Adicionar especialidade
@@ -221,16 +223,18 @@
             <input type="text" id="clinicWhatsapp" name="clinicWhatsapp" placeholder="(11) 99999-9999" />
 
             <label for="clinicServiceInput">Especialidades</label>
-            <div class="tag-input-shell" id="clinicServicesEditor">
-              <div class="tag-pill-list" id="clinicServicesTags"></div>
-              <input
-                type="text"
-                id="clinicServiceInput"
-                placeholder="Digite uma especialidade e pressione Enter"
-                autocomplete="off"
-              />
+            <div class="tag-autocomplete-wrapper">
+              <div class="tag-input-shell" id="clinicServicesEditor">
+                <div class="tag-pill-list" id="clinicServicesTags"></div>
+                <input
+                  type="text"
+                  id="clinicServiceInput"
+                  placeholder="Digite uma especialidade e pressione Enter"
+                  autocomplete="off"
+                />
+              </div>
+              <ul id="clinicServiceSuggestions" class="suggestions-list"></ul>
             </div>
-            <ul id="clinicServiceSuggestions" class="suggestions-list"></ul>
             <div class="tag-editor-actions">
               <button type="button" class="btn btn-outline tag-editor-add-btn" id="addClinicService">
                 + Adicionar especialidade
@@ -303,7 +307,12 @@
       const suggestions = document.getElementById(suggestionsId);
       const onSelect = typeof config.onSelect === 'function' ? config.onSelect : null;
 
-      if (!input || !suggestions) return;
+      if (!input || !suggestions) return null;
+
+      function closeSuggestions() {
+        suggestions.innerHTML = '';
+        suggestions.style.display = 'none';
+      }
 
       function applySelection(option) {
         if (onSelect) {
@@ -314,8 +323,7 @@
           input.dispatchEvent(new Event('change', { bubbles: true }));
         }
 
-        suggestions.innerHTML = '';
-        suggestions.style.display = 'none';
+        closeSuggestions();
       }
 
       function renderSuggestions() {
@@ -345,13 +353,15 @@
 
       input.addEventListener('input', renderSuggestions);
       input.addEventListener('focus', renderSuggestions);
+      input.addEventListener('tag-editor:add', closeSuggestions);
 
       input.addEventListener('blur', () => {
-        setTimeout(() => {
-          suggestions.innerHTML = '';
-          suggestions.style.display = 'none';
-        }, 120);
+        setTimeout(closeSuggestions, 120);
       });
+
+      return {
+        close: closeSuggestions,
+      };
     }
 
     let cadastroFotoBase64 = '';
@@ -490,7 +500,7 @@
         .forEach((input) => input.addEventListener('change', syncAccountTypeForm));
       syncAccountTypeForm();
 
-      setupCadastroAutocomplete(
+      const physioSpecialtyAutocomplete = setupCadastroAutocomplete(
         'especialidadeCadastro',
         'especialidadeCadastroSuggestions',
         getCadastroSpecialtyOptions,
@@ -501,7 +511,7 @@
         }
       );
 
-      setupCadastroAutocomplete(
+      const clinicSpecialtyAutocomplete = setupCadastroAutocomplete(
         'clinicServiceInput',
         'clinicServiceSuggestions',
         getCadastroSpecialtyOptions,
@@ -614,27 +624,38 @@
               return;
             }
 
-            await window.physioApi.register({
-              email: document.getElementById('email').value.trim(),
-              password,
-              accountType,
-            });
+            const emailValue = document.getElementById('email').value.trim();
+            const phoneValue = document.getElementById('telefone').value.trim() || null;
 
             if (accountType === 'clinic') {
               const clinicEditorValue = clinicEditor?.getValue?.() || { services: [], team: [] };
-              await window.physioApi.updateMyClinicProfile({
+
+              if (!clinicEditorValue.services.length) {
+                cadastroMensagem.textContent = 'Adicione pelo menos uma especialidade para a clinica.';
+                cadastroMensagem.style.color = '#b91c1c';
+                if (submitBtn) submitBtn.disabled = false;
+                return;
+              }
+
+              await window.physioApi.register({
+                accountType,
+                name: document.getElementById('nome').value.trim(),
+                email: emailValue,
+                password,
+                phone: phoneValue,
                 clinicName: document.getElementById('nome').value.trim() || null,
                 responsibleName: document.getElementById('clinicResponsible').value.trim() || null,
                 city: document.getElementById('clinicCidade').value.trim() || null,
                 neighborhood: document.getElementById('clinicBairro').value.trim() || null,
                 address: document.getElementById('clinicAddress').value.trim() || null,
-                phone: document.getElementById('telefone').value.trim() || null,
                 whatsapp: document.getElementById('clinicWhatsapp').value.trim() || null,
+                specialties: clinicEditorValue.services,
                 services: clinicEditorValue.services,
                 description: document.getElementById('clinicDescription').value.trim() || null,
                 logoUrl: cadastroFotoBase64 || null,
               });
 
+              clinicSpecialtyAutocomplete?.close?.();
               cadastroMensagem.textContent = 'Conta da clinica criada com sucesso!';
               cadastroMensagem.style.color = '#166534';
 
@@ -643,6 +664,22 @@
               }, 700);
               return;
             }
+
+            await window.physioApi.register({
+              email: emailValue,
+              password,
+              accountType,
+              name: document.getElementById('nome').value.trim(),
+              phone: phoneValue,
+              city: document.getElementById('cidadeCadastro').value.trim() || null,
+              neighborhood: document.getElementById('bairro').value.trim() || null,
+              whatsapp: phoneValue,
+              specialties: physioSpecialties,
+              bio: document.getElementById('descricao').value.trim() || null,
+              photoUrl: cadastroFotoBase64 || null,
+            });
+
+            physioSpecialtyAutocomplete?.close?.();
 
             const profile = await window.physioApi.createProfile({
               name: document.getElementById('nome').value.trim(),
@@ -667,7 +704,16 @@
               window.location.href = `profile.html?id=${encodeURIComponent(profile.id)}`;
             }, 700);
           } catch (error) {
-            cadastroMensagem.textContent = error.message || 'Não foi possível criar sua conta agora.';
+            console.error('Cadastro falhou:', {
+              accountType: getSelectedAccountType(),
+              message: error?.message,
+              status: error?.status,
+              code: error?.code,
+              data: error?.data,
+              responseText: error?.responseText,
+              error,
+            });
+            cadastroMensagem.textContent = error?.message || 'NÃ£o foi possÃ­vel criar sua conta agora.';
             cadastroMensagem.style.color = '#b91c1c';
           } finally {
             if (submitBtn) submitBtn.disabled = false;

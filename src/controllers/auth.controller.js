@@ -65,6 +65,45 @@ function getCookieOptions() {
   };
 }
 
+function cleanOptionalString(value, maxLength = 2000) {
+  const normalized = String(value ?? "").replace(/\s+/g, " ").trim();
+  if (!normalized) return null;
+  return normalized.slice(0, maxLength);
+}
+
+function normalizeClinicServicesForRegister(value) {
+  const rawValues = Array.isArray(value)
+    ? value
+    : typeof value === "string"
+      ? (() => {
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : value.split(/[,\n/|]/);
+          } catch (_) {
+            return value.split(/[,\n/|]/);
+          }
+        })()
+      : [];
+
+  const seen = new Set();
+
+  const services = rawValues
+    .map((item) => cleanOptionalString(item, 120))
+    .filter(Boolean)
+    .filter((item) => {
+      const key = item
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 20);
+
+  return services.length ? JSON.stringify(services) : null;
+}
+
 function sanitizeUser(user) {
   if (!user) return null;
 
@@ -235,6 +274,8 @@ export async function register(req, res) {
     const email = normalizeEmail(req.body?.email);
     const password = String(req.body?.password || "");
     const rawAccountType = req.body?.accountType;
+    const name = cleanOptionalString(req.body?.name, 160);
+    const phone = cleanOptionalString(req.body?.phone ?? req.body?.whatsapp, 40);
 
     if (!email || !password) {
       return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
@@ -265,9 +306,31 @@ export async function register(req, res) {
         email,
         passwordHash,
         accountType,
+        name,
+        phone,
+        clinicProfile:
+          accountType === ACCOUNT_TYPES.CLINIC
+            ? {
+                create: {
+                  clinicName: cleanOptionalString(req.body?.clinicName || req.body?.name, 160),
+                  responsibleName: cleanOptionalString(req.body?.responsibleName, 160),
+                  address: cleanOptionalString(req.body?.address, 200),
+                  city: cleanOptionalString(req.body?.city, 120),
+                  neighborhood: cleanOptionalString(req.body?.neighborhood, 120),
+                  phone,
+                  whatsapp: cleanOptionalString(req.body?.whatsapp ?? req.body?.phone, 40),
+                  services: normalizeClinicServicesForRegister(
+                    req.body?.specialties ?? req.body?.services
+                  ),
+                  logoUrl: cleanOptionalString(req.body?.logoUrl, 2000000),
+                  description: cleanOptionalString(req.body?.description, 2000),
+                },
+              }
+            : undefined,
       },
       include: {
         profiles: true,
+        clinicProfile: true,
       },
     });
 

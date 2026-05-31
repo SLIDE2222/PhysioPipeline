@@ -378,13 +378,26 @@
         return {};
       }
 
-      const data = await response.json().catch(() => ({}));
+      const responseText = await response.text().catch(() => '');
+      const data = responseText
+        ? (() => {
+            try {
+              return JSON.parse(responseText);
+            } catch (_) {
+              return { raw: responseText };
+            }
+          })()
+        : {};
 
       if (!response.ok) {
-        const error = new Error(data.message || 'Request failed.');
+        const fallbackMessage = typeof data?.raw === 'string' && data.raw.trim()
+          ? data.raw.trim()
+          : response.statusText || `Request failed with status ${response.status}.`;
+        const error = new Error(data.message || fallbackMessage);
         error.status = response.status;
         error.code = data.code;
         error.data = data;
+        error.responseText = responseText;
         throw error;
       }
 

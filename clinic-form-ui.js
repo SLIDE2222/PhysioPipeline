@@ -143,6 +143,7 @@
       state.values = nextValues;
       input.value = '';
       render();
+      input.dispatchEvent(new CustomEvent('tag-editor:add', { bubbles: true }));
       return true;
     }
 
