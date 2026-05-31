@@ -220,34 +220,24 @@
             <label for="clinicWhatsapp">WhatsApp</label>
             <input type="text" id="clinicWhatsapp" name="clinicWhatsapp" placeholder="(11) 99999-9999" />
 
-            <label for="clinicServiceInput">Especialidades/servi&ccedil;os</label>
+            <label for="clinicServiceInput">Especialidades</label>
             <div class="tag-input-shell" id="clinicServicesEditor">
               <div class="tag-pill-list" id="clinicServicesTags"></div>
               <input
                 type="text"
                 id="clinicServiceInput"
-                placeholder="Digite uma especialidade ou servi&ccedil;o e pressione Enter"
+                placeholder="Digite uma especialidade e pressione Enter"
                 autocomplete="off"
               />
             </div>
+            <ul id="clinicServiceSuggestions" class="suggestions-list"></ul>
             <div class="tag-editor-actions">
               <button type="button" class="btn btn-outline tag-editor-add-btn" id="addClinicService">
-                + Adicionar especialidade/servi&ccedil;o
+                + Adicionar especialidade
               </button>
               <p class="tag-editor-limit" id="clinicServiceLimitMessage" aria-live="polite"></p>
             </div>
             <input type="hidden" id="clinicServices" name="clinicServices" />
-
-            <div class="clinic-team-section">
-              <div class="clinic-team-section__header">
-                <label for="clinicTeamRows">Fisioterapeutas da cl&iacute;nica</label>
-                <p class="form-hint">Adicione at&eacute; 5 fisioterapeutas com nome e especialidade.</p>
-              </div>
-              <div id="clinicTeamRows" class="clinic-team-rows"></div>
-              <button type="button" class="btn btn-outline clinic-team-add-btn" id="addClinicTeamRow">
-                + Adicionar fisioterapeuta
-              </button>
-            </div>
 
             <label for="clinicDescription">Descri&ccedil;&atilde;o da cl&iacute;nica</label>
             <textarea
@@ -308,11 +298,25 @@
         CADASTRO_SPECIALTY_OPTIONS_FALLBACK;
     }
 
-    function setupCadastroAutocomplete(inputId, suggestionsId, options) {
+    function setupCadastroAutocomplete(inputId, suggestionsId, options, config = {}) {
       const input = document.getElementById(inputId);
       const suggestions = document.getElementById(suggestionsId);
+      const onSelect = typeof config.onSelect === 'function' ? config.onSelect : null;
 
       if (!input || !suggestions) return;
+
+      function applySelection(option) {
+        if (onSelect) {
+          onSelect(option);
+        } else {
+          input.value = option;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+          input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+
+        suggestions.innerHTML = '';
+        suggestions.style.display = 'none';
+      }
 
       function renderSuggestions() {
         const term = input.value.trim().toLowerCase();
@@ -330,12 +334,7 @@
 
           item.addEventListener('mousedown', (event) => {
             event.preventDefault();
-            input.value = option;
-            suggestions.innerHTML = '';
-            suggestions.style.display = 'none';
-
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-            input.dispatchEvent(new Event('change', { bubbles: true }));
+            applySelection(option);
           });
 
           suggestions.appendChild(item);
@@ -394,8 +393,7 @@
         hiddenServicesInputId: 'clinicServices',
         addServiceButtonId: 'addClinicService',
         serviceLimitMessageId: 'clinicServiceLimitMessage',
-        teamRowsId: 'clinicTeamRows',
-        addTeamButtonId: 'addClinicTeamRow',
+        serviceLimitMessage: 'Limite de 5 especialidades atingido.',
       });
       const pageParams = new URLSearchParams(window.location.search);
       const isCompletingProfile = pageParams.get('completeProfile') === 'true';
@@ -495,7 +493,23 @@
       setupCadastroAutocomplete(
         'especialidadeCadastro',
         'especialidadeCadastroSuggestions',
-        getCadastroSpecialtyOptions
+        getCadastroSpecialtyOptions,
+        {
+          onSelect: (option) => {
+            physioSpecialtyEditor?.addTag?.(option);
+          },
+        }
+      );
+
+      setupCadastroAutocomplete(
+        'clinicServiceInput',
+        'clinicServiceSuggestions',
+        getCadastroSpecialtyOptions,
+        {
+          onSelect: (option) => {
+            clinicEditor?.addServiceTag?.(option);
+          },
+        }
       );
 
       if (typeof setupCityNeighborhoodAutocomplete === 'function') {
@@ -617,7 +631,6 @@
                 phone: document.getElementById('telefone').value.trim() || null,
                 whatsapp: document.getElementById('clinicWhatsapp').value.trim() || null,
                 services: clinicEditorValue.services,
-                physioTeam: clinicEditorValue.team,
                 description: document.getElementById('clinicDescription').value.trim() || null,
                 logoUrl: cadastroFotoBase64 || null,
               });

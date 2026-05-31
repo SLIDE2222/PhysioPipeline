@@ -194,11 +194,12 @@
     hiddenServicesInputId,
     addServiceButtonId,
     serviceLimitMessageId,
+    serviceLimitMessage = 'Limite de 5 especialidades/servicos atingido.',
     teamRowsId,
     addTeamButtonId,
   }) {
-    const teamRows = document.getElementById(teamRowsId);
-    const addTeamButton = document.getElementById(addTeamButtonId);
+    const teamRows = teamRowsId ? document.getElementById(teamRowsId) : null;
+    const addTeamButton = addTeamButtonId ? document.getElementById(addTeamButtonId) : null;
     const serviceEditor = createTagEditor({
       inputId: serviceInputId,
       listId: serviceListId,
@@ -206,10 +207,10 @@
       addButtonId: addServiceButtonId,
       limitMessageId: serviceLimitMessageId,
       limit: DEFAULT_SERVICE_LIMIT,
-      limitMessage: 'Limite de 5 especialidades/servicos atingido.',
+      limitMessage: serviceLimitMessage,
     });
 
-    if (!serviceEditor || !teamRows || !addTeamButton) {
+    if (!serviceEditor) {
       return null;
     }
 
@@ -217,7 +218,10 @@
       team: [],
     };
 
+    const hasTeamEditor = Boolean(teamRows && addTeamButton);
+
     function normalizeTeam() {
+      if (!hasTeamEditor) return;
       state.team = Array.from(teamRows.querySelectorAll('.clinic-team-row')).map((row) => ({
         name: cleanTag(row.querySelector('[data-team-name]')?.value || ''),
         specialty: cleanTag(row.querySelector('[data-team-specialty]')?.value || ''),
@@ -225,6 +229,7 @@
     }
 
     function updateTeamControls() {
+      if (!hasTeamEditor) return;
       const rows = Array.from(teamRows.querySelectorAll('.clinic-team-row'));
       const canAddMore = rows.length < MAX_CLINIC_TEAM;
       addTeamButton.disabled = !canAddMore;
@@ -238,6 +243,7 @@
     }
 
     function renderTeamRows() {
+      if (!hasTeamEditor) return;
       teamRows.innerHTML = state.team
         .map(
           (member, index) => `
@@ -293,32 +299,45 @@
       });
     }
 
-    addTeamButton.addEventListener('click', () => {
-      if (state.team.length >= MAX_CLINIC_TEAM) return;
-      normalizeTeam();
-      state.team.push({ name: '', specialty: '' });
-      renderTeamRows();
-    });
+    if (hasTeamEditor) {
+      addTeamButton.addEventListener('click', () => {
+        if (state.team.length >= MAX_CLINIC_TEAM) return;
+        normalizeTeam();
+        state.team.push({ name: '', specialty: '' });
+        renderTeamRows();
+      });
+    }
 
     return {
       setValue({ services, team }) {
         serviceEditor.setValue(services);
-        state.team = parseTeam(team);
-        if (!state.team.length) state.team = [{ name: '', specialty: '' }];
-        renderTeamRows();
+        if (hasTeamEditor) {
+          state.team = parseTeam(team);
+          if (!state.team.length) state.team = [{ name: '', specialty: '' }];
+          renderTeamRows();
+        } else {
+          state.team = [];
+        }
       },
       getValue() {
-        normalizeTeam();
+        if (hasTeamEditor) {
+          normalizeTeam();
+        }
         return {
           services: serviceEditor.getValue(),
-          team: state.team
-            .map((member) => ({
-              name: cleanTag(member.name || ''),
-              specialty: cleanTag(member.specialty || ''),
-            }))
-            .filter((member) => member.name && member.specialty)
-            .slice(0, MAX_CLINIC_TEAM),
+          team: hasTeamEditor
+            ? state.team
+                .map((member) => ({
+                  name: cleanTag(member.name || ''),
+                  specialty: cleanTag(member.specialty || ''),
+                }))
+                .filter((member) => member.name && member.specialty)
+                .slice(0, MAX_CLINIC_TEAM)
+            : [],
         };
+      },
+      addServiceTag(value) {
+        return serviceEditor.addTag(value);
       },
       clearInput() {
         serviceEditor.clearInput();
