@@ -1,0 +1,2 @@
+ALTER TABLE "ClinicProfile"
+ADD COLUMN IF NOT EXISTS "physioTeam" TEXT;

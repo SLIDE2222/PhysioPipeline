@@ -418,8 +418,70 @@
     };
   }
 
+  function parseJsonArrayString(value) {
+    if (typeof value !== 'string') return null;
+
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function normalizeClinicServicesList(value) {
+    const rawValues = Array.isArray(value)
+      ? value
+      : parseJsonArrayString(value) || String(value || '').split(/[,\n/|]/);
+    const seen = new Set();
+
+    return rawValues
+      .map((item) => String(item || '').replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .filter((item) => {
+        const key = item
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+  }
+
+  function normalizeClinicTeamList(value) {
+    const rawValues = Array.isArray(value) ? value : parseJsonArrayString(value) || [];
+    const seen = new Set();
+
+    return rawValues
+      .map((item) => ({
+        name: String(item?.name || '').replace(/\s+/g, ' ').trim(),
+        specialty: String(item?.specialty || '').replace(/\s+/g, ' ').trim(),
+      }))
+      .filter((item) => item.name && item.specialty)
+      .filter((item) => {
+        const key = `${item.name}::${item.specialty}`
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase();
+
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 5);
+  }
+
   function normalizeClinicProfile(clinic) {
     if (!clinic) return null;
+
+    const servicesList = normalizeClinicServicesList(
+      clinic.servicesList ?? clinic.servicosLista ?? clinic.services ?? clinic.servicos
+    );
+    const physioTeamList = normalizeClinicTeamList(
+      clinic.physioTeamList ?? clinic.fisioterapeutas ?? clinic.physioTeam
+    );
 
     return {
       ...clinic,
@@ -432,7 +494,13 @@
       bairro: clinic.neighborhood ?? clinic.bairro ?? '',
       telefone: clinic.phone ?? clinic.telefone ?? '',
       whatsapp: clinic.whatsapp ?? '',
-      servicos: clinic.services ?? clinic.servicos ?? '',
+      servicos: servicesList.join(', '),
+      servicosLista: servicesList,
+      services: clinic.services ?? clinic.servicos ?? '',
+      servicesList,
+      fisioterapeutas: physioTeamList,
+      physioTeamList,
+      physioTeam: clinic.physioTeam ?? null,
       logo: clinic.logoUrl ?? clinic.logo ?? clinic.foto ?? '',
       descricao: clinic.description ?? clinic.descricao ?? '',
       accountType: ACCOUNT_TYPES.CLINIC,
@@ -600,6 +668,7 @@
     fetchClinics(params = {}) {
       const searchParams = new URLSearchParams();
       if (params.specialty) searchParams.set('specialty', params.specialty);
+      if (params.query) searchParams.set('query', params.query);
       if (params.city) searchParams.set('city', params.city);
       if (params.neighborhood) searchParams.set('neighborhood', params.neighborhood);
 
@@ -612,6 +681,11 @@
       return request('/clinics/options', {
         timeoutMs: 10000,
       });
+    },
+    fetchClinic(id) {
+      return request(`/clinics/${encodeURIComponent(id)}`, {
+        timeoutMs: 10000,
+      }).then((data) => normalizeClinicProfile(data.clinicProfile || data));
     },
     async fetchProfile(id) {
       try {

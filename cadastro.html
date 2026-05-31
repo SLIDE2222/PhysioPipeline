@@ -213,13 +213,28 @@
             <label for="clinicWhatsapp">WhatsApp</label>
             <input type="text" id="clinicWhatsapp" name="clinicWhatsapp" placeholder="(11) 99999-9999" />
 
-            <label for="clinicServices">Especialidades/servi&ccedil;os</label>
-            <textarea
-              id="clinicServices"
-              name="clinicServices"
-              rows="3"
-              placeholder="Ex.: Pilates cl&iacute;nico, RPG, reabilita&ccedil;&atilde;o ortop&eacute;dica"
-            ></textarea>
+            <label for="clinicServiceInput">Especialidades/servi&ccedil;os</label>
+            <div class="tag-input-shell" id="clinicServicesEditor">
+              <div class="tag-pill-list" id="clinicServicesTags"></div>
+              <input
+                type="text"
+                id="clinicServiceInput"
+                placeholder="Digite uma especialidade ou servi&ccedil;o e pressione Enter"
+                autocomplete="off"
+              />
+            </div>
+            <input type="hidden" id="clinicServices" name="clinicServices" />
+
+            <div class="clinic-team-section">
+              <div class="clinic-team-section__header">
+                <label for="clinicTeamRows">Fisioterapeutas da cl&iacute;nica</label>
+                <p class="form-hint">Adicione at&eacute; 5 fisioterapeutas com nome e especialidade.</p>
+              </div>
+              <div id="clinicTeamRows" class="clinic-team-rows"></div>
+              <button type="button" class="btn btn-outline clinic-team-add-btn" id="addClinicTeamRow">
+                + Adicionar fisioterapeuta
+              </button>
+            </div>
 
             <label for="clinicDescription">Descri&ccedil;&atilde;o da cl&iacute;nica</label>
             <textarea

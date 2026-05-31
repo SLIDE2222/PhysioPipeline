@@ -2,6 +2,14 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { ACCOUNT_TYPES, normalizeAccountType } from "../constants/account-types.js";
 
+const MAX_CLINIC_TEAM = 5;
+const MAX_SERVICE_TAGS = 20;
+
+const clinicTeamMemberSchema = z.object({
+  name: z.string().min(2).max(160),
+  specialty: z.string().min(2).max(120),
+});
+
 const clinicProfileSchema = z.object({
   clinicName: z.string().min(2).max(160).optional().nullable(),
   responsibleName: z.string().min(2).max(160).optional().nullable(),
@@ -10,7 +18,14 @@ const clinicProfileSchema = z.object({
   neighborhood: z.string().min(2).max(120).optional().nullable(),
   phone: z.string().max(40).optional().nullable(),
   whatsapp: z.string().max(40).optional().nullable(),
-  services: z.string().max(500).optional().nullable(),
+  services: z
+    .union([z.string().max(1200), z.array(z.string().max(120)).max(MAX_SERVICE_TAGS)])
+    .optional()
+    .nullable(),
+  physioTeam: z
+    .union([z.string().max(4000), z.array(clinicTeamMemberSchema).max(MAX_CLINIC_TEAM)])
+    .optional()
+    .nullable(),
   logoUrl: z.string().optional().or(z.literal("")).nullable(),
   description: z.string().max(2000).optional().nullable(),
 });
@@ -59,6 +74,77 @@ function uniqueSortedOptions(values) {
   );
 }
 
+function parseJsonArray(value) {
+  if (typeof value !== "string") return null;
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// Clinic services are stored as a serialized list for backward compatibility.
+// Older rows may still contain a plain string, so every read normalizes both shapes.
+function normalizeClinicServices(value) {
+  const rawValues = Array.isArray(value)
+    ? value
+    : parseJsonArray(value) || String(value || "").split(/[,\n/|]/);
+
+  return uniqueSortedOptions(rawValues.map((item) => cleanOption(item, 120))).slice(
+    0,
+    MAX_SERVICE_TAGS
+  );
+}
+
+function serializeClinicServices(value) {
+  const services = normalizeClinicServices(value);
+  return services.length ? JSON.stringify(services) : null;
+}
+
+function normalizeClinicTeam(value) {
+  const rawValues = Array.isArray(value) ? value : parseJsonArray(value) || [];
+  const normalized = [];
+
+  rawValues.forEach((item) => {
+    if (!item || typeof item !== "object") return;
+
+    const name = cleanOption(item.name, 160);
+    const specialty = cleanOption(item.specialty, 120);
+    if (!name || !specialty) return;
+
+    const key = normalizeOptionKey(`${name}::${specialty}`);
+    if (!key || normalized.some((member) => normalizeOptionKey(`${member.name}::${member.specialty}`) === key)) {
+      return;
+    }
+
+    normalized.push({ name, specialty });
+  });
+
+  return normalized.slice(0, MAX_CLINIC_TEAM);
+}
+
+function serializeClinicTeam(value) {
+  const team = normalizeClinicTeam(value);
+  return team.length ? JSON.stringify(team) : null;
+}
+
+function decorateClinicProfile(profile) {
+  if (!profile) return profile;
+
+  const servicesList = normalizeClinicServices(profile.services);
+  const physioTeamList = normalizeClinicTeam(profile.physioTeam);
+
+  return {
+    ...profile,
+    services: profile.services ?? null,
+    servicesList,
+    physioTeam: profile.physioTeam ?? null,
+    physioTeamList,
+  };
+}
+
 async function findCurrentUser(userId) {
   return prisma.user.findUnique({
     where: { id: userId },
@@ -75,6 +161,18 @@ function isClinicAccount(user) {
   return normalizeAccountType(user?.accountType) === ACCOUNT_TYPES.CLINIC;
 }
 
+export async function getClinic(req, res) {
+  const clinicProfile = await prisma.clinicProfile.findUnique({
+    where: { id: req.params.id },
+  });
+
+  if (!clinicProfile) {
+    return res.status(404).json({ message: "Clinica nao encontrada." });
+  }
+
+  return res.json({ clinicProfile: decorateClinicProfile(clinicProfile) });
+}
+
 export async function getMyClinicProfile(req, res) {
   const user = await findCurrentUser(req.user.userId);
 
@@ -87,11 +185,14 @@ export async function getMyClinicProfile(req, res) {
   }
 
   return res.json({
-    clinicProfile:
+    clinicProfile: decorateClinicProfile(
       user.clinicProfile || {
         clinicName: user.name || "",
         phone: user.phone || "",
-      },
+        services: null,
+        physioTeam: null,
+      }
+    ),
   });
 }
 
@@ -125,11 +226,7 @@ export async function listClinicOptions(_req, res) {
     });
 
     const specialties = uniqueSortedOptions(
-      clinics.flatMap((clinic) =>
-        String(clinic.services || "")
-          .split(/[,\n/|]/)
-          .map((item) => item.trim())
-      )
+      clinics.flatMap((clinic) => normalizeClinicServices(clinic.services))
     );
 
     return res.json({
@@ -150,7 +247,9 @@ export async function listClinicOptions(_req, res) {
 }
 
 export async function listClinics(req, res) {
-  const specialty = String(req.query.specialty || req.query.especialidade || "").trim();
+  const query = String(
+    req.query.query || req.query.specialty || req.query.especialidade || ""
+  ).trim();
   const city = String(req.query.city || req.query.cidade || "").trim();
   const neighborhood = String(req.query.neighborhood || req.query.bairro || "").trim();
 
@@ -159,18 +258,22 @@ export async function listClinics(req, res) {
       clinicName: { not: null },
       city: city ? { contains: city, mode: "insensitive" } : undefined,
       neighborhood: neighborhood ? { contains: neighborhood, mode: "insensitive" } : undefined,
-      OR: specialty
+      OR: query
         ? [
-            { services: { contains: specialty, mode: "insensitive" } },
-            { description: { contains: specialty, mode: "insensitive" } },
-            { clinicName: { contains: specialty, mode: "insensitive" } },
+            { services: { contains: query, mode: "insensitive" } },
+            { physioTeam: { contains: query, mode: "insensitive" } },
+            { description: { contains: query, mode: "insensitive" } },
+            { clinicName: { contains: query, mode: "insensitive" } },
+            { responsibleName: { contains: query, mode: "insensitive" } },
+            { city: { contains: query, mode: "insensitive" } },
+            { neighborhood: { contains: query, mode: "insensitive" } },
           ]
         : undefined,
     },
     orderBy: { updatedAt: "desc" },
   });
 
-  return res.json({ clinics });
+  return res.json({ clinics: clinics.map(decorateClinicProfile) });
 }
 
 export async function upsertMyClinicProfile(req, res) {
@@ -200,7 +303,8 @@ export async function upsertMyClinicProfile(req, res) {
     neighborhood: clean(parsed.data.neighborhood),
     phone: clean(parsed.data.phone),
     whatsapp: clean(parsed.data.whatsapp),
-    services: clean(parsed.data.services),
+    services: serializeClinicServices(parsed.data.services),
+    physioTeam: serializeClinicTeam(parsed.data.physioTeam),
     logoUrl: clean(parsed.data.logoUrl),
     description: clean(parsed.data.description),
   };
@@ -227,5 +331,5 @@ export async function upsertMyClinicProfile(req, res) {
     });
   }
 
-  return res.json({ clinicProfile });
+  return res.json({ clinicProfile: decorateClinicProfile(clinicProfile) });
 }

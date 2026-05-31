@@ -46,7 +46,10 @@ model ClinicProfile {
   neighborhood    String?
   phone           String?
   whatsapp        String?
+  /// Backward-compatible serialized list. Legacy rows may still contain plain text.
   services        String?
+  /// Serialized clinic physiotherapist team list for up to 5 professionals.
+  physioTeam      String?
   logoUrl         String?
   description     String?
   createdAt       DateTime @default(now())
