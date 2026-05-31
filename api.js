@@ -282,11 +282,20 @@
       neighborhoods: dedupeSort(profiles.map((profile) => profile.bairro || profile.neighborhood)),
       neighborhoodsByCity,
       specialties: dedupeSort(
-        profiles.flatMap((profile) => [
-          profile.especialidade || profile.specialty,
-          profile.especialidadeSecundaria || profile.secondarySpecialty,
-          profile.especialidadeTerciaria || profile.tertiarySpecialty || profile.specialty2,
-        ])
+        profiles.flatMap((profile) => {
+          const explicitList = Array.isArray(profile.specialties)
+            ? profile.specialties
+            : Array.isArray(profile.especialidades)
+              ? profile.especialidades
+              : [];
+
+          return [
+            ...explicitList,
+            profile.especialidade || profile.specialty,
+            profile.especialidadeSecundaria || profile.secondarySpecialty,
+            profile.especialidadeTerciaria || profile.tertiarySpecialty || profile.specialty2,
+          ];
+        })
       ),
     };
   }
@@ -397,31 +406,71 @@
 
   function normalizeProfile(profile) {
     if (!profile) return null;
+
+    const explicitSpecialties = Array.isArray(profile.specialties)
+      ? profile.specialties
+      : Array.isArray(profile.especialidades)
+        ? profile.especialidades
+        : parseJsonArrayString(profile.specialties) ||
+          parseJsonArrayString(profile.especialidades) ||
+          [];
+
+    const mergedSpecialties = Array.from(
+      new Map(
+        [
+          ...explicitSpecialties,
+          profile.specialty,
+          profile.especialidade,
+          profile.secondarySpecialty,
+          profile.secondary_specialties,
+          profile.especialidadeSecundaria,
+          profile.tertiarySpecialty,
+          profile.specialty2,
+          profile.especialidadeTerciaria,
+        ]
+          .map((item) => String(item || '').replace(/\s+/g, ' ').trim())
+          .filter(Boolean)
+          .map((item) => [
+            item
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .toLowerCase(),
+            item,
+          ])
+      ).values()
+    );
+
     return {
       ...profile,
       id: profile.id,
       nome: profile.name ?? profile.nome ?? '',
-      especialidade: profile.specialty ?? profile.especialidade ?? '',
+      especialidade: profile.specialty ?? profile.especialidade ?? mergedSpecialties[0] ?? '',
       especialidadeSecundaria:
         profile.secondarySpecialty ??
         profile.secondary_specialties ??
         profile.especialidadeSecundaria ??
+        mergedSpecialties[1] ??
         '',
       especialidadeTerciaria:
         profile.tertiarySpecialty ??
         profile.specialty2 ??
         profile.especialidadeTerciaria ??
+        mergedSpecialties[2] ??
         '',
       specialty2:
         profile.tertiarySpecialty ??
         profile.specialty2 ??
         profile.especialidadeTerciaria ??
+        mergedSpecialties[2] ??
         '',
       tertiarySpecialty:
         profile.tertiarySpecialty ??
         profile.specialty2 ??
         profile.especialidadeTerciaria ??
+        mergedSpecialties[2] ??
         '',
+      specialties: mergedSpecialties,
+      especialidades: mergedSpecialties,
       cidade: profile.city ?? profile.cidade ?? '',
       bairro: profile.neighborhood ?? profile.bairro ?? '',
       telefone: profile.phone ?? profile.telefone ?? '',
@@ -495,7 +544,12 @@
     if (!clinic) return null;
 
     const servicesList = normalizeClinicServicesList(
-      clinic.servicesList ?? clinic.servicosLista ?? clinic.services ?? clinic.servicos
+      clinic.servicesList ??
+      clinic.servicosLista ??
+      clinic.specialties ??
+      clinic.especialidades ??
+      clinic.services ??
+      clinic.servicos
     );
     const physioTeamList = normalizeClinicTeamList(
       clinic.physioTeamList ?? clinic.fisioterapeutas ?? clinic.physioTeam
@@ -516,6 +570,8 @@
       servicosLista: servicesList,
       services: clinic.services ?? clinic.servicos ?? '',
       servicesList,
+      specialties: servicesList,
+      especialidades: servicesList,
       fisioterapeutas: physioTeamList,
       physioTeamList,
       physioTeam: clinic.physioTeam ?? null,

@@ -103,6 +103,12 @@ async function loadLeadSummary() {
 }
 
 function getProfileSpecialties(profissional) {
+  const explicitList = Array.isArray(profissional?.specialties)
+    ? profissional.specialties
+    : Array.isArray(profissional?.especialidades)
+      ? profissional.especialidades
+      : [];
+
   const mainSpecialty =
     profissional.especialidade ||
     profissional.specialty ||
@@ -121,9 +127,21 @@ function getProfileSpecialties(profissional) {
     profissional.extraSpecialty ||
     '';
 
-  return [mainSpecialty, secondSpecialty, thirdSpecialty]
+  const seen = new Set();
+
+  return [...explicitList, mainSpecialty, secondSpecialty, thirdSpecialty]
+    .map((specialty) => String(specialty || '').replace(/\s+/g, ' ').trim())
     .filter(Boolean)
-    .filter((specialty, index, arr) => arr.indexOf(specialty) === index);
+    .filter((specialty) => {
+      const key = specialty
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 function renderBadgeList(items) {
