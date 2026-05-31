@@ -444,14 +444,17 @@ textarea {
 
 .search-mode-toggle {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 0 0 1rem;
   padding: 5px;
   border: 1px solid var(--border);
   border-radius: 16px;
   background: #f8fafc;
+  align-items: stretch;
 }
+
+
 
 .search-mode-toggle label {
   margin: 0;
@@ -467,14 +470,22 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 0.65rem 0.75rem;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0.7rem 0.65rem;
   border-radius: 12px;
   color: var(--muted);
   font-weight: 800;
+  font-size: 0.96rem;
+  line-height: 1.15;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
   cursor: pointer;
   transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
 }
+
+
 
 .search-mode-toggle input:checked + span {
   background: var(--primary);
@@ -485,6 +496,8 @@ textarea {
 .search-mode-toggle--triple {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
+
+
 
 .patient-search-field input {
   margin-bottom: 0.4rem;
@@ -4154,11 +4167,12 @@ img.result-card__avatar {
 
   .results-search-inline .search-mode-toggle {
     width: 100% !important;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .results-search-inline .search-mode-toggle.search-mode-toggle--triple {
-    grid-template-columns: 1fr;
+  .results-search-inline .search-mode-toggle span {
+    font-size: 0.9rem !important;
+    padding-inline: 0.55rem !important;
   }
 
   .results-page-body .results-grid {
@@ -4630,10 +4644,20 @@ img.result-card__avatar {
 }
 
 @media (max-width: 768px) {
-  .account-type-picker,
+  .account-type-picker {
+    grid-template-columns: 1fr;
+  }
+
   .search-mode-toggle,
   .search-mode-toggle--triple {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .search-mode-toggle span {
+    min-height: 44px;
+    padding: 0.62rem 0.45rem;
+    font-size: 0.84rem;
+    line-height: 1.1;
   }
 
   .clinic-team-row {

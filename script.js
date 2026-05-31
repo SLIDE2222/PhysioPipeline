@@ -2640,13 +2640,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   try {
-    logResultsTiming(`iniciando busca de ${modoBusca === 'clinica' ? 'clinicas' : 'profissionais'}`);
-    resumo.textContent = modoBusca === 'clinica' ? 'Buscando clinicas...' : 'Buscando profissionais...';
+    logResultsTiming(`iniciando busca de ${modoBusca === 'clinica' ? 'clinicas' : modoBusca === 'especialidade' ? 'resultados' : 'profissionais'}`);
+    resumo.textContent = modoBusca === 'clinica'
+      ? 'Buscando clinicas...'
+      : modoBusca === 'especialidade'
+        ? 'Buscando resultados...'
+        : 'Buscando profissionais...';
     renderResultsSkeleton();
     slowLoadingTimeoutId = window.setTimeout(() => {
       if (resultsLoaded) return;
 
-      resumo.textContent = modoBusca === 'clinica' ? 'Ainda carregando clinicas...' : 'Ainda carregando profissionais...';
+      resumo.textContent = modoBusca === 'clinica'
+        ? 'Ainda carregando clinicas...'
+        : modoBusca === 'especialidade'
+          ? 'Ainda carregando resultados...'
+          : 'Ainda carregando profissionais...';
       console.warn('PhysioPipeline resultados: busca ainda pendente após 5s');
     }, 5000);
 
@@ -2656,7 +2664,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       resultsLoaded = true;
       resumo.textContent = modoBusca === 'clinica'
         ? 'Não foi possível carregar as clinicas agora.'
-        : 'Não foi possível carregar os profissionais agora.';
+        : modoBusca === 'especialidade'
+          ? 'Não foi possível carregar os resultados agora.'
+          : 'Não foi possível carregar os profissionais agora.';
       resultsGrid.innerHTML = `
         <div class="empty-results">
           <h3>A busca demorou demais.</h3>
@@ -2706,11 +2716,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       console.time('PhysioPipeline fetching professionals');
       let profiles = [];
+      let clinics = [];
       try {
-        profiles = await window.physioApi.fetchProfiles({
-          useCache: true,
-          allowBackendFallback: false,
-        });
+        if (modoBusca === 'especialidade') {
+          [profiles, clinics] = await Promise.all([
+            window.physioApi.fetchProfiles({
+              useCache: true,
+              allowBackendFallback: false,
+            }),
+            window.physioApi.fetchClinics(),
+          ]);
+        } else {
+          profiles = await window.physioApi.fetchProfiles({
+            useCache: true,
+            allowBackendFallback: false,
+          });
+        }
       } finally {
         console.timeEnd('PhysioPipeline fetching professionals');
       }
@@ -2752,14 +2773,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         hasExactInRequestedCity,
       });
 
-      filtered = visibleResults.map((item) => ({ type: 'physio', profile: item.profile }));
+      const physioResults = visibleResults.map((item) => ({ type: 'physio', profile: item.profile }));
+      const clinicResults = modoBusca === 'especialidade'
+        ? filterClinicsBySearch(clinics, {
+            query: params.get('especialidade') || '',
+            city: cidade,
+            neighborhood: bairro,
+          }).map((clinic) => ({ type: 'clinic', profile: clinic }))
+        : [];
 
-      resultLabel = filtered.length === 1
-        ? '1 profissional encontrado'
-        : `${filtered.length} profissionais encontrados`;
+      filtered = [...physioResults, ...clinicResults];
+
+      resultLabel = modoBusca === 'especialidade'
+        ? (filtered.length === 1 ? '1 resultado encontrado' : `${filtered.length} resultados encontrados`)
+        : (filtered.length === 1 ? '1 profissional encontrado' : `${filtered.length} profissionais encontrados`);
 
       resumo.textContent = resultLabel;
-      renderFallbackMessage(fallbackMessage);
+      renderFallbackMessage(modoBusca === 'especialidade' ? '' : fallbackMessage);
+    }
+
+    if (modoBusca === 'especialidade') {
+      const resultsTitle = document.querySelector('[data-search-title]');
+      if (resultsTitle) resultsTitle.textContent = 'Resultados encontrados';
     }
 
     if (modoBusca === 'leigo' && queixa) {
@@ -2790,14 +2825,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (filtered.length === 0) {
       resultsGrid.innerHTML = `
         <div class="empty-results">
-          <h3>${modoBusca === 'clinica' ? 'Nenhuma clinica encontrada.' : 'Nenhum profissional encontrado.'}</h3>
+          <h3>${modoBusca === 'clinica' ? 'Nenhuma clinica encontrada.' : modoBusca === 'especialidade' ? 'Nenhum resultado encontrado.' : 'Nenhum profissional encontrado.'}</h3>
           <p>${modoBusca === 'clinica' ? 'Tente outra cidade ou remova o bairro para ampliar a busca.' : 'Tente pesquisar outra especialidade ou cidade.'}</p>
         </div>
       `;
       if (resultsShowingSummary) {
         resultsShowingSummary.textContent = modoBusca === 'clinica'
           ? 'Mostrando 0 de 0 clinicas'
-          : 'Mostrando 0 de 0 profissionais';
+          : modoBusca === 'especialidade'
+            ? 'Mostrando 0 de 0 resultados'
+            : 'Mostrando 0 de 0 profissionais';
       }
       if (paginationControls) paginationControls.innerHTML = '';
       return;
@@ -3043,7 +3080,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (resultsShowingSummary) {
         resultsShowingSummary.textContent = modoBusca === 'clinica'
           ? `Mostrando ${endIndex} de ${filtered.length} clinicas`
-          : `Mostrando ${endIndex} de ${filtered.length} profissionais`;
+          : modoBusca === 'especialidade'
+            ? `Mostrando ${endIndex} de ${filtered.length} resultados`
+            : `Mostrando ${endIndex} de ${filtered.length} profissionais`;
       }
 
       if (shouldScroll) {
@@ -3069,7 +3108,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   resultsGrid.innerHTML = `
     <div class="empty-results">
-      <h3>${modoBusca === 'clinica' ? 'Erro ao buscar clinicas.' : 'Erro ao buscar profissionais.'}</h3>
+      <h3>${modoBusca === 'clinica' ? 'Erro ao buscar clinicas.' : modoBusca === 'especialidade' ? 'Erro ao buscar resultados.' : 'Erro ao buscar profissionais.'}</h3>
       <p>Tente atualizar a página e pesquisar novamente.</p>
     </div>
   `;
