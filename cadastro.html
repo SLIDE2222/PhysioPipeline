@@ -102,18 +102,25 @@
           <label for="telefone" id="sharedPhoneLabel">Telefone</label>
           <input type="text" id="telefone" name="telefone" placeholder="(11) 99999-9999" required />
           <div id="physioRegistrationFields">
-          <label for="especialidadeCadastro">Especialidade</label>
-          <div class="autocomplete-wrapper">
+          <label for="especialidadeCadastro">Especialidades</label>
+          <div class="tag-input-shell" id="physioSpecialtiesEditor">
+            <div class="tag-pill-list" id="physioSpecialtiesTags"></div>
             <input
               type="text"
               id="especialidadeCadastro"
               name="especialidade"
-              placeholder="Digite uma especialidade"
+              placeholder="Digite uma especialidade e pressione Enter"
               autocomplete="off"
-              required
             />
-            <ul id="especialidadeCadastroSuggestions" class="suggestions-list"></ul>
           </div>
+          <ul id="especialidadeCadastroSuggestions" class="suggestions-list"></ul>
+          <div class="tag-editor-actions">
+            <button type="button" class="btn btn-outline tag-editor-add-btn" id="addPhysioSpecialty">
+              + Adicionar especialidade
+            </button>
+            <p class="tag-editor-limit" id="physioSpecialtyLimitMessage" aria-live="polite"></p>
+          </div>
+          <input type="hidden" id="physioSpecialties" name="physioSpecialties" />
 
           <label for="cidadeCadastro">Cidade</label>
           <div class="autocomplete-wrapper">
@@ -222,6 +229,12 @@
                 placeholder="Digite uma especialidade ou servi&ccedil;o e pressione Enter"
                 autocomplete="off"
               />
+            </div>
+            <div class="tag-editor-actions">
+              <button type="button" class="btn btn-outline tag-editor-add-btn" id="addClinicService">
+                + Adicionar especialidade/servi&ccedil;o
+              </button>
+              <p class="tag-editor-limit" id="clinicServiceLimitMessage" aria-live="polite"></p>
             </div>
             <input type="hidden" id="clinicServices" name="clinicServices" />
 
@@ -366,16 +379,28 @@
       const cadastroSubmitButton = cadastroForm?.querySelector('button[type="submit"]');
       const physioRegistrationFields = document.getElementById('physioRegistrationFields');
       const clinicRegistrationFields = document.getElementById('clinicRegistrationFields');
+      const physioSpecialtyEditor = window.PhysioClinicForm?.createTagEditor?.({
+        inputId: 'especialidadeCadastro',
+        listId: 'physioSpecialtiesTags',
+        hiddenInputId: 'physioSpecialties',
+        addButtonId: 'addPhysioSpecialty',
+        limitMessageId: 'physioSpecialtyLimitMessage',
+        limit: 3,
+        limitMessage: 'Limite de 3 especialidades atingido.',
+      });
       const clinicEditor = window.PhysioClinicForm?.createClinicEditor?.({
         serviceInputId: 'clinicServiceInput',
         serviceListId: 'clinicServicesTags',
         hiddenServicesInputId: 'clinicServices',
+        addServiceButtonId: 'addClinicService',
+        serviceLimitMessageId: 'clinicServiceLimitMessage',
         teamRowsId: 'clinicTeamRows',
         addTeamButtonId: 'addClinicTeamRow',
       });
       const pageParams = new URLSearchParams(window.location.search);
       const isCompletingProfile = pageParams.get('completeProfile') === 'true';
 
+      physioSpecialtyEditor?.setValue([]);
       clinicEditor?.setValue({ services: [], team: [] });
 
       function syncAccountTypeForm() {
@@ -566,6 +591,14 @@
 
           try {
             const accountType = getSelectedAccountType();
+            const physioSpecialties = physioSpecialtyEditor?.getValue?.() || [];
+
+            if (accountType !== 'clinic' && !physioSpecialties.length) {
+              cadastroMensagem.textContent = 'Adicione pelo menos uma especialidade.';
+              cadastroMensagem.style.color = '#b91c1c';
+              if (submitBtn) submitBtn.disabled = false;
+              return;
+            }
 
             await window.physioApi.register({
               email: document.getElementById('email').value.trim(),
@@ -601,7 +634,9 @@
             const profile = await window.physioApi.createProfile({
               name: document.getElementById('nome').value.trim(),
               phone: document.getElementById('telefone').value.trim() || null,
-              specialty: document.getElementById('especialidadeCadastro').value.trim(),
+              specialty: physioSpecialties[0],
+              secondarySpecialty: physioSpecialties[1] || null,
+              tertiarySpecialty: physioSpecialties[2] || null,
               city: document.getElementById('cidadeCadastro').value.trim(),
               neighborhood: document.getElementById('bairro').value.trim() || null,
               attendance: document.getElementById('atendimento').value,

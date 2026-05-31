@@ -112,11 +112,16 @@ function getProfileSpecialties(profissional) {
   const secondSpecialty =
     profissional.especialidadeSecundaria ||
     profissional.secondarySpecialty ||
+    '';
+
+  const thirdSpecialty =
+    profissional.especialidadeTerciaria ||
+    profissional.tertiarySpecialty ||
     profissional.specialty2 ||
     profissional.extraSpecialty ||
     '';
 
-  return [mainSpecialty, secondSpecialty]
+  return [mainSpecialty, secondSpecialty, thirdSpecialty]
     .filter(Boolean)
     .filter((specialty, index, arr) => arr.indexOf(specialty) === index);
 }

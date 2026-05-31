@@ -6,6 +6,7 @@ const createProfileSchema = z.object({
   name: z.string().min(2),
   specialty: z.string().min(2),
   secondarySpecialty: z.string().optional().nullable(),
+  tertiarySpecialty: z.string().optional().nullable(),
   city: z.string().min(2),
   neighborhood: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
@@ -28,7 +29,7 @@ function cleanOption(value, maxLength = 160) {
     .trim()
     .slice(0, maxLength);
 
-  if (!option || option === "-" || /^n[aã]o informado$/i.test(option)) return null;
+  if (!option || option === "-" || /^n[aï¿½]o informado$/i.test(option)) return null;
 
   return option;
 }
@@ -100,6 +101,7 @@ export async function listProfileOptions(_req, res) {
         neighborhood: true,
         specialty: true,
         secondarySpecialty: true,
+        tertiarySpecialty: true,
       },
       orderBy: { updatedAt: "desc" },
       take: 3000,
@@ -123,7 +125,11 @@ export async function listProfileOptions(_req, res) {
     });
 
     const specialties = uniqueSortedOptions(
-      profiles.flatMap((profile) => [profile.specialty, profile.secondarySpecialty])
+      profiles.flatMap((profile) => [
+        profile.specialty,
+        profile.secondarySpecialty,
+        profile.tertiarySpecialty,
+      ])
     );
 
     res.set("Cache-Control", "public, max-age=300");
@@ -156,6 +162,7 @@ export async function listProfiles(req, res) {
         ? [
             { specialty: { contains: String(specialty), mode: "insensitive" } },
             { secondarySpecialty: { contains: String(specialty), mode: "insensitive" } },
+            { tertiarySpecialty: { contains: String(specialty), mode: "insensitive" } },
           ]
         : undefined,
       city: city ? { contains: String(city), mode: "insensitive" } : undefined,
@@ -229,6 +236,7 @@ export async function createProfile(req, res) {
       name: parsed.data.name,
       specialty: parsed.data.specialty,
       secondarySpecialty: clean(parsed.data.secondarySpecialty),
+      tertiarySpecialty: clean(parsed.data.tertiarySpecialty),
       city: parsed.data.city,
       neighborhood: clean(parsed.data.neighborhood),
       phone: clean(parsed.data.phone),
@@ -285,6 +293,9 @@ export async function updateMyProfile(req, res) {
       ...(parsed.data.specialty !== undefined ? { specialty: parsed.data.specialty } : {}),
       ...(parsed.data.secondarySpecialty !== undefined
         ? { secondarySpecialty: clean(parsed.data.secondarySpecialty) }
+        : {}),
+      ...(parsed.data.tertiarySpecialty !== undefined
+        ? { tertiarySpecialty: clean(parsed.data.tertiarySpecialty) }
         : {}),
       ...(parsed.data.city !== undefined ? { city: parsed.data.city } : {}),
       ...(parsed.data.neighborhood !== undefined

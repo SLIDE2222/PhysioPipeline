@@ -25,6 +25,7 @@
     'name',
     'specialty',
     'secondarySpecialty',
+    'tertiarySpecialty',
     'city',
     'neighborhood',
     'bio',
@@ -35,6 +36,7 @@
     'name',
     'specialty',
     'secondarySpecialty',
+    'tertiarySpecialty',
     'city',
     'neighborhood',
     'phone',
@@ -283,6 +285,7 @@
         profiles.flatMap((profile) => [
           profile.especialidade || profile.specialty,
           profile.especialidadeSecundaria || profile.secondarySpecialty,
+          profile.especialidadeTerciaria || profile.tertiarySpecialty || profile.specialty2,
         ])
       ),
     };
@@ -403,6 +406,21 @@
         profile.secondarySpecialty ??
         profile.secondary_specialties ??
         profile.especialidadeSecundaria ??
+        '',
+      especialidadeTerciaria:
+        profile.tertiarySpecialty ??
+        profile.specialty2 ??
+        profile.especialidadeTerciaria ??
+        '',
+      specialty2:
+        profile.tertiarySpecialty ??
+        profile.specialty2 ??
+        profile.especialidadeTerciaria ??
+        '',
+      tertiarySpecialty:
+        profile.tertiarySpecialty ??
+        profile.specialty2 ??
+        profile.especialidadeTerciaria ??
         '',
       cidade: profile.city ?? profile.cidade ?? '',
       bairro: profile.neighborhood ?? profile.bairro ?? '',

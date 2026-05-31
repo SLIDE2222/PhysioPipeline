@@ -6,6 +6,8 @@ const clinicEditor = window.PhysioClinicForm?.createClinicEditor?.({
   serviceInputId: 'clinicServiceInput',
   serviceListId: 'clinicServicesTags',
   hiddenServicesInputId: 'clinicServices',
+  addServiceButtonId: 'addClinicService',
+  serviceLimitMessageId: 'clinicServiceLimitMessage',
   teamRowsId: 'clinicTeamRows',
   addTeamButtonId: 'addClinicTeamRow',
 });

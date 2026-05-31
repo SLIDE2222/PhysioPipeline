@@ -63,6 +63,7 @@ model Profile {
   name          String
   specialty     String
   secondarySpecialty String?
+  tertiarySpecialty String?
   city          String
   neighborhood  String?
   phone         String?

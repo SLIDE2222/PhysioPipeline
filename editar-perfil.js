@@ -139,7 +139,12 @@ async function loadMyProfile() {
 
     setInputValue(
       'especialidadeSecundaria',
-      getProfileField(profile, 'especialidadeSecundaria', 'secondarySpecialty', 'specialty2', 'extraSpecialty')
+      getProfileField(profile, 'especialidadeSecundaria', 'secondarySpecialty')
+    );
+
+    setInputValue(
+      'especialidadeTerciaria',
+      getProfileField(profile, 'especialidadeTerciaria', 'tertiarySpecialty', 'specialty2', 'extraSpecialty')
     );
 
     setInputValue(
@@ -235,6 +240,12 @@ if (editarForm) {
     getEditarSpecialtyOptions
   );
 
+  setupSimpleAutocomplete(
+    'especialidadeTerciaria',
+    'editarEspecialidadeTerciariaSuggestions',
+    getEditarSpecialtyOptions
+  );
+
   if (typeof setupCityNeighborhoodAutocomplete === 'function') {
     setupCityNeighborhoodAutocomplete(
       'editarCidade',
@@ -267,6 +278,7 @@ if (editarForm) {
 
     const submitBtn = editarForm.querySelector('button[type="submit"]');
     if (submitBtn) submitBtn.disabled = true;
+    const especialidadeTerciaria = document.getElementById('especialidadeTerciaria').value.trim();
 
     try {
       const profile = await window.physioApi.updateMyProfile({
@@ -276,6 +288,7 @@ if (editarForm) {
         neighborhood: document.getElementById('bairro').value.trim() || null,
         specialty: especialidade || null,
         secondarySpecialty: especialidadeSecundaria || null,
+        tertiarySpecialty: especialidadeTerciaria || null,
         attendance: document.getElementById('atendimento').value.trim() || null,
         instagram: document.getElementById('instagram').value.trim() || null,
         linkedin: document.getElementById('linkedin').value.trim() || null,

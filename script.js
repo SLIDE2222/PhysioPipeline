@@ -1283,6 +1283,8 @@ function getProfileSpecialtyValues(profile) {
     profile.specialty,
     profile.especialidadeSecundaria,
     profile.secondarySpecialty,
+    profile.especialidadeTerciaria,
+    profile.tertiarySpecialty,
     profile.specialization,
     profile.specialty2,
     profile.extraSpecialty,
@@ -2382,14 +2384,20 @@ function getSearchableSpecialties(profile) {
     .join(' ');
 }
 
-function getDisplaySpecialties(profile) {
+function getProfileSpecialtiesList(profile) {
   return [
     profile.especialidade || profile.specialty,
     profile.especialidadeSecundaria || profile.secondarySpecialty,
+    profile.especialidadeTerciaria || profile.tertiarySpecialty || profile.specialty2,
   ]
     .filter(Boolean)
-    .filter((specialty, index, arr) => arr.indexOf(specialty) === index)
-    .join(' • ');
+    .map((specialty) => String(specialty || '').trim())
+    .filter(Boolean)
+    .filter((specialty, index, arr) => arr.indexOf(specialty) === index);
+}
+
+function getDisplaySpecialties(profile) {
+  return getProfileSpecialtiesList(profile).join(' • ');
 }
 
 function getClinicServicesList(clinic) {
@@ -3016,7 +3024,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         const displayName = profile.nome || profile.name || 'Fisioterapeuta';
-        const displaySpecialty = getDisplaySpecialties(profile) || 'N?o informado';
+        const physioSpecialties = getProfileSpecialtiesList(profile);
+        const displaySpecialty = physioSpecialties.join(' • ') || 'N?o informado';
         const displayCity = profile.cidade || profile.city || 'N?o informado';
         const displayNeighborhood = profile.bairro || profile.neighborhood || 'N?o informado';
         const photoUrl = getProfileImageUrl(profile);
@@ -3036,7 +3045,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
               <div class="result-card__content">
                 <p><strong>Badge:</strong> &#129489; Fisioterapeuta</p>
-                <p><strong>Especialidade:</strong> ${escapeHtml(displaySpecialty)}</p>
+                <p><strong>Especialidades:</strong></p>
+                <div class="result-card__badge-row">
+                  ${physioSpecialties.length ? renderBadgePills(physioSpecialties) : '<span class="profile-badge">Nao informado</span>'}
+                </div>
                 <p><strong>Cidade:</strong> ${escapeHtml(displayCity)}</p>
                 <p><strong>Bairro:</strong> ${escapeHtml(displayNeighborhood)}</p>
 

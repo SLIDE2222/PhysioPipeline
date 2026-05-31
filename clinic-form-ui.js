@@ -1,5 +1,6 @@
 (function () {
   const MAX_CLINIC_TEAM = 5;
+  const DEFAULT_SERVICE_LIMIT = 5;
 
   function normalizeKey(value) {
     return String(value || '')
@@ -9,32 +10,37 @@
       .trim();
   }
 
-  function uniqueServices(values) {
+  function cleanTag(value) {
+    return String(value || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function uniqueTags(values, limit = Number.POSITIVE_INFINITY) {
     const seen = new Set();
 
     return (values || [])
-      .map((value) => String(value || '').replace(/\s+/g, ' ').trim())
+      .map(cleanTag)
       .filter(Boolean)
       .filter((value) => {
         const key = normalizeKey(value);
         if (!key || seen.has(key)) return false;
         seen.add(key);
         return true;
-      });
+      })
+      .slice(0, limit);
   }
 
-  function parseServices(value) {
-    if (Array.isArray(value)) return uniqueServices(value);
+  function parseServices(value, limit = DEFAULT_SERVICE_LIMIT) {
+    if (Array.isArray(value)) return uniqueTags(value, limit);
 
     if (typeof value === 'string') {
       try {
         const parsed = JSON.parse(value);
-        if (Array.isArray(parsed)) return uniqueServices(parsed);
+        if (Array.isArray(parsed)) return uniqueTags(parsed, limit);
       } catch (_) {
         // keep legacy string fallback below
       }
 
-      return uniqueServices(value.split(/[,\n/|]/));
+      return uniqueTags(value.split(/[,\n/|]/), limit);
     }
 
     return [];
@@ -55,66 +61,166 @@
 
     return rawValues
       .map((item) => ({
-        name: String(item?.name || '').replace(/\s+/g, ' ').trim(),
-        specialty: String(item?.specialty || '').replace(/\s+/g, ' ').trim(),
+        name: cleanTag(item?.name || ''),
+        specialty: cleanTag(item?.specialty || ''),
       }))
       .filter((item) => item.name || item.specialty)
       .slice(0, MAX_CLINIC_TEAM);
+  }
+
+  function escapeAttr(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function createTagEditor({
+    inputId,
+    listId,
+    hiddenInputId,
+    addButtonId,
+    limitMessageId,
+    limit = DEFAULT_SERVICE_LIMIT,
+    limitMessage = '',
+  }) {
+    const input = document.getElementById(inputId);
+    const list = document.getElementById(listId);
+    const hiddenInput = hiddenInputId ? document.getElementById(hiddenInputId) : null;
+    const addButton = addButtonId ? document.getElementById(addButtonId) : null;
+    const limitMessageNode = limitMessageId ? document.getElementById(limitMessageId) : null;
+
+    if (!input || !list) return null;
+
+    const state = { values: [] };
+
+    function syncHiddenValue() {
+      if (hiddenInput) hiddenInput.value = JSON.stringify(state.values);
+    }
+
+    function updateControls() {
+      const reachedLimit = state.values.length >= limit;
+
+      if (addButton) {
+        addButton.disabled = reachedLimit;
+      }
+
+      if (limitMessageNode) {
+        limitMessageNode.textContent = reachedLimit ? limitMessage : '';
+      }
+    }
+
+    function render() {
+      list.innerHTML = state.values
+        .map(
+          (value, index) => `
+        <span class="profile-badge tag-pill-item">
+          <span>${escapeAttr(value)}</span>
+          <button type="button" class="tag-pill-remove" data-tag-index="${index}" aria-label="Remover ${escapeAttr(value)}">
+            x
+          </button>
+        </span>
+      `
+        )
+        .join('');
+
+      syncHiddenValue();
+      updateControls();
+    }
+
+    function addTag(rawValue) {
+      const nextValue = cleanTag(rawValue);
+      if (!nextValue) return false;
+
+      const nextValues = uniqueTags([...state.values, nextValue], limit);
+      if (nextValues.length === state.values.length) {
+        input.value = '';
+        render();
+        return false;
+      }
+
+      state.values = nextValues;
+      input.value = '';
+      render();
+      return true;
+    }
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      addTag(input.value);
+    });
+
+    list.addEventListener('click', (event) => {
+      const button = event.target.closest('[data-tag-index]');
+      if (!button) return;
+
+      const index = Number.parseInt(button.dataset.tagIndex || '-1', 10);
+      if (Number.isNaN(index) || index < 0) return;
+
+      state.values.splice(index, 1);
+      render();
+    });
+
+    if (addButton) {
+      addButton.addEventListener('click', () => {
+        addTag(input.value);
+        input.focus();
+      });
+    }
+
+    return {
+      setValue(value) {
+        state.values = parseServices(value, limit);
+        render();
+      },
+      getValue() {
+        state.values = uniqueTags(state.values, limit);
+        syncHiddenValue();
+        updateControls();
+        return [...state.values];
+      },
+      addTag,
+      clearInput() {
+        input.value = '';
+      },
+    };
   }
 
   function createClinicEditor({
     serviceInputId,
     serviceListId,
     hiddenServicesInputId,
+    addServiceButtonId,
+    serviceLimitMessageId,
     teamRowsId,
     addTeamButtonId,
   }) {
-    const serviceInput = document.getElementById(serviceInputId);
-    const serviceList = document.getElementById(serviceListId);
-    const hiddenServicesInput = document.getElementById(hiddenServicesInputId);
     const teamRows = document.getElementById(teamRowsId);
     const addTeamButton = document.getElementById(addTeamButtonId);
+    const serviceEditor = createTagEditor({
+      inputId: serviceInputId,
+      listId: serviceListId,
+      hiddenInputId: hiddenServicesInputId,
+      addButtonId: addServiceButtonId,
+      limitMessageId: serviceLimitMessageId,
+      limit: DEFAULT_SERVICE_LIMIT,
+      limitMessage: 'Limite de 5 especialidades/servicos atingido.',
+    });
 
-    if (!serviceInput || !serviceList || !hiddenServicesInput || !teamRows || !addTeamButton) {
+    if (!serviceEditor || !teamRows || !addTeamButton) {
       return null;
     }
 
     const state = {
-      services: [],
       team: [],
     };
 
-    function syncServicesValue() {
-      hiddenServicesInput.value = JSON.stringify(state.services);
-    }
-
-    function renderServices() {
-      serviceList.innerHTML = state.services.map((service, index) => `
-        <span class="profile-badge tag-pill-item">
-          <span>${service}</span>
-          <button type="button" class="tag-pill-remove" data-service-index="${index}" aria-label="Remover ${service}">
-            ×
-          </button>
-        </span>
-      `).join('');
-
-      syncServicesValue();
-    }
-
-    function addService(rawValue) {
-      const nextValue = String(rawValue || '').replace(/\s+/g, ' ').trim();
-      if (!nextValue) return;
-
-      const uniqueNext = uniqueServices([...state.services, nextValue]);
-      state.services = uniqueNext;
-      serviceInput.value = '';
-      renderServices();
-    }
-
     function normalizeTeam() {
       state.team = Array.from(teamRows.querySelectorAll('.clinic-team-row')).map((row) => ({
-        name: row.querySelector('[data-team-name]')?.value?.replace(/\s+/g, ' ').trim() || '',
-        specialty: row.querySelector('[data-team-specialty]')?.value?.replace(/\s+/g, ' ').trim() || '',
+        name: cleanTag(row.querySelector('[data-team-name]')?.value || ''),
+        specialty: cleanTag(row.querySelector('[data-team-specialty]')?.value || ''),
       }));
     }
 
@@ -132,17 +238,19 @@
     }
 
     function renderTeamRows() {
-      teamRows.innerHTML = state.team.map((member, index) => `
+      teamRows.innerHTML = state.team
+        .map(
+          (member, index) => `
         <div class="clinic-team-row">
           <input
             type="text"
-            value="${member.name.replace(/"/g, '&quot;')}"
+            value="${escapeAttr(member.name)}"
             placeholder="Nome do fisioterapeuta"
             data-team-name
           />
           <input
             type="text"
-            value="${member.specialty.replace(/"/g, '&quot;')}"
+            value="${escapeAttr(member.specialty)}"
             placeholder="Especialidade"
             data-team-specialty
           />
@@ -152,10 +260,12 @@
             data-remove-team-row="${index}"
             aria-label="Remover fisioterapeuta"
           >
-            ×
+            x
           </button>
         </div>
-      `).join('');
+      `
+        )
+        .join('');
 
       if (!state.team.length) {
         state.team = [{ name: '', specialty: '' }];
@@ -183,23 +293,6 @@
       });
     }
 
-    serviceInput.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter') return;
-      event.preventDefault();
-      addService(serviceInput.value);
-    });
-
-    serviceList.addEventListener('click', (event) => {
-      const button = event.target.closest('[data-service-index]');
-      if (!button) return;
-
-      const index = Number.parseInt(button.dataset.serviceIndex || '-1', 10);
-      if (Number.isNaN(index) || index < 0) return;
-
-      state.services.splice(index, 1);
-      renderServices();
-    });
-
     addTeamButton.addEventListener('click', () => {
       if (state.team.length >= MAX_CLINIC_TEAM) return;
       normalizeTeam();
@@ -209,32 +302,32 @@
 
     return {
       setValue({ services, team }) {
-        state.services = parseServices(services);
+        serviceEditor.setValue(services);
         state.team = parseTeam(team);
         if (!state.team.length) state.team = [{ name: '', specialty: '' }];
-        renderServices();
         renderTeamRows();
       },
       getValue() {
         normalizeTeam();
         return {
-          services: uniqueServices(state.services),
+          services: serviceEditor.getValue(),
           team: state.team
             .map((member) => ({
-              name: String(member.name || '').replace(/\s+/g, ' ').trim(),
-              specialty: String(member.specialty || '').replace(/\s+/g, ' ').trim(),
+              name: cleanTag(member.name || ''),
+              specialty: cleanTag(member.specialty || ''),
             }))
             .filter((member) => member.name && member.specialty)
             .slice(0, MAX_CLINIC_TEAM),
         };
       },
       clearInput() {
-        serviceInput.value = '';
+        serviceEditor.clearInput();
       },
     };
   }
 
   window.PhysioClinicForm = {
+    createTagEditor,
     createClinicEditor,
     parseServices,
     parseTeam,
