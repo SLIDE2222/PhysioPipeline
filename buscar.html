@@ -21,7 +21,7 @@
     rel="stylesheet"
   >
 </head>
-<body>
+<body class="product-form-page">
   <header class="header">
     <div class="container nav">
       <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
@@ -37,14 +37,25 @@
 
   <main class="page-main">
     <section class="page-section">
-      <div class="container narrow">
+      <div class="container auth-page-layout">
         <div class="section-heading left">
           <p class="eyebrow">Busca</p>
-          <h1>Encontre um fisioterapeuta</h1>
+          <h1 data-search-title>Encontre um fisioterapeuta</h1>
           <p>Pesquise por especialidade e cidade. O básico que qualquer ser humano esperaria de um marketplace.</p>
         </div>
 
         <form class="form-card" id="buscaForm" action="resultados.html" method="GET">
+          <div class="directory-search-toggle" role="group" aria-label="Buscar perfis">
+            <label>
+              <input type="radio" name="searchType" value="physio" checked />
+              <span>Buscar fisioterapeutas</span>
+            </label>
+            <label>
+              <input type="radio" name="searchType" value="clinic" />
+              <span>Buscar clínicas</span>
+            </label>
+          </div>
+
           <label>Tipo de busca</label>
 
             <div class="search-mode-toggle" role="group" aria-label="Tipo de busca">
@@ -59,6 +70,7 @@
             </div>
 
 
+          <label data-specialty-label for="buscarEspecialidade">Especialidade</label>
           <div class="autocomplete-wrapper specialty-search-field">
             <input
               type="text"
@@ -81,7 +93,7 @@
               <p class="search-field-hint">Para quem n&atilde;o sabe qual especialidade procurar.</p>
             </div>
 
-          <label for="buscarCidade">Cidade</label>
+          <label for="buscarCidade" data-city-label>Cidade</label>
           <div class="autocomplete-wrapper">
             <input
               type="text"
@@ -94,7 +106,7 @@
             <ul id="cidadeSuggestions" class="suggestions-list"></ul>
           </div>
 
-          <label for="buscarBairro">Bairro (opcional)</label>
+          <label for="buscarBairro" data-neighborhood-label>Bairro (opcional)</label>
           <div class="autocomplete-wrapper">
             <input
               type="text"

@@ -22,7 +22,7 @@
     rel="stylesheet"
   >
 </head>
-<body>
+<body class="product-form-page register-page">
   <header class="header">
     <div class="container nav">
       <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
@@ -38,7 +38,7 @@
 
   <main class="page-main">
     <section class="page-section">
-      <div class="container narrow">
+      <div class="container auth-page-layout">
         <div class="section-heading left">
           <p class="eyebrow">Cadastro profissional</p>
           <h1>Crie sua conta e seu perfil</h1>
@@ -66,14 +66,18 @@
             </label>
             <label class="account-type-option">
               <input type="radio" name="accountType" value="clinic" />
-              <span>Sou clinica</span>
+              <span>Sou clínica</span>
             </label>
           </div>
-          <label for="foto">Foto do perfil</label>
-          <input type="file" id="foto" name="foto" accept="image/*" />
+          <label id="uploadLabelText" for="foto">Foto do perfil</label>
+          <label for="foto" class="upload-dropzone">
+            <span class="upload-dropzone__title" id="uploadDropzoneTitle">Clique para enviar uma imagem</span>
+            <span class="upload-dropzone__hint" id="uploadDropzoneHint">PNG, JPG ou WEBP. Ajuste a imagem antes de salvar.</span>
+          </label>
+          <input type="file" id="foto" name="foto" accept="image/*" class="sr-only-file-input" />
 
-          <div class="image-preview-wrapper">
-            <img id="fotoPreview" class="image-preview" alt="Pr&eacute;via da foto" />
+          <div class="image-preview-wrapper image-preview-wrapper--large">
+            <img id="fotoPreview" class="image-preview image-preview--square" alt="Pr&eacute;via da foto" />
           </div>
 
           <label for="nome">Nome completo</label>
@@ -95,7 +99,7 @@
           />
           <p id="senhaErro" style="color:#b91c1c; font-size:0.9rem; margin-bottom: 12px;"></p>
 
-          <label for="telefone">Telefone</label>
+          <label for="telefone" id="sharedPhoneLabel">Telefone</label>
           <input type="text" id="telefone" name="telefone" placeholder="(11) 99999-9999" required />
           <div id="physioRegistrationFields">
           <label for="especialidadeCadastro">Especialidade</label>
@@ -172,6 +176,58 @@
             required
           ></textarea>
 
+          </div>
+
+          <div id="clinicRegistrationFields" hidden>
+            <label for="clinicResponsible">Respons&aacute;vel</label>
+            <input type="text" id="clinicResponsible" name="clinicResponsible" placeholder="Nome do respons&aacute;vel" />
+
+            <label for="clinicCidade">Cidade</label>
+            <div class="autocomplete-wrapper">
+              <input
+                type="text"
+                id="clinicCidade"
+                name="clinicCidade"
+                placeholder="Digite a cidade da cl&iacute;nica"
+                autocomplete="off"
+              />
+              <ul id="clinicCidadeSuggestions" class="suggestions-list"></ul>
+            </div>
+
+            <label for="clinicBairro">Bairro</label>
+            <div class="autocomplete-wrapper">
+              <input
+                type="text"
+                id="clinicBairro"
+                name="clinicBairro"
+                placeholder="Selecione ou digite uma cidade primeiro"
+                autocomplete="off"
+                disabled
+              />
+              <ul id="clinicBairroSuggestions" class="suggestions-list"></ul>
+            </div>
+
+            <label for="clinicAddress">Endere&ccedil;o</label>
+            <input type="text" id="clinicAddress" name="clinicAddress" placeholder="Rua, n&uacute;mero e complemento" />
+
+            <label for="clinicWhatsapp">WhatsApp</label>
+            <input type="text" id="clinicWhatsapp" name="clinicWhatsapp" placeholder="(11) 99999-9999" />
+
+            <label for="clinicServices">Especialidades/servi&ccedil;os</label>
+            <textarea
+              id="clinicServices"
+              name="clinicServices"
+              rows="3"
+              placeholder="Ex.: Pilates cl&iacute;nico, RPG, reabilita&ccedil;&atilde;o ortop&eacute;dica"
+            ></textarea>
+
+            <label for="clinicDescription">Descri&ccedil;&atilde;o da cl&iacute;nica</label>
+            <textarea
+              id="clinicDescription"
+              name="clinicDescription"
+              rows="5"
+              placeholder="Fale sobre a cl&iacute;nica, atendimentos, equipe e diferenciais."
+            ></textarea>
           </div>
 
           <button type="submit" class="btn btn-primary btn-block">
@@ -287,7 +343,13 @@
       const fotoPreview = document.getElementById('fotoPreview');
       const nomeLabel = document.querySelector('label[for="nome"]');
       const nomeInput = document.getElementById('nome');
+      const uploadLabelText = document.getElementById('uploadLabelText');
+      const uploadDropzoneTitle = document.getElementById('uploadDropzoneTitle');
+      const uploadDropzoneHint = document.getElementById('uploadDropzoneHint');
+      const sharedPhoneLabel = document.getElementById('sharedPhoneLabel');
+      const cadastroSubmitButton = cadastroForm?.querySelector('button[type="submit"]');
       const physioRegistrationFields = document.getElementById('physioRegistrationFields');
+      const clinicRegistrationFields = document.getElementById('clinicRegistrationFields');
       const pageParams = new URLSearchParams(window.location.search);
       const isCompletingProfile = pageParams.get('completeProfile') === 'true';
 
@@ -297,6 +359,11 @@
 
         if (nomeLabel) nomeLabel.textContent = isClinic ? 'Nome da clinica' : 'Nome completo';
         if (nomeInput) nomeInput.placeholder = isClinic ? 'Nome da sua clinica' : 'Seu nome';
+        if (uploadLabelText) uploadLabelText.textContent = isClinic ? 'Logo da clinica' : 'Foto do perfil';
+        if (sharedPhoneLabel) sharedPhoneLabel.textContent = isClinic ? 'Telefone da clinica' : 'Telefone';
+        if (uploadDropzoneTitle) uploadDropzoneTitle.textContent = isClinic ? 'Clique para enviar a logo da clínica' : 'Clique para enviar uma foto do perfil';
+        if (uploadDropzoneHint) uploadDropzoneHint.textContent = isClinic ? 'PNG, JPG ou WEBP. Use uma logo nítida e centralizada.' : 'PNG, JPG ou WEBP. Ajuste a imagem antes de salvar.';
+        if (cadastroSubmitButton) cadastroSubmitButton.textContent = isClinic ? 'Criar conta da clinica' : 'Criar conta e meu perfil';
 
         if (physioRegistrationFields) {
           physioRegistrationFields.hidden = isClinic;
@@ -317,6 +384,32 @@
                 field.disabled = false;
                 field.required = field.dataset.wasRequired === 'true';
               }
+            });
+        }
+
+        if (clinicRegistrationFields) {
+          clinicRegistrationFields.hidden = !isClinic;
+
+          clinicRegistrationFields
+            .querySelectorAll('input, textarea')
+            .forEach((field) => {
+              if (!field.dataset.wasRequired) {
+                field.dataset.wasRequired = field.required ? 'true' : 'false';
+              }
+
+              if (isClinic) {
+                field.disabled = false;
+              } else {
+                field.disabled = true;
+                field.required = false;
+              }
+            });
+
+          ['clinicResponsible', 'clinicCidade', 'clinicAddress', 'clinicWhatsapp', 'clinicServices', 'clinicDescription']
+            .forEach((fieldId) => {
+              const field = document.getElementById(fieldId);
+              if (!field) return;
+              field.required = isClinic;
             });
         }
       }
@@ -361,6 +454,13 @@
           'cidadeCadastroSuggestions',
           'bairro',
           'bairroCadastroSuggestions'
+        );
+
+        setupCityNeighborhoodAutocomplete(
+          'clinicCidade',
+          'clinicCidadeSuggestions',
+          'clinicBairro',
+          'clinicBairroSuggestions'
         );
       }
 
@@ -451,7 +551,14 @@
             if (accountType === 'clinic') {
               await window.physioApi.updateMyClinicProfile({
                 clinicName: document.getElementById('nome').value.trim() || null,
+                responsibleName: document.getElementById('clinicResponsible').value.trim() || null,
+                city: document.getElementById('clinicCidade').value.trim() || null,
+                neighborhood: document.getElementById('clinicBairro').value.trim() || null,
+                address: document.getElementById('clinicAddress').value.trim() || null,
                 phone: document.getElementById('telefone').value.trim() || null,
+                whatsapp: document.getElementById('clinicWhatsapp').value.trim() || null,
+                services: document.getElementById('clinicServices').value.trim() || null,
+                description: document.getElementById('clinicDescription').value.trim() || null,
                 logoUrl: cadastroFotoBase64 || null,
               });
 

@@ -40,11 +40,22 @@
       <div class="container">
         <div class="section-heading left">
           <p class="eyebrow">Resultados</p>
-          <h1>Profissionais encontrados</h1>
+          <h1 data-search-title>Profissionais encontrados</h1>
           <p id="resultadoResumo">Carregando busca...</p>
         </div>
 
        <form class="results-search-inline" action="resultados.html" method="GET">
+
+  <div class="directory-search-toggle results-directory-toggle" role="group" aria-label="Buscar perfis">
+    <label>
+      <input type="radio" name="searchType" value="physio" checked />
+      <span>Buscar fisioterapeutas</span>
+    </label>
+    <label>
+      <input type="radio" name="searchType" value="clinic" />
+      <span>Buscar clínicas</span>
+    </label>
+  </div>
 
   <div class="search-mode-toggle results-mode-toggle" role="group" aria-label="Tipo de busca">
     <label>
@@ -58,6 +69,7 @@
   </div>
 
   <div class="autocomplete-wrapper specialty-search-field">
+    <label for="specialtyInput" data-specialty-label>Especialidade</label>
     <input
       type="text"
       id="specialtyInput"
@@ -79,6 +91,7 @@
   </div>
 
   <div class="autocomplete-wrapper">
+    <label for="cityIndexSelect" data-city-label>Cidade</label>
     <input
       type="text"
       id="cityIndexSelect"
@@ -91,6 +104,7 @@
   </div>
 
   <div class="autocomplete-wrapper">
+    <label for="buscarBairroIndex" data-neighborhood-label>Bairro</label>
     <input
       type="text"
       id="buscarBairroIndex"

@@ -16,10 +16,13 @@ CREATE TABLE IF NOT EXISTS "ClinicProfile" (
   "id" TEXT NOT NULL,
   "userId" TEXT NOT NULL,
   "clinicName" TEXT,
+  "responsibleName" TEXT,
   "address" TEXT,
   "city" TEXT,
+  "neighborhood" TEXT,
   "phone" TEXT,
   "whatsapp" TEXT,
+  "services" TEXT,
   "logoUrl" TEXT,
   "description" TEXT,
   "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -45,3 +48,7 @@ BEGIN
     ON UPDATE CASCADE;
   END IF;
 END $$;
+
+ALTER TABLE "ClinicProfile" ADD COLUMN IF NOT EXISTS "responsibleName" TEXT;
+ALTER TABLE "ClinicProfile" ADD COLUMN IF NOT EXISTS "neighborhood" TEXT;
+ALTER TABLE "ClinicProfile" ADD COLUMN IF NOT EXISTS "services" TEXT;

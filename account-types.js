@@ -13,9 +13,9 @@
     },
     [ACCOUNT_TYPES.CLINIC]: {
       value: ACCOUNT_TYPES.CLINIC,
-      label: 'Clinica',
-      shortLabel: 'Sou clinica',
-      badge: '🏥 Clinica',
+      label: 'Clínica',
+      shortLabel: 'Sou clínica',
+      badge: '🏥 Clínica',
     },
   });
 

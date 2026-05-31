@@ -12,14 +12,17 @@ function setClinicMessage(text, color) {
 }
 
 function fillClinicForm(profile) {
-  document.getElementById('clinicName').value = profile?.clinicName || '';
-  document.getElementById('clinicAddress').value = profile?.address || '';
-  document.getElementById('clinicCity').value = profile?.city || '';
-  document.getElementById('clinicPhone').value = profile?.phone || '';
+  document.getElementById('clinicName').value = profile?.nomeClinica || profile?.clinicName || '';
+  document.getElementById('clinicResponsible').value = profile?.responsavel || profile?.responsibleName || '';
+  document.getElementById('clinicAddress').value = profile?.endereco || profile?.address || '';
+  document.getElementById('clinicCity').value = profile?.cidade || profile?.city || '';
+  document.getElementById('clinicNeighborhood').value = profile?.bairro || profile?.neighborhood || '';
+  document.getElementById('clinicPhone').value = profile?.telefone || profile?.phone || '';
   document.getElementById('clinicWhatsapp').value = profile?.whatsapp || '';
-  document.getElementById('clinicDescription').value = profile?.description || '';
+  document.getElementById('clinicServices').value = profile?.servicos || profile?.services || '';
+  document.getElementById('clinicDescription').value = profile?.descricao || profile?.description || '';
 
-  clinicLogoBase64 = profile?.logoUrl || '';
+  clinicLogoBase64 = profile?.logo || profile?.logoUrl || '';
   if (clinicLogoBase64 && clinicLogoPreview) {
     clinicLogoPreview.src = clinicLogoBase64;
     clinicLogoPreview.style.display = 'block';
@@ -113,10 +116,13 @@ if (clinicDashboardForm) {
     try {
       await window.physioApi.updateMyClinicProfile({
         clinicName: document.getElementById('clinicName').value.trim() || null,
+        responsibleName: document.getElementById('clinicResponsible').value.trim() || null,
         address: document.getElementById('clinicAddress').value.trim() || null,
         city: document.getElementById('clinicCity').value.trim() || null,
+        neighborhood: document.getElementById('clinicNeighborhood').value.trim() || null,
         phone: document.getElementById('clinicPhone').value.trim() || null,
         whatsapp: document.getElementById('clinicWhatsapp').value.trim() || null,
+        services: document.getElementById('clinicServices').value.trim() || null,
         logoUrl: clinicLogoBase64 || null,
         description: document.getElementById('clinicDescription').value.trim() || null,
       });

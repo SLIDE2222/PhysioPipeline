@@ -30,6 +30,13 @@
       .replace(/=+$/g, '');
   }
 
+  function getSelectedAccountType() {
+    const selected = document.querySelector('input[name="accountType"]:checked');
+    return window.PhysioAccountTypes?.normalizeAccountType
+      ? window.PhysioAccountTypes.normalizeAccountType(selected?.value)
+      : 'physio';
+  }
+
   async function handleCredentialResponse(response) {
     try {
       if (!response?.credential) {
@@ -37,7 +44,10 @@
         return;
       }
 
-      const data = await window.physioApi.loginWithGoogle(response.credential);
+      const data = await window.physioApi.loginWithGoogle(
+        response.credential,
+        getSelectedAccountType()
+      );
 
       if (!data?.token) {
         showMessage('Login recebido, mas o token não veio do servidor.', '#b91c1c');

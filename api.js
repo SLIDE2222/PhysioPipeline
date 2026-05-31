@@ -418,6 +418,27 @@
     };
   }
 
+  function normalizeClinicProfile(clinic) {
+    if (!clinic) return null;
+
+    return {
+      ...clinic,
+      id: clinic.id,
+      nome: clinic.clinicName ?? clinic.nome ?? '',
+      nomeClinica: clinic.clinicName ?? clinic.nomeClinica ?? '',
+      responsavel: clinic.responsibleName ?? clinic.responsavel ?? '',
+      endereco: clinic.address ?? clinic.endereco ?? '',
+      cidade: clinic.city ?? clinic.cidade ?? '',
+      bairro: clinic.neighborhood ?? clinic.bairro ?? '',
+      telefone: clinic.phone ?? clinic.telefone ?? '',
+      whatsapp: clinic.whatsapp ?? '',
+      servicos: clinic.services ?? clinic.servicos ?? '',
+      logo: clinic.logoUrl ?? clinic.logo ?? clinic.foto ?? '',
+      descricao: clinic.description ?? clinic.descricao ?? '',
+      accountType: ACCOUNT_TYPES.CLINIC,
+    };
+  }
+
   function normalizeUser(user) {
     if (!user) return null;
 
@@ -480,10 +501,15 @@
       }
       return data;
     },
-    async loginWithGoogle(credential) {
+    async loginWithGoogle(credential, accountType) {
       const data = await request('/auth/google', {
         method: 'POST',
-        body: { credential },
+        body: {
+          credential,
+          accountType:
+            window.PhysioAccountTypes?.normalizeAccountType?.(accountType) ||
+            ACCOUNT_TYPES.PHYSIO,
+        },
         timeoutMs: 15000,
       });
 
@@ -507,7 +533,7 @@
       return request('/profiles/me').then((data) => normalizeProfile(data.profile));
     },
     fetchMyClinicProfile() {
-      return request('/clinics/me').then((data) => data.clinicProfile || data);
+      return request('/clinics/me').then((data) => normalizeClinicProfile(data.clinicProfile || data));
     },
     async fetchProfiles(options = {}) {
       const startedAt = performance.now();
@@ -569,7 +595,23 @@
         method: 'PUT',
         body: payload,
         timeoutMs: 20000,
-      }).then((data) => data.clinicProfile || data);
+      }).then((data) => normalizeClinicProfile(data.clinicProfile || data));
+    },
+    fetchClinics(params = {}) {
+      const searchParams = new URLSearchParams();
+      if (params.specialty) searchParams.set('specialty', params.specialty);
+      if (params.city) searchParams.set('city', params.city);
+      if (params.neighborhood) searchParams.set('neighborhood', params.neighborhood);
+
+      const query = searchParams.toString();
+      return request(`/clinics${query ? `?${query}` : ''}`, {
+        timeoutMs: 10000,
+      }).then((data) => (data.clinics || data || []).map(normalizeClinicProfile));
+    },
+    fetchClinicOptions() {
+      return request('/clinics/options', {
+        timeoutMs: 10000,
+      });
     },
     async fetchProfile(id) {
       try {
@@ -624,6 +666,7 @@
       });
     },
     normalizeProfile,
+    normalizeClinicProfile,
     normalizeUser,
     resolveUserHomePath,
     getStoredAuth,

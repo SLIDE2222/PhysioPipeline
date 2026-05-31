@@ -15,7 +15,7 @@
     rel="stylesheet"
   >
 </head>
-<body>
+<body class="product-form-page clinic-page">
   <header class="header">
     <div class="container nav">
       <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
@@ -29,23 +29,30 @@
 
   <main class="page-main">
     <section class="page-section">
-      <div class="container narrow">
+      <div class="container auth-page-layout">
         <div class="section-heading left">
           <p class="eyebrow">Conta de clinica</p>
           <h1>Dashboard da clinica</h1>
-          <p>🏥 Clinica</p>
+          <p>🏥 Clínica</p>
         </div>
 
         <form class="form-card" id="clinicDashboardForm">
           <label for="clinicLogo">Logo da clinica</label>
-          <input type="file" id="clinicLogo" name="clinicLogo" accept="image/*" />
+          <label for="clinicLogo" class="upload-dropzone">
+            <span class="upload-dropzone__title">Clique para enviar a logo da clínica</span>
+            <span class="upload-dropzone__hint">PNG, JPG ou WEBP. A imagem pode ser ajustada antes de salvar.</span>
+          </label>
+          <input type="file" id="clinicLogo" name="clinicLogo" accept="image/*" class="sr-only-file-input" />
 
-          <div class="image-preview-wrapper">
-            <img id="clinicLogoPreview" class="image-preview" alt="Previa da logo" />
+          <div class="image-preview-wrapper image-preview-wrapper--large">
+            <img id="clinicLogoPreview" class="image-preview image-preview--square" alt="Previa da logo" />
           </div>
 
           <label for="clinicName">Nome da clinica</label>
           <input type="text" id="clinicName" name="clinicName" placeholder="Nome da sua clinica" />
+
+          <label for="clinicResponsible">Responsável</label>
+          <input type="text" id="clinicResponsible" name="clinicResponsible" placeholder="Nome do responsável" />
 
           <label for="clinicAddress">Endereco</label>
           <input type="text" id="clinicAddress" name="clinicAddress" placeholder="Rua, numero e complemento" />
@@ -53,11 +60,17 @@
           <label for="clinicCity">Cidade</label>
           <input type="text" id="clinicCity" name="clinicCity" placeholder="Cidade da clinica" />
 
+          <label for="clinicNeighborhood">Bairro</label>
+          <input type="text" id="clinicNeighborhood" name="clinicNeighborhood" placeholder="Bairro da clinica" />
+
           <label for="clinicPhone">Telefone</label>
           <input type="text" id="clinicPhone" name="clinicPhone" placeholder="(11) 99999-9999" />
 
           <label for="clinicWhatsapp">WhatsApp</label>
           <input type="text" id="clinicWhatsapp" name="clinicWhatsapp" placeholder="(11) 99999-9999" />
+
+          <label for="clinicServices">Especialidades/serviços</label>
+          <textarea id="clinicServices" name="clinicServices" rows="3" placeholder="Ex.: Pilates clínico, RPG, ortopedia, neuro"></textarea>
 
           <label for="clinicDescription">Descricao</label>
           <textarea id="clinicDescription" name="clinicDescription" rows="5" placeholder="Fale sobre a clinica, servicos e diferenciais."></textarea>

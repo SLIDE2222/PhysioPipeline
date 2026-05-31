@@ -131,10 +131,19 @@ async function verifyGoogleCredential(credential) {
 export async function googleLogin(req, res) {
   try {
     const credential = String(req.body?.credential || "").trim();
+    const rawAccountType = req.body?.accountType;
 
     if (!credential) {
       return res.status(400).json({ message: "Credencial do Google é obrigatória." });
     }
+
+    if (rawAccountType !== undefined && !isValidAccountType(rawAccountType)) {
+      return res.status(400).json({ message: "Tipo de conta invalido." });
+    }
+
+    // Existing users keep their persisted account type. Only brand-new Google
+    // accounts inherit the type selected on the registration page.
+    const requestedAccountType = normalizeAccountType(rawAccountType);
 
     const googleUser = await verifyGoogleCredential(credential);
     const fallbackName = googleUser.email.split("@")[0] || "Profissional";
@@ -157,7 +166,7 @@ export async function googleLogin(req, res) {
           email: googleUser.email,
           passwordHash,
           emailVerified: true,
-          accountType: ACCOUNT_TYPES.PHYSIO,
+          accountType: requestedAccountType,
           name: firstName,
           googleSub: googleUser.googleSub || null,
         },
@@ -183,7 +192,7 @@ export async function googleLogin(req, res) {
       }
     }
 
-    if (!user.profiles?.length) {
+    if (normalizeAccountType(user.accountType) === ACCOUNT_TYPES.PHYSIO && !user.profiles?.length) {
       const profile = await prisma.profile.create({
         data: {
           name: firstName,
