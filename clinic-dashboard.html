@@ -69,8 +69,28 @@
           <label for="clinicWhatsapp">WhatsApp</label>
           <input type="text" id="clinicWhatsapp" name="clinicWhatsapp" placeholder="(11) 99999-9999" />
 
-          <label for="clinicServices">Especialidades/serviços</label>
-          <textarea id="clinicServices" name="clinicServices" rows="3" placeholder="Ex.: Pilates clínico, RPG, ortopedia, neuro"></textarea>
+          <label for="clinicServiceInput">Especialidades/serviços</label>
+          <div class="tag-input-shell" id="clinicServicesEditor">
+            <div class="tag-pill-list" id="clinicServicesTags"></div>
+            <input
+              type="text"
+              id="clinicServiceInput"
+              placeholder="Digite uma especialidade ou serviço e pressione Enter"
+              autocomplete="off"
+            />
+          </div>
+          <input type="hidden" id="clinicServices" name="clinicServices" />
+
+          <div class="clinic-team-section">
+            <div class="clinic-team-section__header">
+              <label for="clinicTeamRows">Fisioterapeutas da clínica</label>
+              <p class="form-hint">Adicione até 5 fisioterapeutas com nome e especialidade.</p>
+            </div>
+            <div id="clinicTeamRows" class="clinic-team-rows"></div>
+            <button type="button" class="btn btn-outline clinic-team-add-btn" id="addClinicTeamRow">
+              + Adicionar fisioterapeuta
+            </button>
+          </div>
 
           <label for="clinicDescription">Descricao</label>
           <textarea id="clinicDescription" name="clinicDescription" rows="5" placeholder="Fale sobre a clinica, servicos e diferenciais."></textarea>
@@ -85,6 +105,7 @@
   <script src="account-types.js?v=accounttype1"></script>
   <script src="api.js?v=rankedfallback2"></script>
   <script src="image-cropper.js?v=imagecrop1"></script>
+  <script src="clinic-form-ui.js?v=clinicui1"></script>
   <script src="script.js?v=resultphotos1"></script>
   <script src="clinic-dashboard.js?v=accounttype1"></script>
 

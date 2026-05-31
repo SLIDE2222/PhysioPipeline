@@ -4277,7 +4277,7 @@ img.result-card__avatar {
 
 .directory-search-toggle {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin: 0 0 1rem;
   padding: 6px;
@@ -4485,6 +4485,124 @@ img.result-card__avatar {
   font-size: 0.92rem;
 }
 
+.tag-input-shell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  min-height: 62px;
+  margin-bottom: 1rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(203, 213, 225, 0.95);
+  border-radius: 16px;
+  background: #f8fbff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.tag-input-shell:focus-within {
+  border-color: rgba(37, 99, 235, 0.8);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.tag-input-shell input {
+  flex: 1 1 220px;
+  min-width: 180px;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tag-input-shell input:focus {
+  outline: none;
+}
+
+.tag-pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tag-pill-item {
+  gap: 8px;
+}
+
+.tag-pill-remove {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.clinic-team-section {
+  margin-bottom: 1rem;
+  padding: 1.1rem;
+  border: 1px solid rgba(191, 219, 254, 0.85);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.clinic-team-section__header {
+  margin-bottom: 0.9rem;
+}
+
+.clinic-team-rows {
+  display: grid;
+  gap: 12px;
+}
+
+.clinic-team-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.clinic-team-row input {
+  margin-bottom: 0 !important;
+}
+
+.clinic-team-remove-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(191, 219, 254, 0.9);
+  border-radius: 14px;
+  background: #eff6ff;
+  color: var(--primary);
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.clinic-team-add-btn {
+  margin-top: 0.9rem;
+}
+
+.clinic-team-list {
+  display: grid;
+  gap: 12px;
+}
+
+.clinic-team-card {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid rgba(191, 219, 254, 0.82);
+  border-radius: 18px;
+  background: rgba(239, 246, 255, 0.55);
+}
+
+.clinic-services-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0.35rem 0 0.75rem;
+}
+
 #physioRegistrationFields,
 #clinicRegistrationFields {
   margin-top: 0.35rem;
@@ -4549,6 +4667,14 @@ img.result-card__avatar {
   .directory-search-toggle,
   .account-type-picker {
     grid-template-columns: 1fr;
+  }
+
+  .clinic-team-row {
+    grid-template-columns: 1fr;
+  }
+
+  .clinic-team-remove-btn {
+    width: 100%;
   }
 
   .product-form-page .page-section {

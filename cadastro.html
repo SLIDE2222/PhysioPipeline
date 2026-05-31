@@ -260,6 +260,7 @@
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="google-auth.js?v=base64url-auth-fix2"></script>
   <script src="image-cropper.js?v=imagecrop1"></script>
+  <script src="clinic-form-ui.js?v=clinicui1"></script>
   <script src="search-taxonomy.generated.js?v=taxonomy2"></script>
   <script src="search-taxonomy.js?v=taxonomy2"></script>
   <script src="script.js?v=resultphotos1"></script>
@@ -365,8 +366,17 @@
       const cadastroSubmitButton = cadastroForm?.querySelector('button[type="submit"]');
       const physioRegistrationFields = document.getElementById('physioRegistrationFields');
       const clinicRegistrationFields = document.getElementById('clinicRegistrationFields');
+      const clinicEditor = window.PhysioClinicForm?.createClinicEditor?.({
+        serviceInputId: 'clinicServiceInput',
+        serviceListId: 'clinicServicesTags',
+        hiddenServicesInputId: 'clinicServices',
+        teamRowsId: 'clinicTeamRows',
+        addTeamButtonId: 'addClinicTeamRow',
+      });
       const pageParams = new URLSearchParams(window.location.search);
       const isCompletingProfile = pageParams.get('completeProfile') === 'true';
+
+      clinicEditor?.setValue({ services: [], team: [] });
 
       function syncAccountTypeForm() {
         const accountType = getSelectedAccountType();
@@ -564,6 +574,7 @@
             });
 
             if (accountType === 'clinic') {
+              const clinicEditorValue = clinicEditor?.getValue?.() || { services: [], team: [] };
               await window.physioApi.updateMyClinicProfile({
                 clinicName: document.getElementById('nome').value.trim() || null,
                 responsibleName: document.getElementById('clinicResponsible').value.trim() || null,
@@ -572,7 +583,8 @@
                 address: document.getElementById('clinicAddress').value.trim() || null,
                 phone: document.getElementById('telefone').value.trim() || null,
                 whatsapp: document.getElementById('clinicWhatsapp').value.trim() || null,
-                services: document.getElementById('clinicServices').value.trim() || null,
+                services: clinicEditorValue.services,
+                physioTeam: clinicEditorValue.team,
                 description: document.getElementById('clinicDescription').value.trim() || null,
                 logoUrl: cadastroFotoBase64 || null,
               });

@@ -2,6 +2,13 @@ const clinicDashboardForm = document.getElementById('clinicDashboardForm');
 const clinicDashboardMessage = document.getElementById('clinicDashboardMessage');
 const clinicLogoInput = document.getElementById('clinicLogo');
 const clinicLogoPreview = document.getElementById('clinicLogoPreview');
+const clinicEditor = window.PhysioClinicForm?.createClinicEditor?.({
+  serviceInputId: 'clinicServiceInput',
+  serviceListId: 'clinicServicesTags',
+  hiddenServicesInputId: 'clinicServices',
+  teamRowsId: 'clinicTeamRows',
+  addTeamButtonId: 'addClinicTeamRow',
+});
 
 let clinicLogoBase64 = '';
 
@@ -19,8 +26,12 @@ function fillClinicForm(profile) {
   document.getElementById('clinicNeighborhood').value = profile?.bairro || profile?.neighborhood || '';
   document.getElementById('clinicPhone').value = profile?.telefone || profile?.phone || '';
   document.getElementById('clinicWhatsapp').value = profile?.whatsapp || '';
-  document.getElementById('clinicServices').value = profile?.servicos || profile?.services || '';
   document.getElementById('clinicDescription').value = profile?.descricao || profile?.description || '';
+
+  clinicEditor?.setValue({
+    services: profile?.servicesList || profile?.servicosLista || profile?.servicos || profile?.services || [],
+    team: profile?.physioTeamList || profile?.fisioterapeutas || profile?.physioTeam || [],
+  });
 
   clinicLogoBase64 = profile?.logo || profile?.logoUrl || '';
   if (clinicLogoBase64 && clinicLogoPreview) {
@@ -114,6 +125,8 @@ if (clinicDashboardForm) {
     setClinicMessage('', '#166534');
 
     try {
+      const clinicEditorValue = clinicEditor?.getValue?.() || { services: [], team: [] };
+
       await window.physioApi.updateMyClinicProfile({
         clinicName: document.getElementById('clinicName').value.trim() || null,
         responsibleName: document.getElementById('clinicResponsible').value.trim() || null,
@@ -122,7 +135,8 @@ if (clinicDashboardForm) {
         neighborhood: document.getElementById('clinicNeighborhood').value.trim() || null,
         phone: document.getElementById('clinicPhone').value.trim() || null,
         whatsapp: document.getElementById('clinicWhatsapp').value.trim() || null,
-        services: document.getElementById('clinicServices').value.trim() || null,
+        services: clinicEditorValue.services,
+        physioTeam: clinicEditorValue.team,
         logoUrl: clinicLogoBase64 || null,
         description: document.getElementById('clinicDescription').value.trim() || null,
       });
@@ -135,5 +149,6 @@ if (clinicDashboardForm) {
     }
   });
 
+  clinicEditor?.setValue({ services: [], team: [] });
   loadClinicDashboard();
 }

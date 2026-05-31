@@ -308,7 +308,8 @@ async function renderProfilePage() {
       const clinic = await window.physioApi.fetchClinic(profileId);
       if (!clinic) throw new Error('Essa clinica nao existe ou nao pode ser carregada.');
 
-      profileContainer.innerHTML = renderClinicProfileMarkup(clinic, loggedUser?.accountType === 'clinic');
+      const isClinicOwner = loggedUser?.accountType === 'clinic' && loggedUser?.id === clinic?.userId;
+      profileContainer.innerHTML = renderClinicProfileMarkup(clinic, isClinicOwner);
       setupImageModal();
       return;
     }

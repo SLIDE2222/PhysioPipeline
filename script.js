@@ -2107,36 +2107,49 @@ function setupDirectorySearchSwitches() {
     const syncSearchType = () => {
       const searchType = searchTypeInputs.find((input) => input.checked)?.value || 'physio';
       const isClinic = searchType === 'clinic';
+      const isCitySearch = searchType === 'city';
       const modeValue = form.querySelector('input[name="modo"]:checked')?.value || 'especialidade';
       const isPatientMode = modeValue === 'leigo';
 
-      if (modeToggle) modeToggle.hidden = isClinic;
-      if (patientField) patientField.hidden = isClinic || !isPatientMode;
-      if (specialtyField) specialtyField.hidden = !isClinic && isPatientMode;
+      if (modeToggle) modeToggle.hidden = isClinic || isCitySearch;
+      if (patientField) patientField.hidden = isClinic || isCitySearch || !isPatientMode;
+      if (specialtyField) specialtyField.hidden = isCitySearch || (!isClinic && isPatientMode);
 
       if (specialtyInput) {
-        specialtyInput.required = !isClinic ? !isPatientMode : true;
-        specialtyInput.placeholder = isClinic
+        specialtyInput.required = isCitySearch ? false : (!isClinic ? !isPatientMode : true);
+        specialtyInput.placeholder = isCitySearch
+          ? 'Opcional para refinar a cidade'
+          : isClinic
           ? 'Ex.: pilates, RPG, ortopedia, domiciliar'
           : 'Ex.: ortopedia, pilates, esportiva';
       }
 
       if (patientInput) {
-        patientInput.required = !isClinic && isPatientMode;
+        patientInput.required = !isClinic && !isCitySearch && isPatientMode;
       }
 
       if (titleTarget) {
-        titleTarget.textContent = isClinic ? 'Encontre uma clinica' : 'Encontre um fisioterapeuta';
+        titleTarget.textContent = isCitySearch
+          ? 'Encontre perfis por cidade'
+          : isClinic
+            ? 'Encontre uma clinica'
+            : 'Encontre um fisioterapeuta';
       }
 
       if (subtitleTarget) {
-        subtitleTarget.textContent = isClinic
-          ? 'Busque clinicas por servicos, cidade e bairro.'
-          : 'Digite a area que voce procura e veja sugestoes automaticamente.';
+        subtitleTarget.textContent = isCitySearch
+          ? 'Pesquise por cidade para ver fisioterapeutas e clinicas na mesma busca.'
+          : isClinic
+            ? 'Busque clinicas por servicos, cidade e bairro.'
+            : 'Digite a area que voce procura e veja sugestoes automaticamente.';
       }
 
       if (specialtyLabel) {
-        specialtyLabel.textContent = isClinic ? 'Especialidades ou servicos' : 'Especialidade';
+        specialtyLabel.textContent = isCitySearch
+          ? 'Especialidade ou servico (opcional)'
+          : isClinic
+            ? 'Especialidades ou servicos'
+            : 'Especialidade';
       }
 
       if (cityLabel) {
@@ -2148,7 +2161,11 @@ function setupDirectorySearchSwitches() {
       }
 
       if (submitButton) {
-        submitButton.textContent = isClinic ? 'Buscar clinicas' : 'Pesquisar agora';
+        submitButton.textContent = isCitySearch
+          ? 'Buscar por cidade'
+          : isClinic
+            ? 'Buscar clinicas'
+            : 'Pesquisar agora';
       }
     };
 
@@ -2437,6 +2454,22 @@ function getDisplaySpecialties(profile) {
     .join(' • ');
 }
 
+function getClinicServicesList(clinic) {
+  const explicitList = Array.isArray(clinic?.servicesList)
+    ? clinic.servicesList
+    : Array.isArray(clinic?.servicosLista)
+      ? clinic.servicosLista
+      : null;
+
+  if (explicitList?.length) return explicitList;
+
+  return String(clinic?.servicos || clinic?.services || '')
+    .split(/[,\n/|]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .filter((item, index, arr) => arr.indexOf(item) === index);
+}
+
 function getClinicServicesText(clinic) {
   return String(clinic?.servicos || clinic?.services || '')
     .split(/[,\n/|]/)
@@ -2444,6 +2477,21 @@ function getClinicServicesText(clinic) {
     .filter(Boolean)
     .slice(0, 4)
     .join(' • ');
+}
+
+function getClinicTeamList(clinic) {
+  return Array.isArray(clinic?.physioTeamList)
+    ? clinic.physioTeamList
+    : Array.isArray(clinic?.fisioterapeutas)
+      ? clinic.fisioterapeutas
+      : [];
+}
+
+function renderBadgePills(items) {
+  return (items || [])
+    .filter(Boolean)
+    .map((item) => `<span class="profile-badge">${escapeHtml(item)}</span>`)
+    .join('');
 }
 
 function buildClinicWhatsAppLink(clinic) {
@@ -2472,6 +2520,8 @@ function filterClinicsBySearch(clinics, { query = '', city = '', neighborhood = 
       clinic.responsavel,
       clinic.servicos,
       clinic.services,
+      ...getClinicServicesList(clinic),
+      ...getClinicTeamList(clinic).flatMap((member) => [member?.name, member?.specialty]),
       clinic.descricao,
       clinic.description,
       clinic.cidade,
@@ -2609,7 +2659,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const params = new URLSearchParams(window.location.search);
   const requestedPage = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
-  const searchType = params.get('searchType') === 'clinic' ? 'clinic' : 'physio';
+  const rawSearchType = params.get('searchType');
+  const searchType = rawSearchType === 'clinic' || rawSearchType === 'city' ? rawSearchType : 'physio';
 
   const especialidade = normalizeText(
     params.get('especialidade') || ''
@@ -2657,13 +2708,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   try {
-    logResultsTiming(`iniciando busca de ${searchType === 'clinic' ? 'clinicas' : 'profissionais'}`);
-    resumo.textContent = searchType === 'clinic' ? 'Buscando clinicas...' : 'Buscando profissionais...';
+    logResultsTiming(`iniciando busca de ${searchType === 'clinic' ? 'clinicas' : searchType === 'city' ? 'cidade' : 'profissionais'}`);
+    resumo.textContent = searchType === 'clinic' ? 'Buscando clinicas...' : searchType === 'city' ? 'Buscando resultados por cidade...' : 'Buscando profissionais...';
     renderResultsSkeleton();
     slowLoadingTimeoutId = window.setTimeout(() => {
       if (resultsLoaded) return;
 
-      resumo.textContent = searchType === 'clinic' ? 'Ainda carregando clinicas...' : 'Ainda carregando profissionais...';
+      resumo.textContent = searchType === 'clinic' ? 'Ainda carregando clinicas...' : searchType === 'city' ? 'Ainda carregando resultados por cidade...' : 'Ainda carregando profissionais...';
       console.warn('PhysioPipeline resultados: busca ainda pendente após 5s');
     }, 5000);
 
@@ -2673,7 +2724,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       resultsLoaded = true;
       resumo.textContent = searchType === 'clinic'
         ? 'Não foi possível carregar as clinicas agora.'
-        : 'Não foi possível carregar os profissionais agora.';
+        : searchType === 'city'
+          ? 'Não foi possível carregar os resultados por cidade agora.'
+          : 'Não foi possível carregar os profissionais agora.';
       resultsGrid.innerHTML = `
         <div class="empty-results">
           <h3>A busca demorou demais.</h3>
@@ -2709,12 +2762,55 @@ document.addEventListener('DOMContentLoaded', async () => {
         query: params.get('especialidade') || '',
         city: cidade,
         neighborhood: bairro,
-      });
+      }).map((clinic) => ({ type: 'clinic', profile: clinic }));
 
       resultLabel = filtered.length === 1
         ? '1 clinica encontrada'
         : `${filtered.length} clinicas encontradas`;
 
+      resumo.textContent = resultLabel;
+    } else if (searchType === 'city') {
+      console.time('PhysioPipeline fetching city results');
+      let profiles = [];
+      let clinics = [];
+      try {
+        [profiles, clinics] = await Promise.all([
+          window.physioApi.fetchProfiles({
+            useCache: true,
+            allowBackendFallback: false,
+          }),
+          window.physioApi.fetchClinics(),
+        ]);
+      } finally {
+        console.timeEnd('PhysioPipeline fetching city results');
+      }
+
+      if (resultsLoaded && failedLoadingTimeoutId) return;
+      resultsLoaded = true;
+      if (slowLoadingTimeoutId) window.clearTimeout(slowLoadingTimeoutId);
+      if (failedLoadingTimeoutId) window.clearTimeout(failedLoadingTimeoutId);
+      resultsGrid.innerHTML = '';
+      renderFallbackMessage('');
+
+      const matchingProfiles = profiles
+        .filter((profile) => {
+          const cityMatch = !cidade || normalizeText(profile.cidade || profile.city) === cidade;
+          const neighborhoodMatch =
+            !bairro || normalizeText(profile.bairro || profile.neighborhood).includes(bairro);
+          return cityMatch && neighborhoodMatch;
+        })
+        .map((profile) => ({ type: 'physio', profile }));
+
+      const matchingClinics = filterClinicsBySearch(clinics, {
+        query: params.get('especialidade') || '',
+        city: cidade,
+        neighborhood: bairro,
+      }).map((clinic) => ({ type: 'clinic', profile: clinic }));
+
+      filtered = [...matchingProfiles, ...matchingClinics];
+      resultLabel = filtered.length === 1
+        ? '1 resultado encontrado na cidade'
+        : `${filtered.length} resultados encontrados na cidade`;
       resumo.textContent = resultLabel;
     } else {
       console.time('PhysioPipeline fetching professionals');
@@ -2765,7 +2861,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         hasExactInRequestedCity,
       });
 
-      filtered = visibleResults.map((item) => item.profile);
+      filtered = visibleResults.map((item) => ({ type: 'physio', profile: item.profile }));
 
       resultLabel = filtered.length === 1
         ? '1 profissional encontrado'
@@ -2803,14 +2899,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (filtered.length === 0) {
       resultsGrid.innerHTML = `
         <div class="empty-results">
-          <h3>${searchType === 'clinic' ? 'Nenhuma clinica encontrada.' : 'Nenhum profissional encontrado.'}</h3>
-          <p>${searchType === 'clinic' ? 'Tente pesquisar outro servico ou cidade.' : 'Tente pesquisar outra especialidade ou cidade.'}</p>
+          <h3>${searchType === 'clinic' ? 'Nenhuma clinica encontrada.' : searchType === 'city' ? 'Nenhum resultado encontrado nessa cidade.' : 'Nenhum profissional encontrado.'}</h3>
+          <p>${searchType === 'clinic' ? 'Tente pesquisar outro servico ou cidade.' : searchType === 'city' ? 'Tente outra cidade ou remova o bairro para ampliar a busca.' : 'Tente pesquisar outra especialidade ou cidade.'}</p>
         </div>
       `;
       if (resultsShowingSummary) {
         resultsShowingSummary.textContent = searchType === 'clinic'
           ? 'Mostrando 0 de 0 clinicas'
-          : 'Mostrando 0 de 0 profissionais';
+          : searchType === 'city'
+            ? 'Mostrando 0 de 0 resultados'
+            : 'Mostrando 0 de 0 profissionais';
       }
       if (paginationControls) paginationControls.innerHTML = '';
       return;
@@ -2927,141 +3025,126 @@ document.addEventListener('DOMContentLoaded', async () => {
       const endIndex = Math.min(startIndex + RESULTS_PER_PAGE, filtered.length);
       const pageProfiles = filtered.slice(startIndex, endIndex);
 
-   if (searchType === 'clinic') {
-    resultsGrid.innerHTML = pageProfiles.map((profile) => {
-      const displayName = profile.nomeClinica || profile.nome || 'Clinica';
-      const displayServices = getClinicServicesText(profile) || 'Nao informado';
-      const displayCity = profile.cidade || profile.city || 'Nao informado';
-      const displayNeighborhood = profile.bairro || profile.neighborhood || 'Nao informado';
-      const photoUrl = getProfileImageUrl({ foto: profile.logo, photoUrl: profile.logoUrl });
-      const initials = getProfileInitials(displayName);
-      const whatsappLink = buildClinicWhatsAppLink(profile);
+      resultsGrid.innerHTML = pageProfiles.map((item) => {
+        const profile = item.profile || item;
 
-      return `
-      <article class="result-card result-card--clinic">
-        <div class="result-card__layout">
-          <div class="result-card__title">
-            <h3>${escapeHtml(displayName)}</h3>
-            <p class="result-card__mobile-meta">🏥 Clínica • ${escapeHtml(displayCity)}</p>
-          </div>
+        if (item.type === 'clinic') {
+          const displayName = profile.nomeClinica || profile.nome || 'Clinica';
+          const displayCity = profile.cidade || profile.city || 'Nao informado';
+          const displayNeighborhood = profile.bairro || profile.neighborhood || 'Nao informado';
+          const photoUrl = getProfileImageUrl({ foto: profile.logo, photoUrl: profile.logoUrl });
+          const initials = getProfileInitials(displayName);
+          const whatsappLink = buildClinicWhatsAppLink(profile);
+          const servicePills = renderBadgePills(getClinicServicesList(profile));
 
-          <div class="result-card__media" aria-hidden="true">
-            ${renderResultAvatar({ photoUrl, initials, displayName, decorative: true })}
-          </div>
+          return `
+            <article class="result-card result-card--clinic">
+              <div class="result-card__layout">
+                <div class="result-card__title">
+                  <h3>${escapeHtml(displayName)}</h3>
+                  <p class="result-card__mobile-meta">&#127973; Clinica &bull; ${escapeHtml(displayCity)}</p>
+                </div>
 
-          <div class="result-card__content">
-            <p><strong>Badge:</strong> 🏥 Clínica</p>
-            <p><strong>Cidade:</strong> ${escapeHtml(displayCity)}</p>
-            <p><strong>Bairro:</strong> ${escapeHtml(displayNeighborhood)}</p>
-            <p><strong>Serviços:</strong> ${escapeHtml(displayServices)}</p>
+                <div class="result-card__media" aria-hidden="true">
+                  ${renderResultAvatar({ photoUrl, initials, displayName, decorative: true })}
+                </div>
 
-            <div class="bio-wrapper">
-              <p class="bio collapsed">
-                ${escapeHtml(profile.descricao || profile.description || 'Sem descrição.')}
-              </p>
+                <div class="result-card__content">
+                  <p><strong>Badge:</strong> &#127973; Clinica</p>
+                  <p><strong>Cidade:</strong> ${escapeHtml(displayCity)}</p>
+                  <p><strong>Bairro:</strong> ${escapeHtml(displayNeighborhood)}</p>
+                  ${servicePills ? `<div class="clinic-services-pills">${servicePills}</div>` : ''}
 
-              <button class="toggle-bio-btn" type="button">
-                Veja mais
-              </button>
+                  <div class="bio-wrapper">
+                    <p class="bio collapsed">
+                      ${escapeHtml(profile.descricao || profile.description || 'Sem descricao.')}
+                    </p>
+
+                    <button class="toggle-bio-btn" type="button">
+                      Veja mais
+                    </button>
+                  </div>
+
+                  <div class="profile-actions">
+                    <a
+                      href="profile.html?type=clinic&id=${encodeURIComponent(profile.id)}"
+                      class="btn btn-outline"
+                    >
+                      Ver perfil
+                    </a>
+                    <a
+                      href="${escapeHtml(whatsappLink)}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="btn btn-primary"
+                    >
+                      Falar com a clinica
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </article>
+          `;
+        }
+
+        const displayName = profile.nome || profile.name || 'Fisioterapeuta';
+        const displaySpecialty = getDisplaySpecialties(profile) || 'N?o informado';
+        const displayCity = profile.cidade || profile.city || 'N?o informado';
+        const displayNeighborhood = profile.bairro || profile.neighborhood || 'N?o informado';
+        const photoUrl = getProfileImageUrl(profile);
+        const initials = getProfileInitials(displayName);
+
+        return `
+          <article class="result-card">
+            <div class="result-card__layout">
+              <div class="result-card__title">
+                <h3>${escapeHtml(displayName)}</h3>
+                <p class="result-card__mobile-meta">${escapeHtml(displaySpecialty)} &bull; ${escapeHtml(displayCity)}</p>
+              </div>
+
+              <div class="result-card__media" aria-hidden="true">
+                ${renderResultAvatar({ photoUrl, initials, displayName, decorative: true })}
+              </div>
+
+              <div class="result-card__content">
+                <p><strong>Badge:</strong> &#129489; Fisioterapeuta</p>
+                <p><strong>Especialidade:</strong> ${escapeHtml(displaySpecialty)}</p>
+                <p><strong>Cidade:</strong> ${escapeHtml(displayCity)}</p>
+                <p><strong>Bairro:</strong> ${escapeHtml(displayNeighborhood)}</p>
+
+                <div class="bio-wrapper">
+                  <p class="bio collapsed">
+                    ${escapeHtml(profile.bio || profile.descricao || 'Sem descricao.')}
+                  </p>
+
+                  <button class="toggle-bio-btn" type="button">
+                    Veja mais
+                  </button>
+                </div>
+
+                <a
+                  href="profile.html?id=${encodeURIComponent(profile.id)}"
+                  class="btn btn-primary"
+                >
+                  Ver perfil
+                </a>
+              </div>
             </div>
+          </article>
+        `;
+      }).join('');
 
-            <a
-              href="${escapeHtml(whatsappLink)}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="btn btn-primary"
-            >
-              Falar com a clínica
-            </a>
-          </div>
-        </div>
-      </article>
-      `;
-    }).join('');
-   } else {
-   resultsGrid.innerHTML = pageProfiles.map((profile) => {
-    const displayName = profile.nome || profile.name || 'Fisioterapeuta';
-    const displaySpecialty = getDisplaySpecialties(profile) || 'Não informado';
-    const displayCity = profile.cidade || profile.city || 'Não informado';
-    const displayNeighborhood = profile.bairro || profile.neighborhood || 'Não informado';
-    const photoUrl = getProfileImageUrl(profile);
-    const initials = getProfileInitials(displayName);
+      attachResultAvatarFallbacks(resultsGrid);
+      logResultsTiming(`renderResults p?gina ${currentPage} conclu?do (${Math.round(performance.now() - renderStart)}ms)`);
+      console.timeEnd('PhysioPipeline renderResults');
 
-  return `
-  <article class="result-card">
-    <div class="result-card__layout">
-      <div class="result-card__title">
-        <h3>
-          ${escapeHtml(displayName)}
-        </h3>
-        <p class="result-card__mobile-meta">${escapeHtml(displaySpecialty)} • ${escapeHtml(displayCity)}</p>
-      </div>
-
-      <div class="result-card__media" aria-hidden="true">
-        ${renderResultAvatar({ photoUrl, initials, displayName, decorative: true })}
-      </div>
-
-      <div class="result-card__content">
-        <p>
-          <strong>Badge:</strong>
-          🧑 Fisioterapeuta
-        </p>
-
-        <p>
-          <strong>Especialidade:</strong>
-          ${escapeHtml(displaySpecialty)}
-        </p>
-
-        <p>
-          <strong>Cidade:</strong>
-          ${escapeHtml(displayCity)}
-        </p>
-
-        <p>
-          <strong>Bairro:</strong>
-          ${escapeHtml(displayNeighborhood)}
-        </p>
-
-        <div class="bio-wrapper">
-          <p class="bio collapsed">
-            ${escapeHtml(profile.bio || profile.descricao || 'Sem descrição.')}
-          </p>
-
-          <button class="toggle-bio-btn" type="button">
-            Veja mais
-          </button>
-        </div>
-
-        <a
-          href="profile.html?id=${encodeURIComponent(profile.id)}"
-          class="btn btn-primary"
-        >
-          Ver perfil
-        </a>
-      </div>
-    </div>
-  </article>
-`;
-   }).join('');
-   }
-
-attachResultAvatarFallbacks(resultsGrid);
-logResultsTiming(`renderResults página ${currentPage} concluído (${Math.round(performance.now() - renderStart)}ms)`);
-console.timeEnd('PhysioPipeline renderResults');
-
-document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
-  button.addEventListener('click', () => {
-    const bio = button.previousElementSibling;
-
-    bio.classList.toggle('collapsed');
-
-    if (bio.classList.contains('collapsed')) {
-      button.textContent = 'Veja mais';
-    } else {
-      button.textContent = 'Veja menos';
-    }
-  });
-});
+      document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+          const bio = button.previousElementSibling;
+          bio.classList.toggle('collapsed');
+          button.textContent = bio.classList.contains('collapsed') ? 'Veja mais' : 'Veja menos';
+        });
+      });
 
       renderPagination();
       updatePageUrl(currentPage);
@@ -3069,7 +3152,9 @@ document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
       if (resultsShowingSummary) {
         resultsShowingSummary.textContent = searchType === 'clinic'
           ? `Mostrando ${endIndex} de ${filtered.length} clinicas`
-          : `Mostrando ${endIndex} de ${filtered.length} profissionais`;
+          : searchType === 'city'
+            ? `Mostrando ${endIndex} de ${filtered.length} resultados`
+            : `Mostrando ${endIndex} de ${filtered.length} profissionais`;
       }
 
       if (shouldScroll) {
@@ -3095,7 +3180,7 @@ document.querySelectorAll('.toggle-bio-btn').forEach((button) => {
 
   resultsGrid.innerHTML = `
     <div class="empty-results">
-      <h3>${searchType === 'clinic' ? 'Erro ao buscar clinicas.' : 'Erro ao buscar profissionais.'}</h3>
+      <h3>${searchType === 'clinic' ? 'Erro ao buscar clinicas.' : searchType === 'city' ? 'Erro ao buscar por cidade.' : 'Erro ao buscar profissionais.'}</h3>
       <p>Tente atualizar a página e pesquisar novamente.</p>
     </div>
   `;
