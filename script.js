@@ -1,4 +1,4 @@
-let cachedMyProfile = null;
+﻿let cachedMyProfile = null;
 
 const EXISTING_SPECIALTIES = [
   'Fisioterapia Ortopédica',
@@ -2064,35 +2064,9 @@ function setupCityNeighborhoodAutocomplete(cityInputId, cityListId, neighborhood
 function setupSearchModeSwitches() {
   document.querySelectorAll('form[action="resultados.html"]').forEach((form) => {
     const modeInputs = Array.from(form.querySelectorAll('input[name="modo"]'));
-    const specialtyField = form.querySelector('.specialty-search-field');
-    const patientField = form.querySelector('.patient-search-field');
-    const specialtyInput = specialtyField?.querySelector('input[name="especialidade"]');
-    const patientInput = patientField?.querySelector('input[name="queixa"]');
-
-    if (!modeInputs.length || !specialtyField || !patientField) return;
-
-    const syncMode = () => {
-      const mode = modeInputs.find((input) => input.checked)?.value || 'especialidade';
-      const isPatientMode = mode === 'leigo';
-
-      specialtyField.hidden = isPatientMode;
-      patientField.hidden = !isPatientMode;
-
-      if (specialtyInput) specialtyInput.required = !isPatientMode;
-      if (patientInput) patientInput.required = isPatientMode;
-    };
-
-    modeInputs.forEach((input) => input.addEventListener('change', syncMode));
-    syncMode();
-  });
-}
-
-function setupDirectorySearchSwitches() {
-  document.querySelectorAll('form[action="resultados.html"]').forEach((form) => {
-    const searchTypeInputs = Array.from(form.querySelectorAll('input[name="searchType"]'));
     const modeToggle = form.querySelector('.search-mode-toggle');
-    const patientField = form.querySelector('.patient-search-field');
     const specialtyField = form.querySelector('.specialty-search-field');
+    const patientField = form.querySelector('.patient-search-field');
     const specialtyInput = specialtyField?.querySelector('input[name="especialidade"]');
     const patientInput = patientField?.querySelector('input[name="queixa"]');
     const titleTarget = form.querySelector('[data-search-title]') || document.querySelector('[data-search-title]');
@@ -2102,79 +2076,44 @@ function setupDirectorySearchSwitches() {
     const neighborhoodLabel = form.querySelector('[data-neighborhood-label]');
     const submitButton = form.querySelector('button[type="submit"]');
 
-    if (!searchTypeInputs.length) return;
+    if (!modeInputs.length || !specialtyField || !patientField) return;
 
-    const syncSearchType = () => {
-      const searchType = searchTypeInputs.find((input) => input.checked)?.value || 'physio';
-      const isClinic = searchType === 'clinic';
-      const isCitySearch = searchType === 'city';
-      const modeValue = form.querySelector('input[name="modo"]:checked')?.value || 'especialidade';
-      const isPatientMode = modeValue === 'leigo';
+    if (modeToggle) modeToggle.classList.add('search-mode-toggle--triple');
 
-      if (modeToggle) modeToggle.hidden = isClinic || isCitySearch;
-      if (patientField) patientField.hidden = isClinic || isCitySearch || !isPatientMode;
-      if (specialtyField) specialtyField.hidden = isCitySearch || (!isClinic && isPatientMode);
+    const syncMode = () => {
+      const mode = modeInputs.find((input) => input.checked)?.value || 'especialidade';
+      const isPatientMode = mode === 'leigo';
+      const isClinicMode = mode === 'clinica';
 
-      if (specialtyInput) {
-        specialtyInput.required = isCitySearch ? false : (!isClinic ? !isPatientMode : true);
-        specialtyInput.placeholder = isCitySearch
-          ? 'Opcional para refinar a cidade'
-          : isClinic
-          ? 'Ex.: pilates, RPG, ortopedia, domiciliar'
-          : 'Ex.: ortopedia, pilates, esportiva';
-      }
+      specialtyField.hidden = isPatientMode || isClinicMode;
+      patientField.hidden = !isPatientMode;
 
-      if (patientInput) {
-        patientInput.required = !isClinic && !isCitySearch && isPatientMode;
-      }
+      if (specialtyInput) specialtyInput.required = !isPatientMode && !isClinicMode;
+      if (patientInput) patientInput.required = isPatientMode;
 
       if (titleTarget) {
-        titleTarget.textContent = isCitySearch
-          ? 'Encontre perfis por cidade'
-          : isClinic
-            ? 'Encontre uma clinica'
-            : 'Encontre um fisioterapeuta';
+        titleTarget.textContent = isClinicMode
+          ? 'Encontre uma clinica'
+          : 'Encontre um fisioterapeuta';
       }
 
       if (subtitleTarget) {
-        subtitleTarget.textContent = isCitySearch
-          ? 'Pesquise por cidade para ver fisioterapeutas e clinicas na mesma busca.'
-          : isClinic
-            ? 'Busque clinicas por servicos, cidade e bairro.'
-            : 'Digite a area que voce procura e veja sugestoes automaticamente.';
+        subtitleTarget.textContent = isClinicMode
+          ? 'Escolha a cidade e, se quiser, refine pelo bairro para ver clinicas da regiao.'
+          : 'Digite a area que voce procura e veja sugestoes automaticamente.';
       }
 
-      if (specialtyLabel) {
-        specialtyLabel.textContent = isCitySearch
-          ? 'Especialidade ou servico (opcional)'
-          : isClinic
-            ? 'Especialidades ou servicos'
-            : 'Especialidade';
-      }
-
-      if (cityLabel) {
-        cityLabel.textContent = 'Cidade';
-      }
-
-      if (neighborhoodLabel) {
-        neighborhoodLabel.textContent = 'Bairro';
-      }
+      if (specialtyLabel) specialtyLabel.textContent = 'Especialidade';
+      if (cityLabel) cityLabel.textContent = 'Cidade';
+      if (neighborhoodLabel) neighborhoodLabel.textContent = isClinicMode ? 'Bairro (opcional)' : 'Bairro';
 
       if (submitButton) {
-        submitButton.textContent = isCitySearch
-          ? 'Buscar por cidade'
-          : isClinic
-            ? 'Buscar clinicas'
-            : 'Pesquisar agora';
+        submitButton.textContent = isClinicMode ? 'Buscar clinicas' : 'Pesquisar agora';
       }
     };
 
-    searchTypeInputs.forEach((input) => input.addEventListener('change', syncSearchType));
-    form.addEventListener('change', (event) => {
-      if (event.target.matches('input[name="modo"]')) syncSearchType();
-    });
-
-    syncSearchType();
+    modeInputs.forEach((input) => input.addEventListener('change', syncMode));
+    syncMode();
   });
 }
 
@@ -2399,7 +2338,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   setupAccountMenuEvents();
   setupSearchModeSwitches();
-  setupDirectorySearchSwitches();
   await renderAuthArea();
   await loadDynamicSearchOptions();
 
@@ -2659,14 +2597,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const params = new URLSearchParams(window.location.search);
   const requestedPage = Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1);
-  const rawSearchType = params.get('searchType');
-  const searchType = rawSearchType === 'clinic' || rawSearchType === 'city' ? rawSearchType : 'physio';
-
   const especialidade = normalizeText(
     params.get('especialidade') || ''
   );
 
-  const modoBusca = params.get('modo') === 'leigo' ? 'leigo' : 'especialidade';
+  const rawMode = params.get('modo');
+  const modoBusca = rawMode === 'leigo' || rawMode === 'clinica' ? rawMode : 'especialidade';
   const queixa = params.get('queixa') || '';
   const searchQuery = modoBusca === 'leigo'
     ? queixa
@@ -2698,23 +2634,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     'bairroIndexSuggestions'
   );
   setupSearchModeSwitches();
-  setupDirectorySearchSwitches();
-  document.querySelectorAll('input[name="searchType"]').forEach((input) => {
-    input.checked = input.value === searchType;
-  });
   document.querySelectorAll('input[name="modo"]').forEach((input) => {
     input.checked = input.value === modoBusca;
     input.dispatchEvent(new Event('change', { bubbles: true }));
   });
 
   try {
-    logResultsTiming(`iniciando busca de ${searchType === 'clinic' ? 'clinicas' : searchType === 'city' ? 'cidade' : 'profissionais'}`);
-    resumo.textContent = searchType === 'clinic' ? 'Buscando clinicas...' : searchType === 'city' ? 'Buscando resultados por cidade...' : 'Buscando profissionais...';
+    logResultsTiming(`iniciando busca de ${modoBusca === 'clinica' ? 'clinicas' : 'profissionais'}`);
+    resumo.textContent = modoBusca === 'clinica' ? 'Buscando clinicas...' : 'Buscando profissionais...';
     renderResultsSkeleton();
     slowLoadingTimeoutId = window.setTimeout(() => {
       if (resultsLoaded) return;
 
-      resumo.textContent = searchType === 'clinic' ? 'Ainda carregando clinicas...' : searchType === 'city' ? 'Ainda carregando resultados por cidade...' : 'Ainda carregando profissionais...';
+      resumo.textContent = modoBusca === 'clinica' ? 'Ainda carregando clinicas...' : 'Ainda carregando profissionais...';
       console.warn('PhysioPipeline resultados: busca ainda pendente após 5s');
     }, 5000);
 
@@ -2722,11 +2654,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (resultsLoaded) return;
 
       resultsLoaded = true;
-      resumo.textContent = searchType === 'clinic'
+      resumo.textContent = modoBusca === 'clinica'
         ? 'Não foi possível carregar as clinicas agora.'
-        : searchType === 'city'
-          ? 'Não foi possível carregar os resultados por cidade agora.'
-          : 'Não foi possível carregar os profissionais agora.';
+        : 'Não foi possível carregar os profissionais agora.';
       resultsGrid.innerHTML = `
         <div class="empty-results">
           <h3>A busca demorou demais.</h3>
@@ -2741,7 +2671,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let filtered = [];
     let resultLabel = '';
 
-    if (searchType === 'clinic') {
+    if (modoBusca === 'clinica') {
       console.time('PhysioPipeline fetching clinics');
       let clinics = [];
       try {
@@ -2758,59 +2688,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       resultsGrid.innerHTML = '';
       renderFallbackMessage('');
 
-      filtered = filterClinicsBySearch(clinics, {
-        query: params.get('especialidade') || '',
-        city: cidade,
-        neighborhood: bairro,
-      }).map((clinic) => ({ type: 'clinic', profile: clinic }));
+      filtered = clinics
+        .filter((clinic) => {
+          const clinicCity = normalizeText(clinic.cidade || clinic.city);
+          const clinicNeighborhood = normalizeText(clinic.bairro || clinic.neighborhood);
+          const cityMatch = Boolean(cidade) && clinicCity === cidade;
+          const neighborhoodMatch = !bairro || clinicNeighborhood.includes(bairro);
+          return cityMatch && neighborhoodMatch;
+        })
+        .map((clinic) => ({ type: 'clinic', profile: clinic }));
 
       resultLabel = filtered.length === 1
         ? '1 clinica encontrada'
         : `${filtered.length} clinicas encontradas`;
 
-      resumo.textContent = resultLabel;
-    } else if (searchType === 'city') {
-      console.time('PhysioPipeline fetching city results');
-      let profiles = [];
-      let clinics = [];
-      try {
-        [profiles, clinics] = await Promise.all([
-          window.physioApi.fetchProfiles({
-            useCache: true,
-            allowBackendFallback: false,
-          }),
-          window.physioApi.fetchClinics(),
-        ]);
-      } finally {
-        console.timeEnd('PhysioPipeline fetching city results');
-      }
-
-      if (resultsLoaded && failedLoadingTimeoutId) return;
-      resultsLoaded = true;
-      if (slowLoadingTimeoutId) window.clearTimeout(slowLoadingTimeoutId);
-      if (failedLoadingTimeoutId) window.clearTimeout(failedLoadingTimeoutId);
-      resultsGrid.innerHTML = '';
-      renderFallbackMessage('');
-
-      const matchingProfiles = profiles
-        .filter((profile) => {
-          const cityMatch = !cidade || normalizeText(profile.cidade || profile.city) === cidade;
-          const neighborhoodMatch =
-            !bairro || normalizeText(profile.bairro || profile.neighborhood).includes(bairro);
-          return cityMatch && neighborhoodMatch;
-        })
-        .map((profile) => ({ type: 'physio', profile }));
-
-      const matchingClinics = filterClinicsBySearch(clinics, {
-        query: params.get('especialidade') || '',
-        city: cidade,
-        neighborhood: bairro,
-      }).map((clinic) => ({ type: 'clinic', profile: clinic }));
-
-      filtered = [...matchingProfiles, ...matchingClinics];
-      resultLabel = filtered.length === 1
-        ? '1 resultado encontrado na cidade'
-        : `${filtered.length} resultados encontrados na cidade`;
       resumo.textContent = resultLabel;
     } else {
       console.time('PhysioPipeline fetching professionals');
@@ -2871,7 +2762,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderFallbackMessage(fallbackMessage);
     }
 
-    if (searchType === 'physio' && modoBusca === 'leigo' && queixa) {
+    if (modoBusca === 'leigo' && queixa) {
       const existingSummary = document.querySelector('.smart-search-summary');
       if (existingSummary) existingSummary.remove();
 
@@ -2899,16 +2790,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (filtered.length === 0) {
       resultsGrid.innerHTML = `
         <div class="empty-results">
-          <h3>${searchType === 'clinic' ? 'Nenhuma clinica encontrada.' : searchType === 'city' ? 'Nenhum resultado encontrado nessa cidade.' : 'Nenhum profissional encontrado.'}</h3>
-          <p>${searchType === 'clinic' ? 'Tente pesquisar outro servico ou cidade.' : searchType === 'city' ? 'Tente outra cidade ou remova o bairro para ampliar a busca.' : 'Tente pesquisar outra especialidade ou cidade.'}</p>
+          <h3>${modoBusca === 'clinica' ? 'Nenhuma clinica encontrada.' : 'Nenhum profissional encontrado.'}</h3>
+          <p>${modoBusca === 'clinica' ? 'Tente outra cidade ou remova o bairro para ampliar a busca.' : 'Tente pesquisar outra especialidade ou cidade.'}</p>
         </div>
       `;
       if (resultsShowingSummary) {
-        resultsShowingSummary.textContent = searchType === 'clinic'
+        resultsShowingSummary.textContent = modoBusca === 'clinica'
           ? 'Mostrando 0 de 0 clinicas'
-          : searchType === 'city'
-            ? 'Mostrando 0 de 0 resultados'
-            : 'Mostrando 0 de 0 profissionais';
+          : 'Mostrando 0 de 0 profissionais';
       }
       if (paginationControls) paginationControls.innerHTML = '';
       return;
@@ -3035,6 +2924,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           const photoUrl = getProfileImageUrl({ foto: profile.logo, photoUrl: profile.logoUrl });
           const initials = getProfileInitials(displayName);
           const whatsappLink = buildClinicWhatsAppLink(profile);
+          const clinicTeamCount = getClinicTeamList(profile).length;
           const servicePills = renderBadgePills(getClinicServicesList(profile));
 
           return `
@@ -3053,6 +2943,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                   <p><strong>Badge:</strong> &#127973; Clinica</p>
                   <p><strong>Cidade:</strong> ${escapeHtml(displayCity)}</p>
                   <p><strong>Bairro:</strong> ${escapeHtml(displayNeighborhood)}</p>
+                  <p><strong>Fisioterapeutas:</strong> ${clinicTeamCount}</p>
                   ${servicePills ? `<div class="clinic-services-pills">${servicePills}</div>` : ''}
 
                   <div class="bio-wrapper">
@@ -3150,11 +3041,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       updatePageUrl(currentPage);
 
       if (resultsShowingSummary) {
-        resultsShowingSummary.textContent = searchType === 'clinic'
+        resultsShowingSummary.textContent = modoBusca === 'clinica'
           ? `Mostrando ${endIndex} de ${filtered.length} clinicas`
-          : searchType === 'city'
-            ? `Mostrando ${endIndex} de ${filtered.length} resultados`
-            : `Mostrando ${endIndex} de ${filtered.length} profissionais`;
+          : `Mostrando ${endIndex} de ${filtered.length} profissionais`;
       }
 
       if (shouldScroll) {
@@ -3180,7 +3069,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   resultsGrid.innerHTML = `
     <div class="empty-results">
-      <h3>${searchType === 'clinic' ? 'Erro ao buscar clinicas.' : searchType === 'city' ? 'Erro ao buscar por cidade.' : 'Erro ao buscar profissionais.'}</h3>
+      <h3>${modoBusca === 'clinica' ? 'Erro ao buscar clinicas.' : 'Erro ao buscar profissionais.'}</h3>
       <p>Tente atualizar a página e pesquisar novamente.</p>
     </div>
   `;
