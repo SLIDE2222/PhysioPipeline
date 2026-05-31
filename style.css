@@ -444,7 +444,7 @@ textarea {
 
 .search-mode-toggle {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin: 0 0 1rem;
   padding: 5px;
@@ -480,6 +480,10 @@ textarea {
   background: var(--primary);
   color: #ffffff;
   box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+}
+
+.search-mode-toggle--triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .patient-search-field input {
@@ -4150,7 +4154,11 @@ img.result-card__avatar {
 
   .results-search-inline .search-mode-toggle {
     width: 100% !important;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .results-search-inline .search-mode-toggle.search-mode-toggle--triple {
+    grid-template-columns: 1fr;
   }
 
   .results-page-body .results-grid {
@@ -4665,7 +4673,9 @@ img.result-card__avatar {
 
 @media (max-width: 768px) {
   .directory-search-toggle,
-  .account-type-picker {
+  .account-type-picker,
+  .search-mode-toggle,
+  .search-mode-toggle--triple {
     grid-template-columns: 1fr;
   }
 
