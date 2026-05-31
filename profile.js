@@ -67,6 +67,10 @@ function getNeighborhoodBadge(profissional) {
     .join(' • ') || 'Localização não informada';
 }
 
+function getAccountBadge(accountType) {
+  return window.PhysioAccountTypes?.getAccountTypeMeta?.(accountType)?.badge || '🧑 Fisioterapeuta';
+}
+
 function recordProfileLeadEvent(profissional, type, source = 'profile') {
   if (!profissional?.id || !window.physioApi?.recordLeadEvent) return Promise.resolve(null);
 
@@ -160,6 +164,11 @@ async function renderProfilePage() {
       ? window.getLoggedUser(true)
       : Promise.resolve(null));
 
+    if (loggedUser?.accountType === 'clinic') {
+      window.location.replace('clinic-dashboard.html');
+      return;
+    }
+
     if (loggedUser?.profile?.id) {
       window.location.replace(`profile.html?id=${encodeURIComponent(loggedUser.profile.id)}`);
       return;
@@ -226,6 +235,7 @@ async function renderProfilePage() {
             <h1>${escapeHtml(profissional.nome)}</h1>
             <p class="profile-specialty">${escapeHtml(specialtiesText)}</p>
             <p class="profile-city">${escapeHtml(getNeighborhoodBadge(profissional))}</p>
+            <p class="profile-city">${escapeHtml(getAccountBadge('physio'))}</p>
           </div>
         </div>
 

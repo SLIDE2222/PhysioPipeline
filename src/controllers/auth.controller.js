@@ -3,6 +3,11 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
 import { mailConfig, sendMailOrThrow } from "../lib/mail.js";
+import {
+  ACCOUNT_TYPES,
+  isValidAccountType,
+  normalizeAccountType,
+} from "../constants/account-types.js";
 
 const COOKIE_NAME = "token";
 
@@ -66,6 +71,7 @@ function sanitizeUser(user) {
   return {
     id: user.id,
     email: user.email,
+    accountType: normalizeAccountType(user.accountType),
     name: user.name || null,
     phone: user.phone || null,
     emailVerified: Boolean(user.emailVerified),
@@ -151,6 +157,7 @@ export async function googleLogin(req, res) {
           email: googleUser.email,
           passwordHash,
           emailVerified: true,
+          accountType: ACCOUNT_TYPES.PHYSIO,
           name: firstName,
           googleSub: googleUser.googleSub || null,
         },
@@ -218,6 +225,7 @@ export async function register(req, res) {
   try {
     const email = normalizeEmail(req.body?.email);
     const password = String(req.body?.password || "");
+    const rawAccountType = req.body?.accountType;
 
     if (!email || !password) {
       return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
@@ -226,6 +234,12 @@ export async function register(req, res) {
     if (password.length < 6) {
       return res.status(400).json({ message: "A senha precisa ter pelo menos 6 caracteres." });
     }
+
+    if (rawAccountType !== undefined && !isValidAccountType(rawAccountType)) {
+      return res.status(400).json({ message: "Tipo de conta invalido." });
+    }
+
+    const accountType = normalizeAccountType(rawAccountType);
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
@@ -241,6 +255,7 @@ export async function register(req, res) {
       data: {
         email,
         passwordHash,
+        accountType,
       },
       include: {
         profiles: true,

@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
+import { ACCOUNT_TYPES, normalizeAccountType } from "../constants/account-types.js";
 
 const createProfileSchema = z.object({
-  name: z.string().min(2).optional(),
   name: z.string().min(2),
   specialty: z.string().min(2),
   secondarySpecialty: z.string().optional().nullable(),
@@ -28,7 +28,7 @@ function cleanOption(value, maxLength = 160) {
     .trim()
     .slice(0, maxLength);
 
-  if (!option || option === "-" || /^n[aã]o informado$/i.test(option)) return null;
+  if (!option || option === "-" || /^n[a�]o informado$/i.test(option)) return null;
 
   return option;
 }
@@ -59,6 +59,16 @@ function uniqueSortedOptions(values) {
   );
 }
 
+function isClinicAccount(user) {
+  return normalizeAccountType(user?.accountType) === ACCOUNT_TYPES.CLINIC;
+}
+
+// Clinics use a separate private dashboard/data model so public physio search
+// continues to read only from the existing Profile table.
+function getPhysioOnlyMessage() {
+  return "Esta conta e do tipo clinica. Use o dashboard da clinica para editar os dados privados da conta.";
+}
+
 async function resolveOwnedProfile(userId, userEmail) {
   const byOwner = await prisma.profile.findFirst({
     where: { ownerUserId: userId },
@@ -72,6 +82,13 @@ async function resolveOwnedProfile(userId, userEmail) {
       publicEmail: { equals: userEmail, mode: "insensitive" },
     },
     orderBy: { createdAt: "desc" },
+  });
+}
+
+async function findCurrentUser(userId) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true, accountType: true },
   });
 }
 
@@ -106,10 +123,7 @@ export async function listProfileOptions(_req, res) {
     });
 
     const specialties = uniqueSortedOptions(
-      profiles.flatMap((profile) => [
-        profile.specialty,
-        profile.secondarySpecialty,
-      ])
+      profiles.flatMap((profile) => [profile.specialty, profile.secondarySpecialty])
     );
 
     res.set("Cache-Control", "public, max-age=300");
@@ -138,12 +152,16 @@ export async function listProfiles(req, res) {
 
   const profiles = await prisma.profile.findMany({
     where: {
-      OR: specialty ? [
-        { specialty: { contains: String(specialty), mode: "insensitive" } },
-        { secondarySpecialty: { contains: String(specialty), mode: "insensitive" } },
-      ] : undefined,
+      OR: specialty
+        ? [
+            { specialty: { contains: String(specialty), mode: "insensitive" } },
+            { secondarySpecialty: { contains: String(specialty), mode: "insensitive" } },
+          ]
+        : undefined,
       city: city ? { contains: String(city), mode: "insensitive" } : undefined,
-      neighborhood: neighborhood ? { contains: String(neighborhood), mode: "insensitive" } : undefined,
+      neighborhood: neighborhood
+        ? { contains: String(neighborhood), mode: "insensitive" }
+        : undefined,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -154,25 +172,26 @@ export async function listProfiles(req, res) {
 export async function getProfile(req, res) {
   const profile = await prisma.profile.findUnique({ where: { id: req.params.id } });
   if (!profile) {
-    return res.status(404).json({ message: "Perfil não encontrado." });
+    return res.status(404).json({ message: "Perfil nao encontrado." });
   }
   return res.json({ profile });
 }
 
 export async function getMyProfile(req, res) {
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.userId },
-    select: { id: true, email: true },
-  });
+  const user = await findCurrentUser(req.user.userId);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuário não encontrado." });
+    return res.status(404).json({ message: "Usuario nao encontrado." });
+  }
+
+  if (isClinicAccount(user)) {
+    return res.status(403).json({ message: getPhysioOnlyMessage() });
   }
 
   const profile = await resolveOwnedProfile(user.id, user.email);
 
   if (!profile) {
-    return res.status(404).json({ message: "Nenhum perfil está vinculado a esta conta." });
+    return res.status(404).json({ message: "Nenhum perfil esta vinculado a esta conta." });
   }
 
   return res.json({ profile });
@@ -181,20 +200,28 @@ export async function getMyProfile(req, res) {
 export async function createProfile(req, res) {
   const parsed = createProfileSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: "Dados do perfil inválidos.", errors: parsed.error.flatten() });
+    return res.status(400).json({
+      message: "Dados do perfil invalidos.",
+      errors: parsed.error.flatten(),
+    });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.userId },
-    select: { id: true, email: true },
-  });
+  const user = await findCurrentUser(req.user.userId);
+
+  if (!user) {
+    return res.status(404).json({ message: "Usuario nao encontrado." });
+  }
+
+  if (isClinicAccount(user)) {
+    return res.status(403).json({ message: getPhysioOnlyMessage() });
+  }
 
   const existing = await prisma.profile.findFirst({
     where: { ownerUserId: req.user.userId },
   });
 
   if (existing) {
-    return res.status(409).json({ message: "Esta conta já possui um perfil." });
+    return res.status(409).json({ message: "Esta conta ja possui um perfil." });
   }
 
   const profile = await prisma.profile.create({
@@ -209,7 +236,7 @@ export async function createProfile(req, res) {
       instagram: clean(parsed.data.instagram),
       linkedin: clean(parsed.data.linkedin),
       photoUrl: clean(parsed.data.photoUrl),
-      publicEmail: clean(parsed.data.publicEmail) || user?.email || null,
+      publicEmail: clean(parsed.data.publicEmail) || user.email || null,
       attendance: clean(parsed.data.attendance),
       ownerUserId: req.user.userId,
       isClaimed: true,
@@ -229,22 +256,26 @@ export async function createProfile(req, res) {
 export async function updateMyProfile(req, res) {
   const parsed = createProfileSchema.partial().safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ message: "Atualização de perfil inválida.", errors: parsed.error.flatten() });
+    return res.status(400).json({
+      message: "Atualizacao de perfil invalida.",
+      errors: parsed.error.flatten(),
+    });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: req.user.userId },
-    select: { id: true, email: true },
-  });
+  const user = await findCurrentUser(req.user.userId);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuário não encontrado." });
+    return res.status(404).json({ message: "Usuario nao encontrado." });
+  }
+
+  if (isClinicAccount(user)) {
+    return res.status(403).json({ message: getPhysioOnlyMessage() });
   }
 
   const profile = await resolveOwnedProfile(user.id, user.email);
 
   if (!profile) {
-    return res.status(404).json({ message: "Nenhum perfil está vinculado a esta conta." });
+    return res.status(404).json({ message: "Nenhum perfil esta vinculado a esta conta." });
   }
 
   const updated = await prisma.profile.update({
@@ -252,16 +283,24 @@ export async function updateMyProfile(req, res) {
     data: {
       ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
       ...(parsed.data.specialty !== undefined ? { specialty: parsed.data.specialty } : {}),
-      ...(parsed.data.secondarySpecialty !== undefined ? { secondarySpecialty: clean(parsed.data.secondarySpecialty) } : {}),
+      ...(parsed.data.secondarySpecialty !== undefined
+        ? { secondarySpecialty: clean(parsed.data.secondarySpecialty) }
+        : {}),
       ...(parsed.data.city !== undefined ? { city: parsed.data.city } : {}),
-      ...(parsed.data.neighborhood !== undefined ? { neighborhood: clean(parsed.data.neighborhood) } : {}),
+      ...(parsed.data.neighborhood !== undefined
+        ? { neighborhood: clean(parsed.data.neighborhood) }
+        : {}),
       ...(parsed.data.phone !== undefined ? { phone: clean(parsed.data.phone) } : {}),
       ...(parsed.data.bio !== undefined ? { bio: clean(parsed.data.bio) } : {}),
       ...(parsed.data.instagram !== undefined ? { instagram: clean(parsed.data.instagram) } : {}),
       ...(parsed.data.linkedin !== undefined ? { linkedin: clean(parsed.data.linkedin) } : {}),
       ...(parsed.data.photoUrl !== undefined ? { photoUrl: clean(parsed.data.photoUrl) } : {}),
-      ...(parsed.data.publicEmail !== undefined ? { publicEmail: clean(parsed.data.publicEmail) } : {}),
-      ...(parsed.data.attendance !== undefined ? { attendance: clean(parsed.data.attendance) } : {}),
+      ...(parsed.data.publicEmail !== undefined
+        ? { publicEmail: clean(parsed.data.publicEmail) }
+        : {}),
+      ...(parsed.data.attendance !== undefined
+        ? { attendance: clean(parsed.data.attendance) }
+        : {}),
       ownerUserId: user.id,
       isClaimed: true,
     },

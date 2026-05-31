@@ -40,7 +40,7 @@ if (loginForm) {
     setLoginMessage('Entrando...', '#2563eb');
 
     try {
-      await window.physioApi.login(email, senha);
+      const data = await window.physioApi.login(email, senha);
 
       // Try to confirm the session, but do not block the user forever if /auth/me is slow.
       await confirmSession();
@@ -48,7 +48,8 @@ if (loginForm) {
       setLoginMessage('Login realizado com sucesso!', '#166534');
 
       setTimeout(() => {
-        window.location.href = 'index.html';
+        window.location.href =
+          window.physioApi.resolveUserHomePath(data?.user) || 'index.html';
       }, 500);
     } catch (error) {
       const message = error?.message || 'Erro ao fazer login.';

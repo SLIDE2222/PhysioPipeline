@@ -2091,13 +2091,17 @@ async function getLoggedUser(force = false) {
       }
     }
 
+    const accountType = window.PhysioAccountTypes?.normalizeAccountType
+      ? window.PhysioAccountTypes.normalizeAccountType(rawUser.accountType)
+      : 'physio';
+
     let profile = null;
     const storedProfileId =
       rawUser.profiles?.[0]?.id ||
       rawUser.profile?.id ||
       null;
 
-    if (storedProfileId && window.physioApi.fetchProfile) {
+    if (accountType !== 'clinic' && storedProfileId && window.physioApi.fetchProfile) {
       try {
         profile = await window.physioApi.fetchProfile(storedProfileId);
       } catch (_) {
@@ -2105,7 +2109,7 @@ async function getLoggedUser(force = false) {
       }
     }
 
-    if (!profile && window.physioApi.fetchMyProfile) {
+    if (accountType !== 'clinic' && !profile && window.physioApi.fetchMyProfile) {
       try {
         profile = await window.physioApi.fetchMyProfile();
       } catch (_) {
@@ -2116,6 +2120,7 @@ async function getLoggedUser(force = false) {
     cachedMyProfile = {
       id: rawUser.id ?? null,
       email: rawUser.email ?? '',
+      accountType,
       emailVerified: rawUser.emailVerified ?? false,
       profile,
     };
@@ -2139,9 +2144,7 @@ window.logout = logout;
 window.getLoggedUser = getLoggedUser;
 
 function getUserProfileHref(user) {
-  return user?.profile?.id
-    ? `profile.html?id=${encodeURIComponent(user.profile.id)}`
-    : 'profile.html';
+  return window.physioApi?.resolveUserHomePath?.(user) || 'profile.html';
 }
 
 
@@ -2152,8 +2155,7 @@ function updateProfileButtons(user) {
   const profileCtas = Array.from(document.querySelectorAll('[data-profile-cta]'));
 
   const profileHref = getUserProfileHref(user);
-
-  const text = 'Meu perfil';
+  const text = user?.accountType === 'clinic' ? 'Dashboard da clinica' : 'Meu perfil';
 
   [heroBtn, ctaBtn, pageProfileBtn, ...profileCtas].forEach((btn) => {
     if (!btn) return;
@@ -2227,13 +2229,16 @@ async function renderAuthArea() {
 
   updateProfileButtons(user);
 
+  const isClinicAccount = user.accountType === 'clinic';
   const firstName = (
     user.profile?.nome ||
     user.profile?.name ||
     user.email ||
-    'Profissional'
+    (isClinicAccount ? 'Clinica' : 'Profissional')
   ).split(' ')[0];
   const profileHref = getUserProfileHref(user);
+  const editHref = isClinicAccount ? 'clinic-dashboard.html' : 'editar-perfil.html';
+  const profileLabel = isClinicAccount ? 'Dashboard da clinica' : 'Meu perfil';
 
   authArea.innerHTML = `
     <span class="user-greeting">Olá, ${escapeHtml(firstName)}</span>
@@ -2250,8 +2255,8 @@ async function renderAuthArea() {
         <span></span>
       </button>
       <div class="account-menu__panel" role="menu" data-account-menu-panel hidden>
-        <a role="menuitem" href="${profileHref}">Meu perfil</a>
-        <a role="menuitem" href="editar-perfil.html">Editar perfil</a>
+        <a role="menuitem" href="${profileHref}">${profileLabel}</a>
+        <a role="menuitem" href="${editHref}">${isClinicAccount ? 'Editar dados da clinica' : 'Editar perfil'}</a>
         <a role="menuitem" href="planos.html">Planos</a>
         <button role="menuitem" type="button" onclick="logout()">Sair</button>
       </div>

@@ -244,7 +244,14 @@ if (editarForm) {
     );
   }
 
-  loadMyProfile();
+  Promise.resolve(window.getLoggedUser ? window.getLoggedUser(true) : null).then((loggedUser) => {
+    if (loggedUser?.accountType === 'clinic') {
+      window.location.replace('clinic-dashboard.html');
+      return;
+    }
+
+    loadMyProfile();
+  });
 
   editarForm.addEventListener('submit', async (event) => {
     event.preventDefault();

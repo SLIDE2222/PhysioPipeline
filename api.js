@@ -48,6 +48,10 @@
   ].join(',');
   const PUBLIC_PROFILE_CARD_SOURCES = ['Profile', 'public_profiles', 'public_profile_cards'];
   const PUBLIC_PROFILE_DETAIL_SOURCES = ['Profile', 'public_profiles', 'public_profile_details'];
+  const ACCOUNT_TYPES = window.PhysioAccountTypes?.ACCOUNT_TYPES || {
+    PHYSIO: 'physio',
+    CLINIC: 'clinic',
+  };
   let publicProfileListMemoryCache = null;
   let publicProfileListInflight = null;
 
@@ -64,7 +68,10 @@
 
   function setStoredAuth(auth, remember = true) {
     try {
-      const serializedAuth = JSON.stringify(auth);
+      const serializedAuth = JSON.stringify({
+        ...auth,
+        user: normalizeUser(auth?.user),
+      });
       localStorage.setItem('physioAuth', serializedAuth);
       sessionStorage.setItem('physioAuth', serializedAuth);
     } catch (_) {
@@ -411,6 +418,39 @@
     };
   }
 
+  function normalizeUser(user) {
+    if (!user) return null;
+
+    const accountType = window.PhysioAccountTypes?.normalizeAccountType
+      ? window.PhysioAccountTypes.normalizeAccountType(user.accountType)
+      : String(user.accountType || '').trim().toLowerCase() === ACCOUNT_TYPES.CLINIC
+        ? ACCOUNT_TYPES.CLINIC
+        : ACCOUNT_TYPES.PHYSIO;
+
+    return {
+      ...user,
+      accountType,
+      profiles: Array.isArray(user.profiles) ? user.profiles : [],
+    };
+  }
+
+  function getProfilePath(user) {
+    const profileId = user?.profiles?.[0]?.id || user?.profile?.id || null;
+    return profileId
+      ? `profile.html?id=${encodeURIComponent(profileId)}`
+      : 'profile.html';
+  }
+
+  function resolveUserHomePath(user) {
+    const normalizedUser = normalizeUser(user);
+
+    if (normalizedUser?.accountType === ACCOUNT_TYPES.CLINIC) {
+      return 'clinic-dashboard.html';
+    }
+
+    return getProfilePath(normalizedUser);
+  }
+
   function clearStoredAuth() {
     try {
       localStorage.removeItem('physioAuth');
@@ -429,14 +469,14 @@
     async register(payload) {
       const data = await request('/auth/register', { method: 'POST', body: payload });
       if (data?.token) {
-        setStoredAuth({ token: data.token, user: data.user }, true);
+        setStoredAuth({ token: data.token, user: normalizeUser(data.user) }, true);
       }
       return data;
     },
     async login(email, password) {
       const data = await request('/auth/login', { method: 'POST', body: { email, password } });
       if (data?.token) {
-        setStoredAuth({ token: data.token, user: data.user }, true);
+        setStoredAuth({ token: data.token, user: normalizeUser(data.user) }, true);
       }
       return data;
     },
@@ -448,7 +488,7 @@
       });
 
       if (data?.token) {
-        setStoredAuth({ token: data.token, user: data.user }, true);
+        setStoredAuth({ token: data.token, user: normalizeUser(data.user) }, true);
       }
 
       return data;
@@ -458,10 +498,16 @@
       return request('/auth/logout', { method: 'POST' });
     },
     me() {
-      return request('/auth/me', { timeoutMs: 5000 });
+      return request('/auth/me', { timeoutMs: 5000 }).then((data) => ({
+        ...data,
+        user: normalizeUser(data?.user || data),
+      }));
     },
     fetchMyProfile() {
       return request('/profiles/me').then((data) => normalizeProfile(data.profile));
+    },
+    fetchMyClinicProfile() {
+      return request('/clinics/me').then((data) => data.clinicProfile || data);
     },
     async fetchProfiles(options = {}) {
       const startedAt = performance.now();
@@ -518,6 +564,13 @@
         return normalizeProfile(data.profile || data);
       });
     },
+    updateMyClinicProfile(payload) {
+      return request('/clinics/me', {
+        method: 'PUT',
+        body: payload,
+        timeoutMs: 20000,
+      }).then((data) => data.clinicProfile || data);
+    },
     async fetchProfile(id) {
       try {
         const profile = await fetchPublicProfileFromSupabase(id);
@@ -571,6 +624,8 @@
       });
     },
     normalizeProfile,
+    normalizeUser,
+    resolveUserHomePath,
     getStoredAuth,
     setStoredAuth,
     clearStoredAuth,

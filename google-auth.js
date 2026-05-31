@@ -45,12 +45,16 @@
       }
 
       const profileId = data?.user?.profiles?.[0]?.id || null;
+      const accountType = window.PhysioAccountTypes?.normalizeAccountType
+        ? window.PhysioAccountTypes.normalizeAccountType(data?.user?.accountType)
+        : 'physio';
 
       const authPayload = {
         token: data.token,
         user: {
           id: data?.user?.id || null,
           email: data?.user?.email || '',
+          accountType,
           name: data?.user?.name || '',
           emailVerified: Boolean(data?.user?.emailVerified),
           profiles: profileId ? [{ id: profileId }] : [],
@@ -70,8 +74,9 @@
       const packedAuth = encodeBase64Url(JSON.stringify(authPayload));
 
       setTimeout(() => {
-        window.location.href = profileId
-          ? `profile.html?id=${encodeURIComponent(profileId)}#auth=${packedAuth}`
+        const targetPath = window.physioApi?.resolveUserHomePath?.(authPayload.user) || 'profile.html';
+        window.location.href = profileId || accountType === 'clinic'
+          ? `${targetPath}#auth=${packedAuth}`
           : `cadastro.html?completeProfile=true#auth=${packedAuth}`;
       }, 600);
     } catch (error) {

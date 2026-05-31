@@ -4254,3 +4254,23 @@ img.result-card__avatar {
     margin-top: 4px !important;
   }
 }
+.account-type-picker {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.account-type-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.account-type-option input {
+  margin: 0;
+}

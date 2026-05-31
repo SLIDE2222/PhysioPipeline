@@ -58,6 +58,17 @@
         <div class="form-divider">
           <span>ou preencha manualmente</span>
         </div>
+          <label>Tipo de conta</label>
+          <div class="account-type-picker" id="accountTypePicker">
+            <label class="account-type-option">
+              <input type="radio" name="accountType" value="physio" checked />
+              <span>Sou fisioterapeuta</span>
+            </label>
+            <label class="account-type-option">
+              <input type="radio" name="accountType" value="clinic" />
+              <span>Sou clinica</span>
+            </label>
+          </div>
           <label for="foto">Foto do perfil</label>
           <input type="file" id="foto" name="foto" accept="image/*" />
 
@@ -86,8 +97,7 @@
 
           <label for="telefone">Telefone</label>
           <input type="text" id="telefone" name="telefone" placeholder="(11) 99999-9999" required />
-
-
+          <div id="physioRegistrationFields">
           <label for="especialidadeCadastro">Especialidade</label>
           <div class="autocomplete-wrapper">
             <input
@@ -162,6 +172,8 @@
             required
           ></textarea>
 
+          </div>
+
           <button type="submit" class="btn btn-primary btn-block">
             Criar conta e meu perfil
           </button>
@@ -172,6 +184,7 @@
     </section>
   </main>
 
+  <script src="account-types.js?v=accounttype1"></script>
   <script src="api.js?v=rankedfallback2"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="google-auth.js?v=base64url-auth-fix2"></script>
@@ -259,18 +272,63 @@
 
     let cadastroFotoBase64 = '';
 
+    function getSelectedAccountType() {
+      const selected = document.querySelector('input[name="accountType"]:checked');
+      return window.PhysioAccountTypes?.normalizeAccountType
+        ? window.PhysioAccountTypes.normalizeAccountType(selected?.value)
+        : (selected?.value || 'physio');
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       const cadastroForm = document.getElementById('cadastroForm');
       const cadastroMensagem = document.getElementById('cadastroMensagem');
       const senhaErro = document.getElementById('senhaErro');
       const fotoInput = document.getElementById('foto');
       const fotoPreview = document.getElementById('fotoPreview');
+      const nomeLabel = document.querySelector('label[for="nome"]');
+      const nomeInput = document.getElementById('nome');
+      const physioRegistrationFields = document.getElementById('physioRegistrationFields');
       const pageParams = new URLSearchParams(window.location.search);
       const isCompletingProfile = pageParams.get('completeProfile') === 'true';
+
+      function syncAccountTypeForm() {
+        const accountType = getSelectedAccountType();
+        const isClinic = accountType === 'clinic';
+
+        if (nomeLabel) nomeLabel.textContent = isClinic ? 'Nome da clinica' : 'Nome completo';
+        if (nomeInput) nomeInput.placeholder = isClinic ? 'Nome da sua clinica' : 'Seu nome';
+
+        if (physioRegistrationFields) {
+          physioRegistrationFields.hidden = isClinic;
+
+          physioRegistrationFields
+            .querySelectorAll('input, select, textarea')
+            .forEach((field) => {
+              if (field.dataset.alwaysOptional === 'true') return;
+
+              if (!field.dataset.wasRequired) {
+                field.dataset.wasRequired = field.required ? 'true' : 'false';
+              }
+
+              if (isClinic) {
+                field.required = false;
+                field.disabled = true;
+              } else {
+                field.disabled = false;
+                field.required = field.dataset.wasRequired === 'true';
+              }
+            });
+        }
+      }
 
       if (window.physioApi?.getStoredAuth?.()?.token && typeof window.getLoggedUser === 'function') {
         try {
           const loggedUser = await window.getLoggedUser(true);
+
+          if (loggedUser?.accountType === 'clinic') {
+            window.location.replace('clinic-dashboard.html');
+            return;
+          }
 
           if (loggedUser?.profile?.id) {
             window.location.replace(`profile.html?id=${encodeURIComponent(loggedUser.profile.id)}`);
@@ -285,6 +343,11 @@
           // If the session check fails, keep the form usable instead of trapping the user.
         }
       }
+
+      document
+        .querySelectorAll('input[name="accountType"]')
+        .forEach((input) => input.addEventListener('change', syncAccountTypeForm));
+      syncAccountTypeForm();
 
       setupCadastroAutocomplete(
         'especialidadeCadastro',
@@ -377,10 +440,29 @@
           if (submitBtn) submitBtn.disabled = true;
 
           try {
+            const accountType = getSelectedAccountType();
+
             await window.physioApi.register({
               email: document.getElementById('email').value.trim(),
               password,
+              accountType,
             });
+
+            if (accountType === 'clinic') {
+              await window.physioApi.updateMyClinicProfile({
+                clinicName: document.getElementById('nome').value.trim() || null,
+                phone: document.getElementById('telefone').value.trim() || null,
+                logoUrl: cadastroFotoBase64 || null,
+              });
+
+              cadastroMensagem.textContent = 'Conta da clinica criada com sucesso!';
+              cadastroMensagem.style.color = '#166534';
+
+              setTimeout(() => {
+                window.location.href = 'clinic-dashboard.html';
+              }, 700);
+              return;
+            }
 
             const profile = await window.physioApi.createProfile({
               name: document.getElementById('nome').value.trim(),

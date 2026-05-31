@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard da clinica | PhysioPipeline</title>
+  <meta name="description" content="Edite os dados privados da sua clinica no PhysioPipeline." />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="shortcut icon" href="favicon.svg" />
+  <link rel="stylesheet" href="style.css?v=resultphotos1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+</head>
+<body>
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
+      <nav class="nav-links">
+        <a href="index.html">Inicio</a>
+        <a href="buscar.html">Buscar</a>
+      </nav>
+      <div id="authArea" style="display:flex; gap:10px; align-items:center;"></div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <section class="page-section">
+      <div class="container narrow">
+        <div class="section-heading left">
+          <p class="eyebrow">Conta de clinica</p>
+          <h1>Dashboard da clinica</h1>
+          <p>🏥 Clinica</p>
+        </div>
+
+        <form class="form-card" id="clinicDashboardForm">
+          <label for="clinicLogo">Logo da clinica</label>
+          <input type="file" id="clinicLogo" name="clinicLogo" accept="image/*" />
+
+          <div class="image-preview-wrapper">
+            <img id="clinicLogoPreview" class="image-preview" alt="Previa da logo" />
+          </div>
+
+          <label for="clinicName">Nome da clinica</label>
+          <input type="text" id="clinicName" name="clinicName" placeholder="Nome da sua clinica" />
+
+          <label for="clinicAddress">Endereco</label>
+          <input type="text" id="clinicAddress" name="clinicAddress" placeholder="Rua, numero e complemento" />
+
+          <label for="clinicCity">Cidade</label>
+          <input type="text" id="clinicCity" name="clinicCity" placeholder="Cidade da clinica" />
+
+          <label for="clinicPhone">Telefone</label>
+          <input type="text" id="clinicPhone" name="clinicPhone" placeholder="(11) 99999-9999" />
+
+          <label for="clinicWhatsapp">WhatsApp</label>
+          <input type="text" id="clinicWhatsapp" name="clinicWhatsapp" placeholder="(11) 99999-9999" />
+
+          <label for="clinicDescription">Descricao</label>
+          <textarea id="clinicDescription" name="clinicDescription" rows="5" placeholder="Fale sobre a clinica, servicos e diferenciais."></textarea>
+
+          <button type="submit" class="btn btn-primary btn-block">Salvar dados da clinica</button>
+          <p id="clinicDashboardMessage" class="success-message"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script src="account-types.js?v=accounttype1"></script>
+  <script src="api.js?v=rankedfallback2"></script>
+  <script src="image-cropper.js?v=imagecrop1"></script>
+  <script src="script.js?v=resultphotos1"></script>
+  <script src="clinic-dashboard.js?v=accounttype1"></script>
+
+  <footer class="footer tech-signature-footer">
+    <div class="container footer-content tech-signature-footer__content">
+      <div>
+        <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
+        <p class="footer-text">Encontre fisioterapeutas por cidade, bairro ou especialidade.</p>
+      </div>
+      <nav class="footer-links" aria-label="Links institucionais">
+        <a href="about.html">Sobre</a>
+        <a href="contato.html">Contato</a>
+        <a href="privacidade.html">Privacidade</a>
+        <a href="termos.html">Termos</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>
