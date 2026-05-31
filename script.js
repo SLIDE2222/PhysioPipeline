@@ -2663,6 +2663,107 @@ function buildSearchErrorDetails({ mode, query, city, neighborhood, endpoint, er
   };
 }
 
+function getSpecialtySearchTerms(query, analysis) {
+  return Array.from(new Set([
+    normalizeSearchText(query || ''),
+    ...(Array.isArray(analysis?.significantTerms) ? analysis.significantTerms : []),
+    ...(Array.isArray(analysis?.expandedTerms) ? analysis.expandedTerms : []),
+  ].filter(Boolean)));
+}
+
+function scoreSpecialtySearchItem(item, { query = '', city = '', neighborhood = '', analysis = null } = {}) {
+  const normalizedQuery = normalizeSearchText(query || '');
+  const normalizedCity = normalizeSearchText(city || '');
+  const normalizedNeighborhood = normalizeSearchText(neighborhood || '');
+  const searchAnalysis = analysis || analyzeSearchIntent(query, buildSearchContext());
+  const specialtyTerms = getSpecialtySearchTerms(query, searchAnalysis);
+  const isClinic = item.type === 'clinic';
+  const profile = item.profile || item;
+  const specialties = isClinic ? getClinicServicesList(profile) : getProfileSpecialtiesList(profile);
+  const primaryText = normalizeSearchText(specialties.join(' '));
+  const searchableText = normalizeSearchText([
+    profile.nome,
+    profile.nomeClinica,
+    profile.responsavel,
+    profile.descricao,
+    profile.description,
+    profile.cidade,
+    profile.city,
+    profile.bairro,
+    profile.neighborhood,
+    ...specialties,
+    ...(isClinic ? getClinicTeamList(profile).flatMap((member) => [member?.name, member?.specialty]) : []),
+  ].filter(Boolean).join(' '));
+  const itemCity = normalizeSearchText(profile.cidade || profile.city || '');
+  const itemNeighborhood = normalizeSearchText(profile.bairro || profile.neighborhood || '');
+  const reasons = [];
+  let score = 0;
+
+  if (normalizedQuery && primaryText.includes(normalizedQuery)) {
+    score += 100;
+    reasons.push(`exact specialty match: ${normalizedQuery}`);
+  } else if (specialtyTerms.some((term) => term && primaryText.includes(term))) {
+    const matchedTerm = specialtyTerms.find((term) => term && primaryText.includes(term));
+    score += 70;
+    reasons.push(`partial specialty match: ${matchedTerm}`);
+  } else if (specialtyTerms.some((term) => term && searchableText.includes(term))) {
+    const matchedTerm = specialtyTerms.find((term) => term && searchableText.includes(term));
+    score += 40;
+    reasons.push(`related term match: ${matchedTerm}`);
+  }
+
+  if (normalizedCity && itemCity === normalizedCity) {
+    score += 20;
+    reasons.push(`same city: ${normalizedCity}`);
+  }
+
+  if (normalizedNeighborhood && itemNeighborhood && itemNeighborhood.includes(normalizedNeighborhood)) {
+    score += 10;
+    reasons.push(`same neighborhood: ${normalizedNeighborhood}`);
+  }
+
+  let tier = 5;
+  if (score >= 100) tier = 1;
+  else if (score >= 70) tier = 2;
+  else if (score >= 40) tier = 3;
+  else if (score >= 20) tier = 4;
+
+  return {
+    ...item,
+    profile,
+    score,
+    tier,
+    reasons,
+    hasSearchRelevance: score > 0,
+  };
+}
+
+function rankSpecialtyModeResults(physioProfiles, clinicProfiles, options = {}) {
+  const analysis = options.analysis || analyzeSearchIntent(options.query || '', buildSearchContext(physioProfiles));
+  const scored = [
+    ...physioProfiles.map((profile) => scoreSpecialtySearchItem({ type: 'physio', profile }, {
+      query: options.query,
+      city: options.city,
+      neighborhood: options.neighborhood,
+      analysis,
+    })),
+    ...clinicProfiles.map((profile) => scoreSpecialtySearchItem({ type: 'clinic', profile }, {
+      query: options.query,
+      city: options.city,
+      neighborhood: options.neighborhood,
+      analysis,
+    })),
+  ];
+
+  return prioritizeCityFallback(
+    scored.sort((a, b) => {
+      if ((a.tier || 999) !== (b.tier || 999)) return (a.tier || 999) - (b.tier || 999);
+      return (b.score || 0) - (a.score || 0);
+    }),
+    normalizeSearchText(options.city || '')
+  );
+}
+
 function buildClinicWhatsAppLink(clinic) {
   const digits = String(clinic?.whatsapp || clinic?.telefone || clinic?.phone || '').replace(/\D/g, '');
   if (!digits) return '#';
@@ -2935,18 +3036,48 @@ document.addEventListener('DOMContentLoaded', async () => {
       let clinics = [];
       try {
         if (searchType === 'specialty') {
-          [profiles, clinics] = await Promise.all([
+          const [profilesResult, clinicsResult] = await Promise.allSettled([
             window.physioApi.fetchProfiles({
               useCache: true,
-            }).catch((error) => {
-              error.__searchEndpoint = '/profiles';
-              throw error;
             }),
-            window.physioApi.fetchClinics().catch((error) => {
-              error.__searchEndpoint = '/clinics';
-              throw error;
-            }),
+            window.physioApi.fetchClinics(),
           ]);
+
+          if (profilesResult.status === 'fulfilled') {
+            profiles = profilesResult.value;
+          }
+
+          if (clinicsResult.status === 'fulfilled') {
+            clinics = clinicsResult.value;
+          }
+
+          if (profilesResult.status === 'rejected' && clinicsResult.status === 'rejected') {
+            const error = profilesResult.reason || clinicsResult.reason || new Error('Falha ao buscar resultados.');
+            error.__searchEndpoint = '/profiles + /clinics';
+            throw error;
+          }
+
+          if (profilesResult.status === 'rejected') {
+            console.error('PhysioPipeline resultados: falha parcial na busca de fisioterapeutas', buildSearchErrorDetails({
+              mode: searchType,
+              query: searchQuery,
+              city: params.get('cidade') || '',
+              neighborhood: params.get('bairro') || '',
+              endpoint: '/profiles',
+              error: profilesResult.reason,
+            }));
+          }
+
+          if (clinicsResult.status === 'rejected') {
+            console.error('PhysioPipeline resultados: falha parcial na busca de clinicas', buildSearchErrorDetails({
+              mode: searchType,
+              query: searchQuery,
+              city: params.get('cidade') || '',
+              neighborhood: params.get('bairro') || '',
+              endpoint: '/clinics',
+              error: clinicsResult.reason,
+            }));
+          }
         } else {
           profiles = await window.physioApi.fetchProfiles({
             useCache: true,
@@ -2997,22 +3128,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       const physioResults = visibleResults.map((item) => ({ ...item, type: 'physio', profile: item.profile }));
-      const clinicResults = searchType === 'specialty'
-        ? filterClinicsBySearch(clinics, {
+      const combinedResults = searchType === 'specialty'
+        ? rankSpecialtyModeResults(profiles, clinics, {
             query: params.get('especialidade') || '',
             city: cidade,
             neighborhood: bairro,
-          }).map((item) => ({ ...item, type: 'clinic', profile: item.profile }))
-        : [];
-
-      const combinedResults = searchType === 'specialty'
-        ? prioritizeCityFallback(
-            [...physioResults, ...clinicResults].sort((a, b) => {
-              if ((a.tier || 999) !== (b.tier || 999)) return (a.tier || 999) - (b.tier || 999);
-              return (b.score || 0) - (a.score || 0);
-            }),
-            cidade
-          )
+            analysis: searchAnalysis,
+          })
         : physioResults;
 
       filtered = combinedResults.map((item) => ({ type: item.type, profile: item.profile }));
