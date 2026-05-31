@@ -2609,10 +2609,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     params.get('especialidade') || ''
   );
 
-  const rawMode = params.get('modo');
-  const modoBusca = rawMode === 'leigo' || rawMode === 'clinica' ? rawMode : 'especialidade';
+  const SEARCH_TYPE_MAP = {
+    especialidade: 'specialty',
+    leigo: 'symptom',
+    clinica: 'clinic',
+  };
+  const SEARCH_MODE_BY_TYPE = {
+    specialty: 'especialidade',
+    symptom: 'leigo',
+    clinic: 'clinica',
+  };
+  const rawMode = normalizeText(params.get('modo') || '');
+  const rawSearchType = normalizeText(params.get('searchType') || '');
+  const searchType = rawSearchType === 'specialty' || rawSearchType === 'symptom' || rawSearchType === 'clinic'
+    ? rawSearchType
+    : (SEARCH_TYPE_MAP[rawMode] || 'specialty');
+  const modoBusca = SEARCH_MODE_BY_TYPE[searchType] || 'especialidade';
   const queixa = params.get('queixa') || '';
-  const searchQuery = modoBusca === 'leigo'
+  const searchQuery = searchType === 'symptom'
     ? queixa
     : (params.get('especialidade') || '');
   let searchAnalysis = analyzeSearchIntent(searchQuery, buildSearchContext());
@@ -2648,19 +2662,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   try {
-    logResultsTiming(`iniciando busca de ${modoBusca === 'clinica' ? 'clinicas' : modoBusca === 'especialidade' ? 'resultados' : 'profissionais'}`);
-    resumo.textContent = modoBusca === 'clinica'
-      ? 'Buscando clinicas...'
-      : modoBusca === 'especialidade'
+    logResultsTiming(`iniciando busca de ${searchType === 'clinic' ? 'clinicas' : searchType === 'specialty' ? 'resultados' : 'profissionais'}`);
+    resumo.textContent = searchType === 'clinic'
+      ? 'Buscando clínicas...'
+      : searchType === 'specialty'
         ? 'Buscando resultados...'
         : 'Buscando profissionais...';
     renderResultsSkeleton();
     slowLoadingTimeoutId = window.setTimeout(() => {
       if (resultsLoaded) return;
 
-      resumo.textContent = modoBusca === 'clinica'
-        ? 'Ainda carregando clinicas...'
-        : modoBusca === 'especialidade'
+      resumo.textContent = searchType === 'clinic'
+        ? 'Ainda carregando clínicas...'
+        : searchType === 'specialty'
           ? 'Ainda carregando resultados...'
           : 'Ainda carregando profissionais...';
       console.warn('PhysioPipeline resultados: busca ainda pendente após 5s');
@@ -2670,9 +2684,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (resultsLoaded) return;
 
       resultsLoaded = true;
-      resumo.textContent = modoBusca === 'clinica'
-        ? 'Não foi possível carregar as clinicas agora.'
-        : modoBusca === 'especialidade'
+      resumo.textContent = searchType === 'clinic'
+        ? 'Não foi possível carregar as clínicas agora.'
+        : searchType === 'specialty'
           ? 'Não foi possível carregar os resultados agora.'
           : 'Não foi possível carregar os profissionais agora.';
       resultsGrid.innerHTML = `
@@ -2689,7 +2703,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let filtered = [];
     let resultLabel = '';
 
-    if (modoBusca === 'clinica') {
+    if (searchType === 'clinic') {
       console.time('PhysioPipeline fetching clinics');
       let clinics = [];
       try {
@@ -2726,18 +2740,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       let profiles = [];
       let clinics = [];
       try {
-        if (modoBusca === 'especialidade') {
+        if (searchType === 'specialty') {
           [profiles, clinics] = await Promise.all([
             window.physioApi.fetchProfiles({
               useCache: true,
-              allowBackendFallback: false,
             }),
             window.physioApi.fetchClinics(),
           ]);
         } else {
           profiles = await window.physioApi.fetchProfiles({
             useCache: true,
-            allowBackendFallback: false,
           });
         }
       } finally {
@@ -2782,7 +2794,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       const physioResults = visibleResults.map((item) => ({ type: 'physio', profile: item.profile }));
-      const clinicResults = modoBusca === 'especialidade'
+      const clinicResults = searchType === 'specialty'
         ? filterClinicsBySearch(clinics, {
             query: params.get('especialidade') || '',
             city: cidade,
@@ -2792,20 +2804,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       filtered = [...physioResults, ...clinicResults];
 
-      resultLabel = modoBusca === 'especialidade'
+      resultLabel = searchType === 'specialty'
         ? (filtered.length === 1 ? '1 resultado encontrado' : `${filtered.length} resultados encontrados`)
         : (filtered.length === 1 ? '1 profissional encontrado' : `${filtered.length} profissionais encontrados`);
 
       resumo.textContent = resultLabel;
-      renderFallbackMessage(modoBusca === 'especialidade' ? '' : fallbackMessage);
+      renderFallbackMessage(searchType === 'specialty' ? '' : fallbackMessage);
     }
 
-    if (modoBusca === 'especialidade') {
+    if (searchType === 'specialty') {
       const resultsTitle = document.querySelector('[data-search-title]');
       if (resultsTitle) resultsTitle.textContent = 'Resultados encontrados';
     }
 
-    if (modoBusca === 'leigo' && queixa) {
+    if (searchType === 'symptom' && queixa) {
       const existingSummary = document.querySelector('.smart-search-summary');
       if (existingSummary) existingSummary.remove();
 
@@ -2833,14 +2845,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (filtered.length === 0) {
       resultsGrid.innerHTML = `
         <div class="empty-results">
-          <h3>${modoBusca === 'clinica' ? 'Nenhuma clinica encontrada.' : modoBusca === 'especialidade' ? 'Nenhum resultado encontrado.' : 'Nenhum profissional encontrado.'}</h3>
-          <p>${modoBusca === 'clinica' ? 'Tente outra cidade ou remova o bairro para ampliar a busca.' : 'Tente pesquisar outra especialidade ou cidade.'}</p>
+          <h3>${searchType === 'clinic' ? 'Nenhum resultado encontrado.' : searchType === 'specialty' ? 'Nenhum resultado encontrado.' : 'Nenhum resultado encontrado.'}</h3>
+          <p>${searchType === 'clinic' ? 'Tente outra cidade ou remova o bairro para ampliar a busca.' : searchType === 'symptom' ? 'Tente pesquisar outro sintoma, dor ou cidade.' : 'Tente pesquisar outra especialidade ou cidade.'}</p>
         </div>
       `;
       if (resultsShowingSummary) {
-        resultsShowingSummary.textContent = modoBusca === 'clinica'
-          ? 'Mostrando 0 de 0 clinicas'
-          : modoBusca === 'especialidade'
+        resultsShowingSummary.textContent = searchType === 'clinic'
+          ? 'Mostrando 0 de 0 clínicas'
+          : searchType === 'specialty'
             ? 'Mostrando 0 de 0 resultados'
             : 'Mostrando 0 de 0 profissionais';
       }
@@ -3090,9 +3102,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       updatePageUrl(currentPage);
 
       if (resultsShowingSummary) {
-        resultsShowingSummary.textContent = modoBusca === 'clinica'
-          ? `Mostrando ${endIndex} de ${filtered.length} clinicas`
-          : modoBusca === 'especialidade'
+        resultsShowingSummary.textContent = searchType === 'clinic'
+          ? `Mostrando ${endIndex} de ${filtered.length} clínicas`
+          : searchType === 'specialty'
             ? `Mostrando ${endIndex} de ${filtered.length} resultados`
             : `Mostrando ${endIndex} de ${filtered.length} profissionais`;
       }
@@ -3109,12 +3121,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.timeEnd('PhysioPipeline resultados page init');
 
 } catch (error) {
-  console.error(error);
+  console.error('PhysioPipeline resultados: falha real na busca', error);
   resultsLoaded = true;
   if (slowLoadingTimeoutId) window.clearTimeout(slowLoadingTimeoutId);
   if (failedLoadingTimeoutId) window.clearTimeout(failedLoadingTimeoutId);
 
-  resumo.textContent = 'Erro ao carregar resultados.';
+  resumo.textContent = modoBusca === 'clinica'
+    ? 'Erro ao buscar clínicas.'
+    : 'Erro ao buscar resultados.';
   if (resultsShowingSummary) resultsShowingSummary.textContent = '';
   if (paginationControls) paginationControls.innerHTML = '';
 
