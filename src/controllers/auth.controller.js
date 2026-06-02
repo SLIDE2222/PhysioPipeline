@@ -114,6 +114,13 @@ function sanitizeUser(user) {
     name: user.name || null,
     phone: user.phone || null,
     emailVerified: Boolean(user.emailVerified),
+    clinicProfile: user.clinicProfile
+      ? {
+          id: user.clinicProfile.id,
+          clinicName: user.clinicProfile.clinicName || null,
+          userId: user.clinicProfile.userId || null,
+        }
+      : null,
     profiles: user.profiles || [],
   };
 }
@@ -193,6 +200,7 @@ export async function googleLogin(req, res) {
       where: { email: googleUser.email },
       include: {
         profiles: true,
+        clinicProfile: true,
       },
     });
 
@@ -208,9 +216,21 @@ export async function googleLogin(req, res) {
           accountType: requestedAccountType,
           name: firstName,
           googleSub: googleUser.googleSub || null,
+          clinicProfile:
+            requestedAccountType === ACCOUNT_TYPES.CLINIC
+              ? {
+                  create: {
+                    clinicName: fullName,
+                    responsibleName: fullName,
+                    phone: null,
+                    whatsapp: null,
+                  },
+                }
+              : undefined,
         },
         include: {
           profiles: true,
+          clinicProfile: true,
         },
       });
     } else {
@@ -226,9 +246,33 @@ export async function googleLogin(req, res) {
           data: userUpdateData,
           include: {
             profiles: true,
+            clinicProfile: true,
           },
         });
       }
+    }
+
+    if (
+      normalizeAccountType(user.accountType) === ACCOUNT_TYPES.CLINIC &&
+      !user.clinicProfile
+    ) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          clinicProfile: {
+            create: {
+              clinicName: fullName,
+              responsibleName: fullName,
+              phone: user.phone || null,
+              whatsapp: user.phone || null,
+            },
+          },
+        },
+        include: {
+          profiles: true,
+          clinicProfile: true,
+        },
+      });
     }
 
     if (normalizeAccountType(user.accountType) === ACCOUNT_TYPES.PHYSIO && !user.profiles?.length) {
@@ -251,6 +295,13 @@ export async function googleLogin(req, res) {
         ...user,
         profiles: [profile],
       };
+    }
+
+    if (normalizeAccountType(user.accountType) === ACCOUNT_TYPES.CLINIC) {
+      console.info("Clinic Google signup/login resolved records:", {
+        userId: user.id,
+        clinicProfileId: user.clinicProfile?.id || null,
+      });
     }
 
     const token = createToken(user);
@@ -300,6 +351,17 @@ export async function register(req, res) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+
+    if (accountType === ACCOUNT_TYPES.CLINIC) {
+      console.info("Clinic signup payload received:", {
+        email,
+        accountType,
+        clinicName: cleanOptionalString(req.body?.clinicName || req.body?.name, 160),
+        responsibleName: cleanOptionalString(req.body?.responsibleName, 160),
+        city: cleanOptionalString(req.body?.city, 120),
+        neighborhood: cleanOptionalString(req.body?.neighborhood, 120),
+      });
+    }
 
     const user = await prisma.user.create({
       data: {
@@ -360,6 +422,7 @@ export async function login(req, res) {
       where: { email },
       include: {
         profiles: true,
+        clinicProfile: true,
       },
     });
 
@@ -402,6 +465,7 @@ export async function me(req, res) {
       where: { id: req.user.userId },
       include: {
         profiles: true,
+        clinicProfile: true,
       },
     });
 

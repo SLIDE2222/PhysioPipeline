@@ -590,6 +590,8 @@
       physioTeam: clinic.physioTeam ?? null,
       logo: clinic.logoUrl ?? clinic.logo ?? clinic.foto ?? '',
       descricao: clinic.description ?? clinic.descricao ?? '',
+      userId: clinic.userId ?? null,
+      isClaimable: typeof clinic.isClaimable === 'boolean' ? clinic.isClaimable : !clinic.userId,
       accountType: ACCOUNT_TYPES.CLINIC,
     };
   }
@@ -607,6 +609,7 @@
       ...user,
       accountType,
       profiles: Array.isArray(user.profiles) ? user.profiles : [],
+      clinicProfile: user.clinicProfile ? normalizeClinicProfile(user.clinicProfile) : null,
     };
   }
 

@@ -2104,7 +2104,7 @@ async function getLoggedUser(force = false) {
 
     if (!auth?.token) {
       cachedMyProfile = null;
-      console.info(`PhysioPipeline auth/session: sem sessão em ${Math.round(performance.now() - authStart)}ms`);
+      console.info(`PhysioPipeline auth/session: sem sessao em ${Math.round(performance.now() - authStart)}ms`);
       return null;
     }
 
@@ -2113,12 +2113,13 @@ async function getLoggedUser(force = false) {
       rawUser.profiles?.[0]?.id ||
       rawUser.profile?.id
     );
+    const storedHasClinicProfileId = Boolean(rawUser.clinicProfile?.id);
 
-    if (!storedHasProfileId && window.physioApi.me) {
+    if ((!storedHasProfileId && !storedHasClinicProfileId) && window.physioApi.me) {
       try {
         const meData = await window.physioApi.me();
         rawUser = meData?.user ?? meData ?? rawUser;
-        console.info(`PhysioPipeline auth/session: /auth/me concluído em ${Math.round(performance.now() - authStart)}ms`);
+        console.info(`PhysioPipeline auth/session: /auth/me concluido em ${Math.round(performance.now() - authStart)}ms`);
       } catch (error) {
         console.warn('Using stored auth fallback because /auth/me failed:', error);
       }
@@ -2128,34 +2129,59 @@ async function getLoggedUser(force = false) {
       ? window.PhysioAccountTypes.normalizeAccountType(rawUser.accountType)
       : 'physio';
 
+    console.info('PhysioPipeline profile lookup accountType:', accountType);
+
     let profile = null;
+    let clinicProfile = rawUser.clinicProfile
+      ? window.physioApi?.normalizeClinicProfile?.(rawUser.clinicProfile) || rawUser.clinicProfile
+      : null;
+
     const storedProfileId =
       rawUser.profiles?.[0]?.id ||
       rawUser.profile?.id ||
       null;
 
-    if (accountType !== 'clinic' && storedProfileId && window.physioApi.fetchProfile) {
-      try {
-        profile = await window.physioApi.fetchProfile(storedProfileId);
-      } catch (_) {
-        profile = { id: storedProfileId };
+    if (accountType === 'clinic') {
+      if (window.physioApi.fetchMyClinicProfile) {
+        try {
+          console.info('PhysioPipeline profile lookup route called: /clinics/me');
+          clinicProfile = await window.physioApi.fetchMyClinicProfile();
+        } catch (error) {
+          console.error('PhysioPipeline clinic session lookup failed:', error);
+          if (!clinicProfile && rawUser.clinicProfile?.id) {
+            clinicProfile = window.physioApi?.normalizeClinicProfile?.(rawUser.clinicProfile) || rawUser.clinicProfile;
+          }
+        }
       }
-    }
+    } else {
+      if (storedProfileId && window.physioApi.fetchProfile) {
+        try {
+          console.info('PhysioPipeline profile lookup route called: /profiles/:id');
+          profile = await window.physioApi.fetchProfile(storedProfileId);
+        } catch (_) {
+          profile = { id: storedProfileId };
+        }
+      }
 
-    if (accountType !== 'clinic' && !profile && window.physioApi.fetchMyProfile) {
-      try {
-        profile = await window.physioApi.fetchMyProfile();
-      } catch (_) {
-        profile = null;
+      if (!profile && window.physioApi.fetchMyProfile) {
+        try {
+          console.info('PhysioPipeline profile lookup route called: /profiles/me');
+          profile = await window.physioApi.fetchMyProfile();
+        } catch (_) {
+          profile = null;
+        }
       }
     }
 
     cachedMyProfile = {
       id: rawUser.id ?? null,
       email: rawUser.email ?? '',
+      name: rawUser.name ?? '',
+      phone: rawUser.phone ?? '',
       accountType,
       emailVerified: rawUser.emailVerified ?? false,
       profile,
+      clinicProfile,
     };
 
     console.info(`PhysioPipeline auth/session: carregado em ${Math.round(performance.now() - authStart)}ms`);
@@ -2264,8 +2290,11 @@ async function renderAuthArea() {
 
   const isClinicAccount = user.accountType === 'clinic';
   const firstName = (
+    user.clinicProfile?.nomeClinica ||
+    user.clinicProfile?.clinicName ||
     user.profile?.nome ||
     user.profile?.name ||
+    user.name ||
     user.email ||
     (isClinicAccount ? 'Clinica' : 'Profissional')
   ).split(' ')[0];

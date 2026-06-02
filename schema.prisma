@@ -37,25 +37,26 @@ model User {
 }
 
 model ClinicProfile {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  clinicName      String?
-  responsibleName String?
-  address         String?
-  city            String?
-  neighborhood    String?
-  phone           String?
-  whatsapp        String?
+  id                  String               @id @default(cuid())
+  userId              String?              @unique
+  clinicName          String?
+  responsibleName     String?
+  address             String?
+  city                String?
+  neighborhood        String?
+  phone               String?
+  whatsapp            String?
   /// Backward-compatible serialized list. Legacy rows may still contain plain text.
-  services        String?
+  services            String?
   /// Serialized clinic physiotherapist team list for up to 5 professionals.
-  physioTeam      String?
-  logoUrl         String?
-  description     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  physioTeam          String?
+  logoUrl             String?
+  description         String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinicClaimRequests ClinicClaimRequest[]
 }
 
 model Profile {
@@ -98,6 +99,27 @@ model ClaimRequest {
 
   @@index([profileId, status])
   @@index([userId, status])
+}
+
+model ClinicClaimRequest {
+  id                     String       @id @default(cuid())
+  clinicProfileId        String
+  clinicName             String?
+  cnpj                   String
+  responsibleName        String
+  responsibleEmail       String
+  whatsapp               String?
+  roleOrRelation         String
+  authorizationConfirmed Boolean      @default(false)
+  proofFileName          String?
+  proofFileMime          String?
+  status                 ClaimStatus  @default(PENDING)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  clinicProfile ClinicProfile @relation(fields: [clinicProfileId], references: [id], onDelete: Cascade)
+
+  @@index([clinicProfileId, status])
 }
 
 model PasswordResetToken {

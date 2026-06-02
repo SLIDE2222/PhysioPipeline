@@ -637,7 +637,16 @@
                 return;
               }
 
-              await window.physioApi.register({
+              console.info('Clinic signup payload:', {
+                accountType,
+                email: emailValue,
+                clinicName: document.getElementById('nome').value.trim() || null,
+                responsibleName: document.getElementById('clinicResponsible').value.trim() || null,
+                city: document.getElementById('clinicCidade').value.trim() || null,
+                neighborhood: document.getElementById('clinicBairro').value.trim() || null,
+              });
+
+              const clinicRegisterResponse = await window.physioApi.register({
                 accountType,
                 name: document.getElementById('nome').value.trim(),
                 email: emailValue,

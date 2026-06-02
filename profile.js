@@ -1,4 +1,4 @@
-﻿const profileContainer = document.getElementById('profileContainer');
+const profileContainer = document.getElementById('profileContainer');
 
 function escapeHtml(value) {
   return String(value || '')
@@ -172,7 +172,7 @@ function renderTeamMembers(team) {
   `;
 }
 
-function renderClinicProfileMarkup(clinic, isOwner) {
+function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
   const clinicName = clinic?.nomeClinica || clinic?.nome || 'Clinica';
   const services = clinic?.servicesList || clinic?.servicosLista || [];
   const team = clinic?.physioTeamList || clinic?.fisioterapeutas || [];
@@ -219,9 +219,11 @@ function renderClinicProfileMarkup(clinic, isOwner) {
 
         <div class="profile-actions">
           ${clinic.whatsapp || clinic.telefone ? `<a href="${buildClinicWhatsAppLink(clinic)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Falar no WhatsApp</a>` : ''}
+          ${showClaimButton ? `<a href="claim-clinic.html?id=${encodeURIComponent(clinic.id)}" class="btn btn-outline">Reivindicar clinica</a>` : ''}
           ${isOwner ? '<a href="clinic-dashboard.html" class="btn btn-secondary">Editar dados da clinica</a>' : ''}
           <a href="buscar.html" class="btn btn-secondary">Voltar</a>
         </div>
+        ${showClaimButton ? '<p class="claim-profile-warning"><strong>Essa clinica e sua?</strong> Envie uma comprovacao de vinculo com o CNPJ para solicitar acesso ao perfil.</p>' : ''}
       </section>
     </article>
   `;
@@ -285,6 +287,28 @@ function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton) {
   `;
 }
 
+async function resolveClinicProfileForSession(loggedUser) {
+  if (loggedUser?.accountType !== 'clinic') return null;
+
+  console.info('PhysioPipeline clinic profile lookup accountType:', loggedUser.accountType);
+
+  if (loggedUser?.clinicProfile?.id) {
+    console.info('PhysioPipeline clinic profile lookup route called: auth cache');
+    return loggedUser.clinicProfile;
+  }
+
+  if (!window.physioApi?.fetchMyClinicProfile) return loggedUser?.clinicProfile || null;
+
+  try {
+    console.info('PhysioPipeline clinic profile lookup route called: /clinics/me');
+    const clinicProfile = await window.physioApi.fetchMyClinicProfile();
+    return clinicProfile || null;
+  } catch (error) {
+    console.error('PhysioPipeline clinic profile lookup failed:', error);
+    return loggedUser?.clinicProfile || null;
+  }
+}
+
 async function renderProfilePage() {
   if (!profileContainer) return;
 
@@ -296,6 +320,13 @@ async function renderProfilePage() {
     const loggedUser = await (window.getLoggedUser ? window.getLoggedUser(true) : Promise.resolve(null));
 
     if (loggedUser?.accountType === 'clinic') {
+      const clinicProfile = await resolveClinicProfileForSession(loggedUser);
+
+      if (clinicProfile?.id) {
+        window.location.replace(`profile.html?type=clinic&id=${encodeURIComponent(clinicProfile.id)}`);
+        return;
+      }
+
       window.location.replace('clinic-dashboard.html');
       return;
     }
@@ -305,12 +336,16 @@ async function renderProfilePage() {
       return;
     }
 
+    const completeHref = loggedUser?.accountType === 'clinic'
+      ? 'clinic-dashboard.html'
+      : 'cadastro.html?completeProfile=true';
+
     profileContainer.innerHTML = `
       <article class="profile-card-full">
         <h2>Perfil ainda nao encontrado</h2>
         <p>Nao encontramos um perfil publicado ligado a esta sessao.</p>
         <div class="profile-actions">
-          <a href="cadastro.html?completeProfile=true" class="btn btn-primary">Completar cadastro</a>
+          <a href="${completeHref}" class="btn btn-primary">Completar cadastro</a>
           <a href="buscar.html" class="btn btn-secondary">Buscar fisioterapeuta</a>
         </div>
       </article>
@@ -332,7 +367,8 @@ async function renderProfilePage() {
       if (!clinic) throw new Error('Essa clinica nao existe ou nao pode ser carregada.');
 
       const isClinicOwner = loggedUser?.accountType === 'clinic' && loggedUser?.id === clinic?.userId;
-      profileContainer.innerHTML = renderClinicProfileMarkup(clinic, isClinicOwner);
+      const showClinicClaimButton = !isClinicOwner && Boolean(clinic?.isClaimable);
+      profileContainer.innerHTML = renderClinicProfileMarkup(clinic, isClinicOwner, showClinicClaimButton);
       setupImageModal();
       return;
     }
