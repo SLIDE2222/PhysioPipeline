@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -9,8 +9,8 @@
   <meta property="og:description" content="Cadastre seu perfil profissional no PhysioPipeline para aparecer em buscas por fisioterapia." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="PhysioPipeline" />
-  <!-- Google Search Console: cole aqui a meta tag de verificação real quando tiver o domínio. -->
-  <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de medição. -->
+  <!-- Google Search Console: cole aqui a meta tag de verificaÃ§Ã£o real quando tiver o domÃ­nio. -->
+  <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de mediÃ§Ã£o. -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
   <link rel="stylesheet" href="style.css?v=resultphotos1" />
@@ -66,7 +66,7 @@
             </label>
             <label class="account-type-option">
               <input type="radio" name="accountType" value="clinic" />
-              <span>Sou clínica</span>
+              <span>Sou clÃ­nica</span>
             </label>
           </div>
           <label id="uploadLabelText" for="foto">Foto do perfil</label>
@@ -153,10 +153,10 @@
 
           <label for="atendimento">Tipo de atendimento</label>
           <select id="atendimento" name="atendimento" required>
-            <option value="" disabled selected>Selecione uma opção</option>
-            <option value="Clínica">Clínica</option>
+            <option value="" disabled selected>Selecione uma opÃ§Ã£o</option>
+            <option value="ClÃ­nica">ClÃ­nica</option>
             <option value="Domiciliar">Domiciliar</option>
-            <option value="Clínica e domiciliar">Clínica e domiciliar</option>
+            <option value="ClÃ­nica e domiciliar">ClÃ­nica e domiciliar</option>
             <option value="Online">Online</option>
           </select>
 
@@ -176,12 +176,12 @@
             placeholder="https://linkedin.com/in/seuperfil"
           />
 
-          <label for="descricao">Descrição profissional</label>
+          <label for="descricao">DescriÃ§Ã£o profissional</label>
           <textarea
             id="descricao"
             name="descricao"
             rows="5"
-            placeholder="Fale brevemente sobre sua atuação..."
+            placeholder="Fale brevemente sobre sua atuaÃ§Ã£o..."
             required
           ></textarea>
 
@@ -274,18 +274,18 @@
 
   <script>
     const CADASTRO_SPECIALTY_OPTIONS_FALLBACK = [
-      'Fisioterapia Ortopédica',
+      'Fisioterapia OrtopÃ©dica',
       'Fisioterapia Esportiva',
-      'Fisioterapia Neurológica',
-      'Fisioterapia Geriátrica',
-      'Fisioterapia Respiratória',
-      'Fisioterapia Pediátrica',
+      'Fisioterapia NeurolÃ³gica',
+      'Fisioterapia GeriÃ¡trica',
+      'Fisioterapia RespiratÃ³ria',
+      'Fisioterapia PediÃ¡trica',
       'Fisioterapia do Trabalho',
       'Fisioterapia Ocupacional',
       'Fisioterapia Dermatofuncional',
-      'Fisioterapia Pélvica',
+      'Fisioterapia PÃ©lvica',
       'Fisioterapia Cardiovascular',
-      'Fisioterapia Aquática',
+      'Fisioterapia AquÃ¡tica',
       'Fisioterapia Home Care',
       'Fisioterapia Domiciliar',
       'Quiropraxia',
@@ -293,7 +293,7 @@
       'Domiciliar',
       'Ocupacional',
       'Ergonomia',
-      'Pós-operatório'
+      'PÃ³s-operatÃ³rio'
     ];
 
     function getCadastroSpecialtyOptions() {
@@ -419,8 +419,8 @@
         if (nomeInput) nomeInput.placeholder = isClinic ? 'Nome da sua clinica' : 'Seu nome';
         if (uploadLabelText) uploadLabelText.textContent = isClinic ? 'Logo da clinica' : 'Foto do perfil';
         if (sharedPhoneLabel) sharedPhoneLabel.textContent = isClinic ? 'Telefone da clinica' : 'Telefone';
-        if (uploadDropzoneTitle) uploadDropzoneTitle.textContent = isClinic ? 'Clique para enviar a logo da clínica' : 'Clique para enviar uma foto do perfil';
-        if (uploadDropzoneHint) uploadDropzoneHint.textContent = isClinic ? 'PNG, JPG ou WEBP. Use uma logo nítida e centralizada.' : 'PNG, JPG ou WEBP. Ajuste a imagem antes de salvar.';
+        if (uploadDropzoneTitle) uploadDropzoneTitle.textContent = isClinic ? 'Clique para enviar a logo da clÃ­nica' : 'Clique para enviar uma foto do perfil';
+        if (uploadDropzoneHint) uploadDropzoneHint.textContent = isClinic ? 'PNG, JPG ou WEBP. Use uma logo nÃ­tida e centralizada.' : 'PNG, JPG ou WEBP. Ajuste a imagem antes de salvar.';
         if (cadastroSubmitButton) cadastroSubmitButton.textContent = isClinic ? 'Criar conta da clinica' : 'Criar conta e meu perfil';
 
         if (physioRegistrationFields) {
@@ -556,7 +556,7 @@
             fotoInput.value = '';
           } catch (error) {
             console.error(error);
-            cadastroMensagem.textContent = 'Não foi possível ajustar essa imagem.';
+            cadastroMensagem.textContent = 'NÃ£o foi possÃ­vel ajustar essa imagem.';
             cadastroMensagem.style.color = '#b91c1c';
             fotoInput.value = '';
           }
@@ -567,7 +567,7 @@
           if (!file) return;
 
           if (!file.type.startsWith('image/')) {
-            cadastroMensagem.textContent = 'Escolha um arquivo de imagem válido.';
+            cadastroMensagem.textContent = 'Escolha um arquivo de imagem vÃ¡lido.';
             cadastroMensagem.style.color = '#b91c1c';
             fotoInput.value = '';
             return;
@@ -606,7 +606,7 @@
           cadastroMensagem.textContent = '';
 
           if (password !== confirmPassword) {
-            senhaErro.textContent = 'As senhas não são iguais.';
+            senhaErro.textContent = 'As senhas nÃ£o sÃ£o iguais.';
             return;
           }
 
@@ -722,7 +722,7 @@
               responseText: error?.responseText,
               error,
             });
-            cadastroMensagem.textContent = error?.message || 'NÃ£o foi possÃ­vel criar sua conta agora.';
+            cadastroMensagem.textContent = error?.message || 'NÃƒÂ£o foi possÃƒÂ­vel criar sua conta agora.';
             cadastroMensagem.style.color = '#b91c1c';
           } finally {
             if (submitBtn) submitBtn.disabled = false;
@@ -747,3 +747,4 @@
     </div>
   </footer></body>
 </html>
+

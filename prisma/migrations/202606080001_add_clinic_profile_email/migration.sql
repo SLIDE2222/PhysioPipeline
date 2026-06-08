@@ -1,0 +1,1 @@
+﻿ALTER TABLE "ClinicProfile" ADD COLUMN IF NOT EXISTS "email" TEXT;

@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const isLocalHost =
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1';
@@ -404,11 +404,11 @@
       return data;
     } catch (error) {
       if (error.name === 'AbortError') {
-        throw new Error('A requisição demorou demais. Verifique se o backend está online e tente novamente.');
+        throw new Error('A requisiÃ§Ã£o demorou demais. Verifique se o backend estÃ¡ online e tente novamente.');
       }
 
       if (error instanceof TypeError) {
-        throw new Error('Não foi possível conectar ao servidor. Confira a URL da API, CORS e se o backend está no ar.');
+        throw new Error('NÃ£o foi possÃ­vel conectar ao servidor. Confira a URL da API, CORS e se o backend estÃ¡ no ar.');
       }
 
       throw error;
@@ -574,6 +574,7 @@
       nome: clinic.clinicName ?? clinic.nome ?? '',
       nomeClinica: clinic.clinicName ?? clinic.nomeClinica ?? '',
       responsavel: clinic.responsibleName ?? clinic.responsavel ?? '',
+      email: clinic.email ?? clinic.publicEmail ?? '',
       endereco: clinic.address ?? clinic.endereco ?? '',
       cidade: clinic.city ?? clinic.cidade ?? '',
       bairro: clinic.neighborhood ?? clinic.bairro ?? '',
@@ -858,3 +859,5 @@ window.debugPhysioAuth = function () {
     return { error: error.message };
   }
 };
+
+

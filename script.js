@@ -1,26 +1,26 @@
-let cachedMyProfile = null;
+﻿let cachedMyProfile = null;
 
 const EXISTING_SPECIALTIES = [
-  'Fisioterapia Ortopédica',
+  'Fisioterapia OrtopÃ©dica',
   'Fisioterapia Esportiva',
-  'Fisioterapia Neurológica',
-  'Fisioterapia Geriátrica',
-  'Fisioterapia Respiratória',
+  'Fisioterapia NeurolÃ³gica',
+  'Fisioterapia GeriÃ¡trica',
+  'Fisioterapia RespiratÃ³ria',
   'Pilates',
   'Domicilar',
   'Fisioterapia Ocupacional',
   'Quiropraxia',
-  'Fisioterapia Pediátrica',
+  'Fisioterapia PediÃ¡trica',
   'Ventosaterapia',
-  'Pós-operatório'
+  'PÃ³s-operatÃ³rio'
 ];
 
 const SPECIALTIES = window.PhysioTaxonomy?.profileSpecialtyOptions || EXISTING_SPECIALTIES;
 
 const CITY_NEIGHBORHOODS = {
-  'São Paulo': [
+  'SÃ£o Paulo': [
     'Bela Vista',
-    'Butantã',
+    'ButantÃ£',
     'Ipiranga',
     'Lapa',
     'Mooca',
@@ -28,23 +28,23 @@ const CITY_NEIGHBORHOODS = {
     'Santana',
     'Santo Amaro',
     'Campo Belo',
-    'Tatuapé',
+    'TatuapÃ©',
     'Vila Mariana'
   ],
   'Sorocaba': [
     'Campolim',
     'Centro',
-    'Éden',
+    'Ã‰den',
     'Jardim Europa',
-    'Santa Rosália',
+    'Santa RosÃ¡lia',
     'Vila Haro',
     'Wanel Ville'
   ],
   'Itapetininga': [
     'Centro',
     'Chapada Grande',
-    'Jardim Fogaça',
-    'Jardim Marabá',
+    'Jardim FogaÃ§a',
+    'Jardim MarabÃ¡',
     'Vila Aparecida',
     'Vila Nastri',
     'Vila Rio Branco'
@@ -185,7 +185,7 @@ const GENERIC_QUERY_TERMS = new Set([
 const INTENT_RULES = [
   {
     id: 'pelvica',
-    label: 'Fisioterapia Pélvica / Uroginecológica',
+    label: 'Fisioterapia PÃ©lvica / UroginecolÃ³gica',
     triggers: ['perereca', 'vagina', 'vaginal', 'perineo', 'pelvica', 'pelvico', 'assoalho pelvico', 'assoalho', 'xixi', 'incontinencia', 'urina', 'bexiga', 'escape de urina'],
     specialtyKeywords: ['pelvica', 'uroginecologica', 'perineal'],
     relatedTerms: ['assoalho pelvico', 'perineo', 'incontinencia urinaria', 'urgencia urinaria', 'saude da mulher', 'gestante', 'obstetrica', 'pos parto', 'parto'],
@@ -193,7 +193,7 @@ const INTENT_RULES = [
   },
   {
     id: 'obstetrica',
-    label: 'Fisioterapia Obstétrica / Pós-parto',
+    label: 'Fisioterapia ObstÃ©trica / PÃ³s-parto',
     triggers: ['gravidez', 'gestante', 'gestacao', 'parto', 'pos parto', 'pos-parto', 'puerperio'],
     specialtyKeywords: ['obstetrica', 'pelvica', 'uroginecologica', 'saude da mulher'],
     relatedTerms: ['gestante', 'parto', 'pos parto', 'perineo', 'assoalho pelvico', 'diastase'],
@@ -201,7 +201,7 @@ const INTENT_RULES = [
   },
   {
     id: 'joelho',
-    label: 'Ortopedia / Esportiva / Traumato-ortopédica',
+    label: 'Ortopedia / Esportiva / Traumato-ortopÃ©dica',
     triggers: ['joelho', 'dor no joelho', 'menisco', 'ligamento', 'lca', 'acl', 'condromalacia'],
     specialtyKeywords: ['ortopedica', 'esportiva', 'traumato', 'traumato ortopedica'],
     relatedTerms: ['joelho', 'menisco', 'ligamento', 'condromalacia', 'pos operatorio', 'reabilitacao esportiva'],
@@ -233,7 +233,7 @@ const INTENT_RULES = [
   },
   {
     id: 'respiratoria',
-    label: 'Fisioterapia Respiratória',
+    label: 'Fisioterapia RespiratÃ³ria',
     triggers: ['respirar', 'respiracao', 'respiratoria', 'pulmao', 'folego', 'asma', 'bronquite', 'dpoc'],
     specialtyKeywords: ['respiratoria', 'cardiorrespiratoria', 'pulmonar', 'reabilitacao respiratoria'],
     relatedTerms: ['respirar', 'pulmao', 'folego', 'asma', 'bronquite', 'dpoc'],
@@ -241,7 +241,7 @@ const INTENT_RULES = [
   },
   {
     id: 'geriatria',
-    label: 'Fisioterapia Geriátrica / Gerontologia',
+    label: 'Fisioterapia GeriÃ¡trica / Gerontologia',
     triggers: ['idoso', 'idosa', 'geriatria', 'geriatrica', 'gerontologia', 'equilibrio', 'quedas', 'queda'],
     specialtyKeywords: ['geriatrica', 'gerontologia', 'geriatria', 'prevencao de quedas'],
     relatedTerms: ['idoso', 'equilibrio', 'quedas', 'mobilidade reduzida', 'marcha'],
@@ -249,7 +249,7 @@ const INTENT_RULES = [
   },
   {
     id: 'pediatrica',
-    label: 'Fisioterapia Pediátrica',
+    label: 'Fisioterapia PediÃ¡trica',
     triggers: ['bebe', 'crianca', 'infantil', 'pediatrica', 'pediatria', 'atraso motor'],
     specialtyKeywords: ['pediatrica', 'pediatria', 'infantil'],
     relatedTerms: ['bebe', 'crianca', 'infantil', 'atraso motor', 'desenvolvimento'],
@@ -662,7 +662,7 @@ async function loadDynamicSearchOptions() {
     if (DYNAMIC_OPTIONS_CACHE_MS > 0) writeCachedDynamicOptions(options);
     applyDynamicOptions(options);
   } catch (error) {
-    console.warn('Não foi possível carregar opções dinâmicas:', error);
+    console.warn('NÃ£o foi possÃ­vel carregar opÃ§Ãµes dinÃ¢micas:', error);
     applyDynamicOptions({});
   }
 
@@ -733,7 +733,7 @@ function normalizeText(value) {
   return String(value || '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
-    .replace(/['’`]/g, ' ')
+    .replace(/['â€™`]/g, ' ')
     .replace(/\s+/g, ' ')
     .toLowerCase()
     .trim();
@@ -2289,7 +2289,7 @@ async function renderAuthArea() {
   updateProfileButtons(user);
 
   const isClinicAccount = user.accountType === 'clinic';
-  const firstName = (
+  const displayName = (
     user.clinicProfile?.nomeClinica ||
     user.clinicProfile?.clinicName ||
     user.profile?.nome ||
@@ -2297,13 +2297,14 @@ async function renderAuthArea() {
     user.name ||
     user.email ||
     (isClinicAccount ? 'Clinica' : 'Profissional')
-  ).split(' ')[0];
+  ).trim();
+  const greetingName = isClinicAccount ? displayName : displayName.split(' ')[0];
   const profileHref = getUserProfileHref(user);
   const editHref = isClinicAccount ? 'clinic-dashboard.html' : 'editar-perfil.html';
   const profileLabel = isClinicAccount ? 'Dashboard da clinica' : 'Meu perfil';
 
   authArea.innerHTML = `
-    <span class="user-greeting">Olá, ${escapeHtml(firstName)}</span>
+    <span class="user-greeting">OlÃ¡, ${escapeHtml(greetingName)}</span>
     <div class="account-menu" data-account-menu>
       <button
         class="account-menu__button"
@@ -2414,7 +2415,7 @@ function getProfileSpecialtiesList(profile) {
 }
 
 function getDisplaySpecialties(profile) {
-  return getProfileSpecialtiesList(profile).join(' • ');
+  return getProfileSpecialtiesList(profile).join(' â€¢ ');
 }
 
 function getClinicServicesList(clinic) {
@@ -2468,7 +2469,7 @@ function getClinicServicesText(clinic) {
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 4)
-    .join(' • ');
+    .join(' â€¢ ');
 }
 
 function getClinicTeamList(clinic) {
@@ -2859,7 +2860,7 @@ function attachResultAvatarFallbacks(container = document) {
 
       const fallback = image.nextElementSibling;
       image.dataset.fallbackApplied = 'true';
-      console.warn(`Imagem de perfil ${reason}; usando avatar padrão:`, image.currentSrc || image.src);
+      console.warn(`Imagem de perfil ${reason}; usando avatar padrÃ£o:`, image.currentSrc || image.src);
       image.classList.add('is-hidden');
       if (fallback?.classList.contains('result-card__avatar-fallback')) {
         fallback.classList.remove('is-hidden');
@@ -2868,7 +2869,7 @@ function attachResultAvatarFallbacks(container = document) {
 
     image.addEventListener('error', () => useFallback('falhou'), { once: true });
     image.addEventListener('load', () => {
-      if (!image.naturalWidth) useFallback('inválida');
+      if (!image.naturalWidth) useFallback('invÃ¡lida');
     }, { once: true });
 
     window.setTimeout(() => {
@@ -2888,7 +2889,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.time('PhysioPipeline resultados page init');
   const resultsGrid = document.getElementById('resultsGrid');
 
-  // Só executa em resultados.html
+  // SÃ³ executa em resultados.html
   if (!resultsGrid) {
     console.timeEnd('PhysioPipeline resultados page init');
     return;
@@ -2987,7 +2988,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     logResultsTiming(`iniciando busca de ${searchType === 'clinic' ? 'clinicas' : searchType === 'specialty' ? 'resultados' : 'profissionais'}`);
     resumo.textContent = searchType === 'clinic'
-      ? 'Buscando clínicas...'
+      ? 'Buscando clÃ­nicas...'
       : searchType === 'specialty'
         ? 'Buscando resultados...'
         : 'Buscando profissionais...';
@@ -2996,11 +2997,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (resultsLoaded) return;
 
       resumo.textContent = searchType === 'clinic'
-        ? 'Ainda carregando clínicas...'
+        ? 'Ainda carregando clÃ­nicas...'
         : searchType === 'specialty'
           ? 'Ainda carregando resultados...'
           : 'Ainda carregando profissionais...';
-      console.warn('PhysioPipeline resultados: busca ainda pendente após 5s');
+      console.warn('PhysioPipeline resultados: busca ainda pendente apÃ³s 5s');
     }, 5000);
 
     failedLoadingTimeoutId = window.setTimeout(() => {
@@ -3008,14 +3009,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       resultsLoaded = true;
       resumo.textContent = searchType === 'clinic'
-        ? 'Não foi possível carregar as clínicas agora.'
+        ? 'NÃ£o foi possÃ­vel carregar as clÃ­nicas agora.'
         : searchType === 'specialty'
-          ? 'Não foi possível carregar os resultados agora.'
-          : 'Não foi possível carregar os profissionais agora.';
+          ? 'NÃ£o foi possÃ­vel carregar os resultados agora.'
+          : 'NÃ£o foi possÃ­vel carregar os profissionais agora.';
       resultsGrid.innerHTML = `
         <div class="empty-results">
           <h3>A busca demorou demais.</h3>
-          <p>Tente atualizar a página em alguns segundos.</p>
+          <p>Tente atualizar a pÃ¡gina em alguns segundos.</p>
         </div>
       `;
       if (resultsShowingSummary) resultsShowingSummary.textContent = '';
@@ -3055,8 +3056,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       filtered = clinicRanking.visible.map((item) => ({ type: 'clinic', profile: item.profile }));
 
       resultLabel = filtered.length === 1
-        ? '1 clínica encontrada'
-        : `${filtered.length} clínicas encontradas`;
+        ? '1 clÃ­nica encontrada'
+        : `${filtered.length} clÃ­nicas encontradas`;
 
       resumo.textContent = resultLabel;
     } else {
@@ -3127,13 +3128,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       console.time('PhysioPipeline filtering/search ranking');
       searchAnalysis = analyzeSearchIntent(searchQuery, buildSearchContext(profiles));
-      logResultsTiming('análise de busca concluída');
+      logResultsTiming('anÃ¡lise de busca concluÃ­da');
 
       const rankedResult = rankProfilesByRelevance(profiles, searchAnalysis, {
         city: cidade,
         neighborhood: bairro,
       });
-      logResultsTiming('search/filter processing concluído');
+      logResultsTiming('search/filter processing concluÃ­do');
       console.timeEnd('PhysioPipeline filtering/search ranking');
 
       debugRankedResults(searchQuery, searchAnalysis, rankedResult.ordered);
@@ -3215,7 +3216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       `;
       if (resultsShowingSummary) {
         resultsShowingSummary.textContent = searchType === 'clinic'
-          ? 'Mostrando 0 de 0 clínicas'
+          ? 'Mostrando 0 de 0 clÃ­nicas'
           : searchType === 'specialty'
             ? 'Mostrando 0 de 0 resultados'
             : 'Mostrando 0 de 0 profissionais';
@@ -3286,7 +3287,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               type="button"
               class="pagination-page ${item === currentPage ? 'is-active' : ''}"
               data-page="${item}"
-              aria-label="Ir para a página ${item}"
+              aria-label="Ir para a pÃ¡gina ${item}"
               ${item === currentPage ? 'aria-current="page"' : ''}
             >
               ${item}
@@ -3315,7 +3316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           data-page="${currentPage + 1}"
           ${currentPage === totalPages ? 'disabled' : ''}
         >
-          Próxima
+          PrÃ³xima
         </button>
       `;
 
@@ -3401,7 +3402,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const displayName = profile.nome || profile.name || 'Fisioterapeuta';
         const physioSpecialties = getProfileSpecialtiesList(profile);
-        const displaySpecialty = physioSpecialties.join(' • ') || 'N?o informado';
+        const displaySpecialty = physioSpecialties.join(' â€¢ ') || 'N?o informado';
         const displayCity = profile.cidade || profile.city || 'N?o informado';
         const displayNeighborhood = profile.bairro || profile.neighborhood || 'N?o informado';
         const photoUrl = getProfileImageUrl(profile);
@@ -3467,7 +3468,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (resultsShowingSummary) {
         resultsShowingSummary.textContent = searchType === 'clinic'
-          ? `Mostrando ${endIndex} de ${filtered.length} clínicas`
+          ? `Mostrando ${endIndex} de ${filtered.length} clÃ­nicas`
           : searchType === 'specialty'
             ? `Mostrando ${endIndex} de ${filtered.length} resultados`
             : `Mostrando ${endIndex} de ${filtered.length} profissionais`;
@@ -3480,7 +3481,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     renderPage(currentPage);
     loadDynamicSearchOptions().catch((error) => {
-      console.warn('Opções dinâmicas carregando em segundo plano falharam:', error);
+      console.warn('OpÃ§Ãµes dinÃ¢micas carregando em segundo plano falharam:', error);
     });
     console.timeEnd('PhysioPipeline resultados page init');
 
@@ -3501,17 +3502,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (failedLoadingTimeoutId) window.clearTimeout(failedLoadingTimeoutId);
 
   resumo.textContent = modoBusca === 'clinica'
-    ? 'Erro ao buscar clínicas.'
+    ? 'Erro ao buscar clÃ­nicas.'
     : 'Erro ao buscar resultados.';
   if (resultsShowingSummary) resultsShowingSummary.textContent = '';
   if (paginationControls) paginationControls.innerHTML = '';
 
   resultsGrid.innerHTML = `
     <div class="empty-results">
-      <h3>${modoBusca === 'clinica' ? 'Erro ao buscar clínicas.' : 'Erro ao buscar resultados.'}</h3>
-      <p>Tente atualizar a página e pesquisar novamente.</p>
+      <h3>${modoBusca === 'clinica' ? 'Erro ao buscar clÃ­nicas.' : 'Erro ao buscar resultados.'}</h3>
+      <p>Tente atualizar a pÃ¡gina e pesquisar novamente.</p>
     </div>
   `;
   console.timeEnd('PhysioPipeline resultados page init');
 }
 });
+

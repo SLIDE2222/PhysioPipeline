@@ -1,4 +1,4 @@
-generator client {
+﻿generator client {
   provider = "prisma-client-js"
 }
 
@@ -6,6 +6,11 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+}
+
+enum AccountType {
+  physio
+  clinic
 }
 
 enum ClaimStatus {
@@ -16,40 +21,65 @@ enum ClaimStatus {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
+  id             String        @id @default(cuid())
+  email          String        @unique
   passwordHash   String
-  emailVerified  Boolean   @default(false)
+  emailVerified  Boolean       @default(false)
   name           String?
   phone          String?
-  googleSub      String?   @unique
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  accountType    AccountType   @default(physio)
+  googleSub      String?       @unique
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
   profiles       Profile[]
+  clinicProfile  ClinicProfile?
   claimRequests  ClaimRequest[]
 }
 
 model Profile {
-  id            String         @id @default(cuid())
-  name          String
-  specialty     String
+  id                 String         @id @default(cuid())
+  name               String
+  specialty          String
   secondarySpecialty String?
-  city          String
-  neighborhood  String?
-  phone         String?
-  bio           String?
-  instagram     String?
-  linkedin      String?
-  photoUrl      String?
-  publicEmail   String?
-  attendance    String?
-  isClaimed     Boolean        @default(false)
-  ownerUserId   String?
-  ownerUser     User?          @relation(fields: [ownerUserId], references: [id])
-  claimRequests ClaimRequest[]
-  leadEvents    LeadEvent[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  tertiarySpecialty  String?
+  city               String
+  neighborhood       String?
+  phone              String?
+  bio                String?
+  instagram          String?
+  linkedin           String?
+  photoUrl           String?
+  publicEmail        String?
+  attendance         String?
+  isClaimed          Boolean        @default(false)
+  ownerUserId        String?
+  ownerUser          User?          @relation(fields: [ownerUserId], references: [id])
+  claimRequests      ClaimRequest[]
+  leadEvents         LeadEvent[]
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
+
+model ClinicProfile {
+  id                  String               @id @default(cuid())
+  userId              String?              @unique
+  clinicName          String?
+  responsibleName     String?
+  email               String?
+  address             String?
+  city                String?
+  neighborhood        String?
+  phone               String?
+  whatsapp            String?
+  services            String?
+  physioTeam          String?
+  logoUrl             String?
+  description         String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  user                User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinicClaimRequests ClinicClaimRequest[]
 }
 
 model ClaimRequest {
@@ -68,6 +98,27 @@ model ClaimRequest {
 
   @@index([profileId, status])
   @@index([userId, status])
+}
+
+model ClinicClaimRequest {
+  id                     String        @id @default(cuid())
+  clinicProfileId        String
+  clinicName             String?
+  cnpj                   String
+  responsibleName        String
+  responsibleEmail       String
+  whatsapp               String?
+  roleOrRelation         String
+  authorizationConfirmed Boolean       @default(false)
+  proofFileName          String?
+  proofFileMime          String?
+  status                 ClaimStatus   @default(PENDING)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  clinicProfile          ClinicProfile @relation(fields: [clinicProfileId], references: [id], onDelete: Cascade)
+
+  @@index([clinicProfileId, status])
 }
 
 model PasswordResetToken {

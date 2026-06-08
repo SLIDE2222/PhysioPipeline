@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { ACCOUNT_TYPES, normalizeAccountType } from "../constants/account-types.js";
 
@@ -13,6 +13,7 @@ const clinicTeamMemberSchema = z.object({
 const clinicProfileSchema = z.object({
   clinicName: z.string().min(2).max(160).optional().nullable(),
   responsibleName: z.string().min(2).max(160).optional().nullable(),
+  email: z.string().email().optional().nullable(),
   address: z.string().min(2).max(200).optional().nullable(),
   city: z.string().min(2).max(120).optional().nullable(),
   neighborhood: z.string().min(2).max(120).optional().nullable(),
@@ -142,6 +143,7 @@ function decorateClinicProfile(profile) {
     servicesList,
     physioTeam: profile.physioTeam ?? null,
     physioTeamList,
+    isClaimable: typeof profile.isClaimable === "boolean" ? profile.isClaimable : !profile.userId,
   };
 }
 
@@ -151,6 +153,8 @@ async function findCurrentUser(userId) {
     select: {
       id: true,
       email: true,
+      name: true,
+      phone: true,
       accountType: true,
       clinicProfile: true,
     },
@@ -184,16 +188,31 @@ export async function getMyClinicProfile(req, res) {
     return res.status(403).json({ message: getClinicOnlyMessage() });
   }
 
-  return res.json({
-    clinicProfile: decorateClinicProfile(
-      user.clinicProfile || {
-        clinicName: user.name || "",
-        phone: user.phone || "",
-        services: null,
-        physioTeam: null,
-      }
-    ),
+  // Clinic accounts always need a persisted ClinicProfile linked to the
+  // authenticated user id. If an older clinic user exists without one, create a
+  // minimal profile now so the dashboard/profile lookup never falls through to
+  // the physiotherapist-only "perfil nao encontrado" state.
+  const clinicProfile = user.clinicProfile || await prisma.clinicProfile.create({
+    data: {
+      userId: user.id,
+      clinicName: user.name || user.email,
+      responsibleName: user.name || null,
+      email: user.email,
+      phone: user.phone || null,
+      whatsapp: user.phone || null,
+      services: null,
+      physioTeam: null,
+    },
   });
+
+  if (!user.clinicProfile) {
+    console.info("Clinic profile auto-created from /clinics/me:", {
+      userId: user.id,
+      clinicProfileId: clinicProfile.id,
+    });
+  }
+
+  return res.json({ clinicProfile: decorateClinicProfile(clinicProfile) });
 }
 
 export async function listClinicOptions(_req, res) {
@@ -298,6 +317,7 @@ export async function upsertMyClinicProfile(req, res) {
   const data = {
     clinicName: clean(parsed.data.clinicName),
     responsibleName: clean(parsed.data.responsibleName),
+    email: clean(parsed.data.email) || user.email,
     address: clean(parsed.data.address),
     city: clean(parsed.data.city),
     neighborhood: clean(parsed.data.neighborhood),
@@ -333,3 +353,4 @@ export async function upsertMyClinicProfile(req, res) {
 
   return res.json({ clinicProfile: decorateClinicProfile(clinicProfile) });
 }
+
