@@ -8,6 +8,11 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum AccountType {
+  physio
+  clinic
+}
+
 enum ClaimStatus {
   PENDING
   APPROVED
@@ -15,25 +20,44 @@ enum ClaimStatus {
   EXPIRED
 }
 
-enum AccountType {
-  physio
-  clinic
-}
-
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
+  id             String        @id @default(cuid())
+  email          String        @unique
   passwordHash   String
-  emailVerified  Boolean   @default(false)
-  accountType    AccountType @default(physio)
+  emailVerified  Boolean       @default(false)
   name           String?
   phone          String?
-  googleSub      String?   @unique
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  accountType    AccountType   @default(physio)
+  googleSub      String?       @unique
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
   profiles       Profile[]
   clinicProfile  ClinicProfile?
   claimRequests  ClaimRequest[]
+}
+
+model Profile {
+  id                 String         @id @default(cuid())
+  name               String
+  specialty          String
+  secondarySpecialty String?
+  tertiarySpecialty  String?
+  city               String
+  neighborhood       String?
+  phone              String?
+  bio                String?
+  instagram          String?
+  linkedin           String?
+  photoUrl           String?
+  publicEmail        String?
+  attendance         String?
+  isClaimed          Boolean        @default(false)
+  ownerUserId        String?
+  ownerUser          User?          @relation(fields: [ownerUserId], references: [id])
+  claimRequests      ClaimRequest[]
+  leadEvents         LeadEvent[]
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
 }
 
 model ClinicProfile {
@@ -41,14 +65,13 @@ model ClinicProfile {
   userId              String?              @unique
   clinicName          String?
   responsibleName     String?
+  email               String?
   address             String?
   city                String?
   neighborhood        String?
   phone               String?
   whatsapp            String?
-  /// Backward-compatible serialized list. Legacy rows may still contain plain text.
   services            String?
-  /// Serialized clinic physiotherapist team list for up to 5 professionals.
   physioTeam          String?
   logoUrl             String?
   description         String?
@@ -57,30 +80,6 @@ model ClinicProfile {
 
   user                User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
   clinicClaimRequests ClinicClaimRequest[]
-}
-
-model Profile {
-  id            String         @id @default(cuid())
-  name          String
-  specialty     String
-  secondarySpecialty String?
-  tertiarySpecialty String?
-  city          String
-  neighborhood  String?
-  phone         String?
-  bio           String?
-  instagram     String?
-  linkedin      String?
-  photoUrl      String?
-  publicEmail   String?
-  attendance    String?
-  isClaimed     Boolean        @default(false)
-  ownerUserId   String?
-  ownerUser     User?          @relation(fields: [ownerUserId], references: [id])
-  claimRequests ClaimRequest[]
-  leadEvents    LeadEvent[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
 }
 
 model ClaimRequest {
@@ -102,7 +101,7 @@ model ClaimRequest {
 }
 
 model ClinicClaimRequest {
-  id                     String       @id @default(cuid())
+  id                     String        @id @default(cuid())
   clinicProfileId        String
   clinicName             String?
   cnpj                   String
@@ -110,14 +109,14 @@ model ClinicClaimRequest {
   responsibleEmail       String
   whatsapp               String?
   roleOrRelation         String
-  authorizationConfirmed Boolean      @default(false)
+  authorizationConfirmed Boolean       @default(false)
   proofFileName          String?
   proofFileMime          String?
-  status                 ClaimStatus  @default(PENDING)
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
+  status                 ClaimStatus   @default(PENDING)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
 
-  clinicProfile ClinicProfile @relation(fields: [clinicProfileId], references: [id], onDelete: Cascade)
+  clinicProfile          ClinicProfile @relation(fields: [clinicProfileId], references: [id], onDelete: Cascade)
 
   @@index([clinicProfileId, status])
 }

@@ -27,3 +27,12 @@ WHY THIS FIX HELPS
 - fails faster when backend or Supabase is down
 - exposes clearer backend errors for CLIENT_URL and Supabase env problems
 - logs the redirect URL being used in production
+
+CLINIC ACCOUNT DATABASE SYNC
+- The backend expects User.accountType and ClinicProfile columns from prisma/schema.prisma.
+- Render must run Prisma before starting the API:
+  npm install && npx prisma generate && node tools/sync-clinic-schema.js
+- package.json now runs `prisma generate && node tools/sync-clinic-schema.js` in both `build` and `start` so deployments that use `npm start` apply the schema before querying User.accountType.
+- If Render uses custom commands, set:
+  Build Command: npm install && npx prisma generate && node tools/sync-clinic-schema.js
+  Start Command: npm start
