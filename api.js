@@ -404,11 +404,11 @@
       return data;
     } catch (error) {
       if (error.name === 'AbortError') {
-        throw new Error('A requisiÃ§Ã£o demorou demais. Verifique se o backend estÃ¡ online e tente novamente.');
+        throw new Error('A requisição demorou demais. Verifique se o backend está online e tente novamente.');
       }
 
       if (error instanceof TypeError) {
-        throw new Error('NÃ£o foi possÃ­vel conectar ao servidor. Confira a URL da API, CORS e se o backend estÃ¡ no ar.');
+        throw new Error('Não foi possível conectar ao servidor. Confira a URL da API, CORS e se o backend está no ar.');
       }
 
       throw error;

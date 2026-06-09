@@ -9,8 +9,8 @@
   <meta property="og:description" content="Cadastre seu perfil profissional no PhysioPipeline para aparecer em buscas por fisioterapia." />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="PhysioPipeline" />
-  <!-- Google Search Console: cole aqui a meta tag de verificaÃ§Ã£o real quando tiver o domÃ­nio. -->
-  <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de mediÃ§Ã£o. -->
+  <!-- Google Search Console: cole aqui a meta tag de verificação real quando tiver o domínio. -->
+  <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de medição. -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
   <link rel="stylesheet" href="style.css?v=resultphotos1" />
@@ -66,7 +66,7 @@
             </label>
             <label class="account-type-option">
               <input type="radio" name="accountType" value="clinic" />
-              <span>Sou clÃ­nica</span>
+              <span>Sou clínica</span>
             </label>
           </div>
           <label id="uploadLabelText" for="foto">Foto do perfil</label>
@@ -153,10 +153,10 @@
 
           <label for="atendimento">Tipo de atendimento</label>
           <select id="atendimento" name="atendimento" required>
-            <option value="" disabled selected>Selecione uma opÃ§Ã£o</option>
-            <option value="ClÃ­nica">ClÃ­nica</option>
+            <option value="" disabled selected>Selecione uma opção</option>
+            <option value="Clínica">Clínica</option>
             <option value="Domiciliar">Domiciliar</option>
-            <option value="ClÃ­nica e domiciliar">ClÃ­nica e domiciliar</option>
+            <option value="Clínica e domiciliar">Clínica e domiciliar</option>
             <option value="Online">Online</option>
           </select>
 
@@ -176,12 +176,12 @@
             placeholder="https://linkedin.com/in/seuperfil"
           />
 
-          <label for="descricao">DescriÃ§Ã£o profissional</label>
+          <label for="descricao">Descrição profissional</label>
           <textarea
             id="descricao"
             name="descricao"
             rows="5"
-            placeholder="Fale brevemente sobre sua atuaÃ§Ã£o..."
+            placeholder="Fale brevemente sobre sua atuação..."
             required
           ></textarea>
 
@@ -274,18 +274,18 @@
 
   <script>
     const CADASTRO_SPECIALTY_OPTIONS_FALLBACK = [
-      'Fisioterapia OrtopÃ©dica',
+      'Fisioterapia Ortopédica',
       'Fisioterapia Esportiva',
-      'Fisioterapia NeurolÃ³gica',
-      'Fisioterapia GeriÃ¡trica',
-      'Fisioterapia RespiratÃ³ria',
-      'Fisioterapia PediÃ¡trica',
+      'Fisioterapia Neurológica',
+      'Fisioterapia Geriátrica',
+      'Fisioterapia Respiratória',
+      'Fisioterapia Pediátrica',
       'Fisioterapia do Trabalho',
       'Fisioterapia Ocupacional',
       'Fisioterapia Dermatofuncional',
-      'Fisioterapia PÃ©lvica',
+      'Fisioterapia Pélvica',
       'Fisioterapia Cardiovascular',
-      'Fisioterapia AquÃ¡tica',
+      'Fisioterapia Aquática',
       'Fisioterapia Home Care',
       'Fisioterapia Domiciliar',
       'Quiropraxia',
@@ -293,7 +293,7 @@
       'Domiciliar',
       'Ocupacional',
       'Ergonomia',
-      'PÃ³s-operatÃ³rio'
+      'Pós-operatório'
     ];
 
     function getCadastroSpecialtyOptions() {
@@ -415,13 +415,13 @@
         const accountType = getSelectedAccountType();
         const isClinic = accountType === 'clinic';
 
-        if (nomeLabel) nomeLabel.textContent = isClinic ? 'Nome da clinica' : 'Nome completo';
-        if (nomeInput) nomeInput.placeholder = isClinic ? 'Nome da sua clinica' : 'Seu nome';
-        if (uploadLabelText) uploadLabelText.textContent = isClinic ? 'Logo da clinica' : 'Foto do perfil';
-        if (sharedPhoneLabel) sharedPhoneLabel.textContent = isClinic ? 'Telefone da clinica' : 'Telefone';
-        if (uploadDropzoneTitle) uploadDropzoneTitle.textContent = isClinic ? 'Clique para enviar a logo da clÃ­nica' : 'Clique para enviar uma foto do perfil';
-        if (uploadDropzoneHint) uploadDropzoneHint.textContent = isClinic ? 'PNG, JPG ou WEBP. Use uma logo nÃ­tida e centralizada.' : 'PNG, JPG ou WEBP. Ajuste a imagem antes de salvar.';
-        if (cadastroSubmitButton) cadastroSubmitButton.textContent = isClinic ? 'Criar conta da clinica' : 'Criar conta e meu perfil';
+        if (nomeLabel) nomeLabel.textContent = isClinic ? 'Nome da clínica' : 'Nome completo';
+        if (nomeInput) nomeInput.placeholder = isClinic ? 'Nome da sua clínica' : 'Seu nome';
+        if (uploadLabelText) uploadLabelText.textContent = isClinic ? 'Logo da clínica' : 'Foto do perfil';
+        if (sharedPhoneLabel) sharedPhoneLabel.textContent = isClinic ? 'Telefone da clínica' : 'Telefone';
+        if (uploadDropzoneTitle) uploadDropzoneTitle.textContent = isClinic ? 'Clique para enviar a logo da clínica' : 'Clique para enviar uma foto do perfil';
+        if (uploadDropzoneHint) uploadDropzoneHint.textContent = isClinic ? 'PNG, JPG ou WEBP. Use uma logo nítida e centralizada.' : 'PNG, JPG ou WEBP. Ajuste a imagem antes de salvar.';
+        if (cadastroSubmitButton) cadastroSubmitButton.textContent = isClinic ? 'Criar conta da clínica' : 'Criar conta e meu perfil';
 
         if (physioRegistrationFields) {
           physioRegistrationFields.hidden = isClinic;
@@ -556,7 +556,7 @@
             fotoInput.value = '';
           } catch (error) {
             console.error(error);
-            cadastroMensagem.textContent = 'NÃ£o foi possÃ­vel ajustar essa imagem.';
+            cadastroMensagem.textContent = 'Não foi possível ajustar essa imagem.';
             cadastroMensagem.style.color = '#b91c1c';
             fotoInput.value = '';
           }
@@ -567,7 +567,7 @@
           if (!file) return;
 
           if (!file.type.startsWith('image/')) {
-            cadastroMensagem.textContent = 'Escolha um arquivo de imagem vÃ¡lido.';
+            cadastroMensagem.textContent = 'Escolha um arquivo de imagem válido.';
             cadastroMensagem.style.color = '#b91c1c';
             fotoInput.value = '';
             return;
@@ -606,7 +606,7 @@
           cadastroMensagem.textContent = '';
 
           if (password !== confirmPassword) {
-            senhaErro.textContent = 'As senhas nÃ£o sÃ£o iguais.';
+            senhaErro.textContent = 'As senhas não são iguais.';
             return;
           }
 
@@ -631,7 +631,7 @@
               const clinicEditorValue = clinicEditor?.getValue?.() || { services: [], team: [] };
 
               if (!clinicEditorValue.services.length) {
-                cadastroMensagem.textContent = 'Adicione pelo menos uma especialidade para a clinica.';
+                cadastroMensagem.textContent = 'Adicione pelo menos uma especialidade para a clínica.';
                 cadastroMensagem.style.color = '#b91c1c';
                 if (submitBtn) submitBtn.disabled = false;
                 return;
@@ -646,7 +646,7 @@
                 neighborhood: document.getElementById('clinicBairro').value.trim() || null,
               });
 
-              const clinicRegisterResponse = await window.physioApi.register({
+              const clinicPayload = {
                 accountType,
                 name: document.getElementById('nome').value.trim(),
                 email: emailValue,
@@ -662,10 +662,18 @@
                 services: clinicEditorValue.services,
                 description: document.getElementById('clinicDescription').value.trim() || null,
                 logoUrl: cadastroFotoBase64 || null,
-              });
+              };
+
+              const clinicRegisterResponse = await window.physioApi.register(clinicPayload);
+              console.info('Clinic signup backend response:', clinicRegisterResponse);
+
+              if (window.physioApi.updateMyClinicProfile) {
+                const clinicProfileResponse = await window.physioApi.updateMyClinicProfile(clinicPayload);
+                console.info('Clinic profile upsert after signup response:', clinicProfileResponse);
+              }
 
               clinicSpecialtyAutocomplete?.close?.();
-              cadastroMensagem.textContent = 'Conta da clinica criada com sucesso!';
+              cadastroMensagem.textContent = 'Conta da clínica criada com sucesso!';
               cadastroMensagem.style.color = '#166534';
 
               setTimeout(() => {
@@ -722,7 +730,7 @@
               responseText: error?.responseText,
               error,
             });
-            cadastroMensagem.textContent = error?.message || 'NÃƒÂ£o foi possÃƒÂ­vel criar sua conta agora.';
+            cadastroMensagem.textContent = error?.message || 'Não foi possível criar sua conta agora.';
             cadastroMensagem.style.color = '#b91c1c';
           } finally {
             if (submitBtn) submitBtn.disabled = false;
@@ -747,4 +755,6 @@
     </div>
   </footer></body>
 </html>
+
+
 

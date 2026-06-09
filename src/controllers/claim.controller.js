@@ -1,4 +1,4 @@
-import crypto from "crypto";
+﻿import crypto from "crypto";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { sendClaimVerificationEmail } from "../lib/mail.js";
@@ -16,7 +16,7 @@ export async function requestClaim(req, res) {
 
   const profile = await prisma.profile.findUnique({ where: { id: parsed.data.profileId } });
   if (!profile) {
-    return res.status(404).json({ message: "Perfil nao encontrado." });
+    return res.status(404).json({ message: "Perfil não encontrado." });
   }
 
   if (profile.isClaimed) {
@@ -25,7 +25,7 @@ export async function requestClaim(req, res) {
 
   const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
   if (!user) {
-    return res.status(404).json({ message: "Usuario nao encontrado." });
+    return res.status(404).json({ message: "Usuário não encontrado." });
   }
 
   if (normalizeAccountType(user.accountType) !== ACCOUNT_TYPES.PHYSIO) {
@@ -105,3 +105,4 @@ export async function verifyClaim(req, res) {
 
   return res.json({ message: "Reivindicacao de perfil confirmada com sucesso." });
 }
+

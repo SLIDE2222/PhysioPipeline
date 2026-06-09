@@ -1,4 +1,4 @@
-const profileContainer = document.getElementById('profileContainer');
+﻿const profileContainer = document.getElementById('profileContainer');
 
 function escapeHtml(value) {
   return String(value || '')
@@ -22,21 +22,21 @@ function buildClinicWhatsAppLink(clinic) {
   const digits = String(clinic?.whatsapp || clinic?.telefone || '').replace(/\D/g, '');
   if (!digits) return '#';
 
-  const clinicName = clinic?.nomeClinica || clinic?.nome || 'a clinica';
+  const clinicName = clinic?.nomeClinica || clinic?.nome || 'a clínica';
   const message = `Ola, encontrei ${clinicName} no PhysioPipeline e gostaria de saber mais sobre os atendimentos.`;
   return `https://wa.me/55${digits}?text=${encodeURIComponent(message)}`;
 }
 
 function getNeighborhoodBadge(profissional) {
-  return [profissional.cidade, profissional.bairro].filter(Boolean).join(' • ') || 'Localizacao nao informada';
+  return [profissional.cidade, profissional.bairro].filter(Boolean).join(' â€¢ ') || 'Localizacao nao informada';
 }
 
 function getClinicLocationBadge(clinic) {
-  return [clinic?.cidade, clinic?.bairro].filter(Boolean).join(' • ') || 'Localizacao nao informada';
+  return [clinic?.cidade, clinic?.bairro].filter(Boolean).join(' â€¢ ') || 'Localizacao nao informada';
 }
 
 function getAccountBadge(accountType) {
-  return window.PhysioAccountTypes?.getAccountTypeMeta?.(accountType)?.badge || '🧑 Fisioterapeuta';
+  return window.PhysioAccountTypes?.getAccountTypeMeta?.(accountType)?.badge || 'ðŸ§‘ Fisioterapeuta';
 }
 
 function recordProfileLeadEvent(profissional, type, source = 'profile') {
@@ -157,7 +157,7 @@ function renderTeamMembers(team) {
     : [];
 
   if (!members.length) {
-    return '<p>Essa clinica ainda nao adicionou fisioterapeutas da equipe.</p>';
+    return '<p>Essa clínica ainda não adicionou fisioterapeutas da equipe.</p>';
   }
 
   return `
@@ -173,7 +173,7 @@ function renderTeamMembers(team) {
 }
 
 function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
-  const clinicName = clinic?.nomeClinica || clinic?.nome || 'Clinica';
+  const clinicName = clinic?.nomeClinica || clinic?.nome || 'Clínica';
   const services = clinic?.servicesList || clinic?.servicosLista || [];
   const team = clinic?.physioTeamList || clinic?.fisioterapeutas || [];
   const logoHTML = clinic?.logo
@@ -186,7 +186,7 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
         <div class="profile-avatar-big">${logoHTML}</div>
         <div class="profile-head-info">
           <h1>${escapeHtml(clinicName)}</h1>
-          <p class="profile-specialty">${escapeHtml(clinic.responsavel || 'Clinica')}</p>
+          <p class="profile-specialty">${escapeHtml(clinic.responsavel || 'Clínica')}</p>
           <p class="profile-city">${escapeHtml(getClinicLocationBadge(clinic))}</p>
           <p class="profile-city">${escapeHtml(getAccountBadge('clinic'))}</p>
         </div>
@@ -199,12 +199,12 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
       </div>
 
       <section class="profile-section">
-        <h3>Sobre a clinica</h3>
-        <p>${escapeHtml(clinic.descricao || 'Essa clinica ainda nao adicionou uma descricao.')}</p>
+        <h3>Sobre a clínica</h3>
+        <p>${escapeHtml(clinic.descricao || 'Essa clínica ainda não adicionou uma descrição.')}</p>
       </section>
 
       <section class="profile-section">
-        <h3>Fisioterapeutas da clinica</h3>
+        <h3>Fisioterapeutas da clínica</h3>
         ${renderTeamMembers(team)}
       </section>
 
@@ -219,11 +219,11 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
 
         <div class="profile-actions">
           ${clinic.whatsapp || clinic.telefone ? `<a href="${buildClinicWhatsAppLink(clinic)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Falar no WhatsApp</a>` : ''}
-          ${showClaimButton ? `<a href="claim-clinic.html?id=${encodeURIComponent(clinic.id)}" class="btn btn-outline">Reivindicar clinica</a>` : ''}
-          ${isOwner ? '<a href="clinic-dashboard.html" class="btn btn-secondary">Editar dados da clinica</a>' : ''}
+          ${showClaimButton ? `<a href="claim-clinic.html?id=${encodeURIComponent(clinic.id)}" class="btn btn-outline">Reivindicar clínica</a>` : ''}
+          ${isOwner ? '<a href="clinic-dashboard.html" class="btn btn-secondary">Editar dados da clínica</a>' : ''}
           <a href="buscar.html" class="btn btn-secondary">Voltar</a>
         </div>
-        ${showClaimButton ? '<p class="claim-profile-warning"><strong>Essa clinica e sua?</strong> Envie uma comprovacao de vinculo com o CNPJ para solicitar acesso ao perfil.</p>' : ''}
+        ${showClaimButton ? '<p class="claim-profile-warning"><strong>Essa clínica é sua?</strong> Envie uma comprovação de vínculo com o CNPJ para solicitar acesso ao perfil.</p>' : ''}
       </section>
     </article>
   `;
@@ -231,7 +231,7 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
 
 function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton) {
   const specialties = getProfileSpecialties(profissional);
-  const specialtiesText = specialties.length ? specialties.join(' • ') : '-';
+  const specialtiesText = specialties.length ? specialties.join(' â€¢ ') : '-';
   const fotoHTML = profissional.foto
     ? `<img src="${escapeHtml(profissional.foto)}" alt="${escapeHtml(profissional.nome)}" class="clickable-avatar" loading="lazy" decoding="async">`
     : `<span>${escapeHtml((profissional.nome || '?').charAt(0).toUpperCase())}</span>`;
@@ -260,7 +260,7 @@ function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton) {
 
       <section class="profile-section">
         <h3>Sobre</h3>
-        <p>${escapeHtml(profissional.descricao || 'Esse profissional ainda nao adicionou uma descricao.')}</p>
+        <p>${escapeHtml(profissional.descricao || 'Esse profissional ainda não adicionou uma descrição.')}</p>
       </section>
 
       ${isOwner ? renderLeadSummaryCard() : ''}
@@ -288,9 +288,7 @@ function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton) {
 }
 
 async function resolveClinicProfileForSession(loggedUser) {
-  if (loggedUser?.accountType !== 'clinic') return null;
-
-  console.info('PhysioPipeline clinic profile lookup accountType:', loggedUser.accountType);
+  console.info('PhysioPipeline clinic profile lookup accountType:', loggedUser?.accountType || null);
 
   if (loggedUser?.clinicProfile?.id) {
     console.info('PhysioPipeline clinic profile lookup route called: auth cache');
@@ -309,6 +307,19 @@ async function resolveClinicProfileForSession(loggedUser) {
   }
 }
 
+async function resolvePhysioProfileForSession(loggedUser) {
+  if (loggedUser?.profile?.id) return loggedUser.profile;
+  if (!window.physioApi?.fetchMyProfile) return null;
+
+  try {
+    console.info('PhysioPipeline physio profile lookup route called: /profiles/me');
+    return await window.physioApi.fetchMyProfile();
+  } catch (error) {
+    console.info('PhysioPipeline physio profile lookup result: none', error?.message || error);
+    return null;
+  }
+}
+
 async function renderProfilePage() {
   if (!profileContainer) return;
 
@@ -319,22 +330,30 @@ async function renderProfilePage() {
   if (!profileId) {
     const loggedUser = await (window.getLoggedUser ? window.getLoggedUser(true) : Promise.resolve(null));
 
-    if (loggedUser?.accountType === 'clinic') {
-      const clinicProfile = await resolveClinicProfileForSession(loggedUser);
+    console.info('PhysioPipeline profile lookup current user id:', loggedUser?.id || null);
+    console.info('PhysioPipeline profile lookup detected role/type:', loggedUser?.accountType || null);
 
-      if (clinicProfile?.id) {
-        window.location.replace(`profile.html?type=clinic&id=${encodeURIComponent(clinicProfile.id)}`);
-        return;
-      }
+    const [physioProfile, clinicProfile] = await Promise.all([
+      resolvePhysioProfileForSession(loggedUser),
+      resolveClinicProfileForSession(loggedUser),
+    ]);
 
-      window.location.replace('clinic-dashboard.html');
+    console.info('PhysioPipeline profile lookup physiotherapist profile result:', physioProfile?.id || null);
+    console.info('PhysioPipeline profile lookup clinic profile result:', clinicProfile?.id || null);
+
+    if (clinicProfile?.id) {
+      console.info('PhysioPipeline profile lookup final selected profile type:', 'clinic');
+      window.location.replace(`profile.html?type=clinic&id=${encodeURIComponent(clinicProfile.id)}`);
       return;
     }
 
-    if (loggedUser?.profile?.id) {
-      window.location.replace(`profile.html?id=${encodeURIComponent(loggedUser.profile.id)}`);
+    if (physioProfile?.id) {
+      console.info('PhysioPipeline profile lookup final selected profile type:', 'physio');
+      window.location.replace(`profile.html?id=${encodeURIComponent(physioProfile.id)}`);
       return;
     }
+
+    console.info('PhysioPipeline profile lookup final selected profile type:', null);
 
     const completeHref = loggedUser?.accountType === 'clinic'
       ? 'clinic-dashboard.html'
@@ -342,8 +361,8 @@ async function renderProfilePage() {
 
     profileContainer.innerHTML = `
       <article class="profile-card-full">
-        <h2>Perfil ainda nao encontrado</h2>
-        <p>Nao encontramos um perfil publicado ligado a esta sessao.</p>
+        <h2>Perfil ainda não encontrado</h2>
+        <p>Não encontramos um perfil publicado ligado a esta sessão.</p>
         <div class="profile-actions">
           <a href="${completeHref}" class="btn btn-primary">Completar cadastro</a>
           <a href="buscar.html" class="btn btn-secondary">Buscar fisioterapeuta</a>
@@ -364,7 +383,7 @@ async function renderProfilePage() {
 
     if (profileType === 'clinic') {
       const clinic = await window.physioApi.fetchClinic(profileId);
-      if (!clinic) throw new Error('Essa clinica nao existe ou nao pode ser carregada.');
+      if (!clinic) throw new Error('Essa clínica não existe ou não pode ser carregada.');
 
       const isClinicOwner = loggedUser?.accountType === 'clinic' && loggedUser?.id === clinic?.userId;
       const showClinicClaimButton = !isClinicOwner && Boolean(clinic?.isClaimable);
@@ -374,7 +393,7 @@ async function renderProfilePage() {
     }
 
     const profissional = await window.physioApi.fetchProfile(profileId);
-    if (!profissional) throw new Error('Esse perfil nao existe ou nao pode ser carregado.');
+    if (!profissional) throw new Error('Esse perfil não existe ou não pode ser carregado.');
 
     const linkedProfileId = loggedUser?.profile?.id || null;
     const isOwner = linkedProfileId === profissional.id;
@@ -403,7 +422,7 @@ async function renderProfilePage() {
     profileContainer.innerHTML = `
       <article class="profile-card-full">
         <h2>Perfil nao encontrado</h2>
-        <p>${escapeHtml(error.message || 'Esse perfil nao existe ou nao pode ser carregado.')}</p>
+        <p>${escapeHtml(error.message || 'Esse perfil não existe ou não pode ser carregado.')}</p>
         <div class="profile-actions">
           <a href="buscar.html" class="btn btn-secondary">Voltar para busca</a>
         </div>
@@ -433,3 +452,8 @@ function setupImageModal() {
 }
 
 renderProfilePage();
+
+
+
+
+

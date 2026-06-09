@@ -1,4 +1,4 @@
-import { z } from "zod";
+﻿import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { ACCOUNT_TYPES, normalizeAccountType } from "../constants/account-types.js";
 
@@ -29,7 +29,7 @@ function cleanOption(value, maxLength = 160) {
     .trim()
     .slice(0, maxLength);
 
-  if (!option || option === "-" || /^n[a�]o informado$/i.test(option)) return null;
+  if (!option || option === "-" || /^n[aï¿½]o informado$/i.test(option)) return null;
 
   return option;
 }
@@ -67,7 +67,7 @@ function isClinicAccount(user) {
 // Clinics use a separate private dashboard/data model so public physio search
 // continues to read only from the existing Profile table.
 function getPhysioOnlyMessage() {
-  return "Esta conta e do tipo clinica. Use o dashboard da clinica para editar os dados privados da conta.";
+  return "Esta conta é do tipo clínica. Use o dashboard da clínica para editar os dados privados da conta.";
 }
 
 async function resolveOwnedProfile(userId, userEmail) {
@@ -179,7 +179,7 @@ export async function listProfiles(req, res) {
 export async function getProfile(req, res) {
   const profile = await prisma.profile.findUnique({ where: { id: req.params.id } });
   if (!profile) {
-    return res.status(404).json({ message: "Perfil nao encontrado." });
+    return res.status(404).json({ message: "Perfil não encontrado." });
   }
   return res.json({ profile });
 }
@@ -188,7 +188,7 @@ export async function getMyProfile(req, res) {
   const user = await findCurrentUser(req.user.userId);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuario nao encontrado." });
+    return res.status(404).json({ message: "Usuário não encontrado." });
   }
 
   if (isClinicAccount(user)) {
@@ -216,7 +216,7 @@ export async function createProfile(req, res) {
   const user = await findCurrentUser(req.user.userId);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuario nao encontrado." });
+    return res.status(404).json({ message: "Usuário não encontrado." });
   }
 
   if (isClinicAccount(user)) {
@@ -265,7 +265,7 @@ export async function updateMyProfile(req, res) {
   const parsed = createProfileSchema.partial().safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
-      message: "Atualizacao de perfil invalida.",
+      message: "Atualização de perfil inválida.",
       errors: parsed.error.flatten(),
     });
   }
@@ -273,7 +273,7 @@ export async function updateMyProfile(req, res) {
   const user = await findCurrentUser(req.user.userId);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuario nao encontrado." });
+    return res.status(404).json({ message: "Usuário não encontrado." });
   }
 
   if (isClinicAccount(user)) {
@@ -326,3 +326,6 @@ export async function updateMyProfile(req, res) {
 
   return res.json({ profile: updated });
 }
+
+
+

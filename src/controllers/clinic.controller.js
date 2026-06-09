@@ -37,7 +37,7 @@ function clean(value) {
 }
 
 function getClinicOnlyMessage() {
-  return "Esta area e exclusiva para contas de clinica.";
+  return "Esta área é exclusiva para contas de clínica.";
 }
 
 function cleanOption(value, maxLength = 160) {
@@ -171,7 +171,7 @@ export async function getClinic(req, res) {
   });
 
   if (!clinicProfile) {
-    return res.status(404).json({ message: "Clinica nao encontrada." });
+    return res.status(404).json({ message: "Clínica não encontrada." });
   }
 
   return res.json({ clinicProfile: decorateClinicProfile(clinicProfile) });
@@ -181,7 +181,7 @@ export async function getMyClinicProfile(req, res) {
   const user = await findCurrentUser(req.user.userId);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuario nao encontrado." });
+    return res.status(404).json({ message: "Usuário não encontrado." });
   }
 
   if (!isClinicAccount(user)) {
@@ -191,7 +191,7 @@ export async function getMyClinicProfile(req, res) {
   // Clinic accounts always need a persisted ClinicProfile linked to the
   // authenticated user id. If an older clinic user exists without one, create a
   // minimal profile now so the dashboard/profile lookup never falls through to
-  // the physiotherapist-only "perfil nao encontrado" state.
+  // the physiotherapist-only "perfil não encontrado" state.
   const clinicProfile = user.clinicProfile || await prisma.clinicProfile.create({
     data: {
       userId: user.id,
@@ -299,7 +299,7 @@ export async function upsertMyClinicProfile(req, res) {
   const parsed = clinicProfileSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({
-      message: "Dados da clinica invalidos.",
+      message: "Dados da clínica inválidos.",
       errors: parsed.error.flatten(),
     });
   }
@@ -307,7 +307,7 @@ export async function upsertMyClinicProfile(req, res) {
   const user = await findCurrentUser(req.user.userId);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuario nao encontrado." });
+    return res.status(404).json({ message: "Usuário não encontrado." });
   }
 
   if (!isClinicAccount(user)) {
@@ -353,4 +353,6 @@ export async function upsertMyClinicProfile(req, res) {
 
   return res.json({ clinicProfile: decorateClinicProfile(clinicProfile) });
 }
+
+
 

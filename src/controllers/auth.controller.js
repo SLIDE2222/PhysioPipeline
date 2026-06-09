@@ -104,6 +104,35 @@ function normalizeClinicServicesForRegister(value) {
   return services.length ? JSON.stringify(services) : null;
 }
 
+
+async function ensureClinicProfileForUser(user, fallback = {}) {
+  if (!user || normalizeAccountType(user.accountType) !== ACCOUNT_TYPES.CLINIC) return user;
+  if (user.clinicProfile?.id) return user;
+
+  const clinicProfile = await prisma.clinicProfile.create({
+    data: {
+      userId: user.id,
+      clinicName: cleanOptionalString(fallback.clinicName || user.name || user.email, 160),
+      responsibleName: cleanOptionalString(fallback.responsibleName || user.name, 160),
+      email: user.email,
+      address: cleanOptionalString(fallback.address, 200),
+      city: cleanOptionalString(fallback.city, 120),
+      neighborhood: cleanOptionalString(fallback.neighborhood, 120),
+      phone: cleanOptionalString(fallback.phone || user.phone, 40),
+      whatsapp: cleanOptionalString(fallback.whatsapp || fallback.phone || user.phone, 40),
+      services: normalizeClinicServicesForRegister(fallback.specialties || fallback.services),
+      logoUrl: cleanOptionalString(fallback.logoUrl, 2000000),
+      description: cleanOptionalString(fallback.description, 2000),
+    },
+  });
+
+  console.info("Clinic profile backfilled for user:", {
+    userId: user.id,
+    clinicProfileId: clinicProfile.id,
+  });
+
+  return { ...user, clinicProfile };
+}
 function sanitizeUser(user) {
   if (!user) return null;
 
@@ -130,7 +159,7 @@ async function verifyGoogleCredential(credential) {
   const googleClientId = String(process.env.GOOGLE_CLIENT_ID || "").trim();
 
   if (!googleClientId) {
-    const error = new Error("Login com Google nÃ£o estÃ¡ configurado.");
+    const error = new Error("Login com Google não está configurado.");
     error.status = 500;
     throw error;
   }
@@ -142,7 +171,7 @@ async function verifyGoogleCredential(credential) {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const error = new Error(payload.error_description || "Credencial do Google invÃ¡lida.");
+    const error = new Error(payload.error_description || "Credencial do Google inválida.");
     error.status = 401;
     throw error;
   }
@@ -154,7 +183,7 @@ async function verifyGoogleCredential(credential) {
   }
 
   if (String(payload.email_verified) !== "true") {
-    const error = new Error("O e-mail do Google nÃ£o estÃ¡ verificado.");
+    const error = new Error("O e-mail do Google não está verificado.");
     error.status = 401;
     throw error;
   }
@@ -162,7 +191,7 @@ async function verifyGoogleCredential(credential) {
   const email = normalizeEmail(payload.email);
 
   if (!email) {
-    const error = new Error("A conta Google nÃ£o retornou um e-mail.");
+    const error = new Error("A conta Google não retornou um e-mail.");
     error.status = 401;
     throw error;
   }
@@ -181,7 +210,7 @@ export async function googleLogin(req, res) {
     const rawAccountType = req.body?.accountType;
 
     if (!credential) {
-      return res.status(400).json({ message: "Credencial do Google Ã© obrigatÃ³ria." });
+      return res.status(400).json({ message: "Credencial do Google é obrigatória." });
     }
 
     if (rawAccountType !== undefined && !isValidAccountType(rawAccountType)) {
@@ -254,36 +283,19 @@ export async function googleLogin(req, res) {
       }
     }
 
-    if (
-      normalizeAccountType(user.accountType) === ACCOUNT_TYPES.CLINIC &&
-      !user.clinicProfile
-    ) {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          clinicProfile: {
-            create: {
-              clinicName: fullName,
-              responsibleName: fullName,
-              email: user.email,
-              phone: user.phone || null,
-              whatsapp: user.phone || null,
-            },
-          },
-        },
-        include: {
-          profiles: true,
-          clinicProfile: true,
-        },
-      });
-    }
+    user = await ensureClinicProfileForUser(user, {
+      clinicName: fullName,
+      responsibleName: fullName,
+      phone: user.phone || null,
+      whatsapp: user.phone || null,
+    });
 
     if (normalizeAccountType(user.accountType) === ACCOUNT_TYPES.PHYSIO && !user.profiles?.length) {
       const profile = await prisma.profile.create({
         data: {
           name: firstName,
-          specialty: "NÃ£o informado",
-          city: "NÃ£o informado",
+          specialty: "Não informado",
+          city: "Não informado",
           neighborhood: null,
           phone: user.phone || null,
           bio: "Perfil criado com Google. Complete seus dados profissionais para aparecer melhor nas buscas.",
@@ -307,17 +319,19 @@ export async function googleLogin(req, res) {
       });
     }
 
-    const token = createToken(user);
+    const resolvedUser = await ensureClinicProfileForUser(user);
+
+    const token = createToken(resolvedUser);
     res.cookie(COOKIE_NAME, token, getCookieOptions());
 
     return res.json({
-      user: sanitizeUser(user),
+      user: sanitizeUser(resolvedUser),
       token,
     });
   } catch (error) {
     console.error("Google login error:", error);
     return res.status(error.status || 500).json({
-      message: error.message || "NÃ£o foi possÃ­vel entrar com Google.",
+      message: error.message || "Não foi possível entrar com Google.",
     });
   }
 }
@@ -332,7 +346,7 @@ export async function register(req, res) {
     const phone = cleanOptionalString(req.body?.phone ?? req.body?.whatsapp, 40);
 
     if (!email || !password) {
-      return res.status(400).json({ message: "E-mail e senha sÃ£o obrigatÃ³rios." });
+      return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
     }
 
     if (password.length < 6) {
@@ -350,7 +364,7 @@ export async function register(req, res) {
     });
 
     if (existingUser) {
-      return res.status(409).json({ message: "Este e-mail jÃ¡ estÃ¡ cadastrado." });
+      return res.status(409).json({ message: "Este e-mail já está cadastrado." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -400,23 +414,25 @@ export async function register(req, res) {
       },
     });
 
+    const resolvedUser = await ensureClinicProfileForUser(user, req.body || {});
+
     if (accountType === ACCOUNT_TYPES.CLINIC) {
       console.info("Clinic signup created records:", {
-        userId: user.id,
-        clinicProfileId: user.clinicProfile?.id || null,
+        userId: resolvedUser.id,
+        clinicProfileId: resolvedUser.clinicProfile?.id || null,
       });
     }
 
-    const token = createToken(user);
+    const token = createToken(resolvedUser);
     res.cookie(COOKIE_NAME, token, getCookieOptions());
 
     return res.status(201).json({
-      user: sanitizeUser(user),
+      user: sanitizeUser(resolvedUser),
       token,
     });
   } catch (error) {
     console.error("Register error:", error);
-    return res.status(500).json({ message: error.message || "NÃ£o foi possÃ­vel criar a conta." });
+    return res.status(500).json({ message: error.message || "Não foi possível criar a conta." });
   }
 }
 
@@ -426,7 +442,7 @@ export async function login(req, res) {
     const password = String(req.body?.password || "");
 
     if (!email || !password) {
-      return res.status(400).json({ message: "E-mail e senha sÃ£o obrigatÃ³rios." });
+      return res.status(400).json({ message: "E-mail e senha são obrigatórios." });
     }
 
     const user = await prisma.user.findUnique({
@@ -438,25 +454,27 @@ export async function login(req, res) {
     });
 
     if (!user) {
-      return res.status(401).json({ message: "E-mail ou senha invÃ¡lidos." });
+      return res.status(401).json({ message: "E-mail ou senha inválidos." });
     }
 
     const passwordIsValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!passwordIsValid) {
-      return res.status(401).json({ message: "E-mail ou senha invÃ¡lidos." });
+      return res.status(401).json({ message: "E-mail ou senha inválidos." });
     }
 
-    const token = createToken(user);
+    const resolvedUser = await ensureClinicProfileForUser(user);
+
+    const token = createToken(resolvedUser);
     res.cookie(COOKIE_NAME, token, getCookieOptions());
 
     return res.json({
-      user: sanitizeUser(user),
+      user: sanitizeUser(resolvedUser),
       token,
     });
   } catch (error) {
     console.error("Login error:", error);
-    return res.status(500).json({ message: error.message || "NÃ£o foi possÃ­vel entrar." });
+    return res.status(500).json({ message: error.message || "Não foi possível entrar." });
   }
 }
 
@@ -467,7 +485,7 @@ export async function logout(_req, res) {
     secure: process.env.NODE_ENV === "production",
   });
 
-  return res.json({ message: "SessÃ£o encerrada." });
+  return res.json({ message: "Sessão encerrada." });
 }
 
 export async function me(req, res) {
@@ -481,15 +499,17 @@ export async function me(req, res) {
     });
 
     if (!user) {
-      return res.status(404).json({ message: "UsuÃ¡rio nÃ£o encontrado." });
+      return res.status(404).json({ message: "Usuário não encontrado." });
     }
 
+    const resolvedUser = await ensureClinicProfileForUser(user);
+
     return res.json({
-      user: sanitizeUser(user),
+      user: sanitizeUser(resolvedUser),
     });
   } catch (error) {
     console.error("Me error:", error);
-    return res.status(500).json({ message: error.message || "NÃ£o foi possÃ­vel carregar o usuÃ¡rio." });
+    return res.status(500).json({ message: error.message || "Não foi possível carregar o usuário." });
   }
 }
 
@@ -498,7 +518,7 @@ export async function forgotPassword(req, res) {
     const email = normalizeEmail(req.body?.email);
 
     if (!email) {
-      return res.status(400).json({ message: "E-mail Ã© obrigatÃ³rio." });
+      return res.status(400).json({ message: "E-mail é obrigatório." });
     }
 
     const user = await prisma.user.findUnique({
@@ -509,7 +529,7 @@ export async function forgotPassword(req, res) {
     // Generic response so people cannot check which emails exist.
     if (!user) {
       return res.json({
-        message: "Se o e-mail existir, o link de recuperaÃ§Ã£o foi enviado.",
+        message: "Se o e-mail existir, o link de recuperação foi enviado.",
       });
     }
 
@@ -535,38 +555,38 @@ export async function forgotPassword(req, res) {
       sender: mailConfig.user,
       to: email,
       replyTo: mailConfig.user,
-      subject: "RecuperaÃ§Ã£o de senha - PhysioPipeline",
+      subject: "Recuperação de senha - PhysioPipeline",
       text: [
-        "RecuperaÃ§Ã£o de senha",
+        "Recuperação de senha",
         "",
-        "Recebemos uma solicitaÃ§Ã£o para redefinir sua senha no PhysioPipeline.",
+        "Recebemos uma solicitação para redefinir sua senha no PhysioPipeline.",
         `Abra este link para criar uma nova senha: ${resetLink}`,
         "",
         "Este link expira em 30 minutos.",
-        "Se vocÃª nÃ£o solicitou isso, ignore este e-mail.",
+        "Se você não solicitou isso, ignore este e-mail.",
       ].join("\n"),
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a">
-          <h2>RecuperaÃ§Ã£o de senha</h2>
-          <p>Recebemos uma solicitaÃ§Ã£o para redefinir sua senha no <strong>PhysioPipeline</strong>.</p>
+          <h2>Recuperação de senha</h2>
+          <p>Recebemos uma solicitação para redefinir sua senha no <strong>PhysioPipeline</strong>.</p>
           <p>
             <a href="${resetLink}" style="display:inline-block;padding:12px 18px;background:#2563eb;color:#fff;text-decoration:none;border-radius:10px;">
               Criar nova senha
             </a>
           </p>
           <p>Este link expira em <strong>30 minutos</strong>.</p>
-          <p>Se vocÃª nÃ£o solicitou isso, ignore este e-mail.</p>
+          <p>Se você não solicitou isso, ignore este e-mail.</p>
         </div>
       `,
     });
 
     return res.json({
-      message: "Se o e-mail existir, o link de recuperaÃ§Ã£o foi enviado.",
+      message: "Se o e-mail existir, o link de recuperação foi enviado.",
     });
   } catch (error) {
     console.error("Forgot password error:", error);
     return res.status(500).json({
-      message: error.message || "NÃ£o foi possÃ­vel enviar o link de recuperaÃ§Ã£o.",
+      message: error.message || "Não foi possível enviar o link de recuperação.",
     });
   }
 }
@@ -577,7 +597,7 @@ export async function updatePassword(req, res) {
     const password = String(req.body?.password || "");
 
     if (!token || !password) {
-      return res.status(400).json({ message: "Token e nova senha sÃ£o obrigatÃ³rios." });
+      return res.status(400).json({ message: "Token e nova senha são obrigatórios." });
     }
 
     if (password.length < 6) {
@@ -589,7 +609,7 @@ export async function updatePassword(req, res) {
     });
 
     if (!resetToken) {
-      return res.status(400).json({ message: "Token invÃ¡lido ou expirado." });
+      return res.status(400).json({ message: "Token inválido ou expirado." });
     }
 
     if (resetToken.expiresAt < new Date()) {
@@ -604,7 +624,7 @@ export async function updatePassword(req, res) {
 
     if (!user) {
       await prisma.passwordResetToken.deleteMany({ where: { email: resetToken.email } });
-      return res.status(400).json({ message: "Token invÃ¡lido ou expirado." });
+      return res.status(400).json({ message: "Token inválido ou expirado." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -623,10 +643,14 @@ export async function updatePassword(req, res) {
   } catch (error) {
     console.error("Update password error:", error);
     return res.status(500).json({
-      message: error.message || "NÃ£o foi possÃ­vel atualizar a senha.",
+      message: error.message || "Não foi possível atualizar a senha.",
     });
   }
 }
+
+
+
+
 
 
 

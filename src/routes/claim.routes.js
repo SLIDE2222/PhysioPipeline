@@ -1,4 +1,4 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { mailConfig, sendMailOrThrow } from "../lib/mail.js";
 
@@ -65,7 +65,7 @@ router.post("/request", async (req, res) => {
     });
 
     if (!profile) {
-      return res.status(404).json({ message: "Perfil nao encontrado." });
+      return res.status(404).json({ message: "Perfil não encontrado." });
     }
 
     if (profile.isClaimed) {
@@ -158,7 +158,7 @@ router.post("/clinic-request", async (req, res) => {
     }
 
     if (!clinicProfileId) {
-      return res.status(400).json({ message: "Perfil da clinica e obrigatorio." });
+      return res.status(400).json({ message: "Perfil da clínica e obrigatorio." });
     }
 
     const normalizedEmail = normalizeEmail(responsibleEmail);
@@ -169,7 +169,7 @@ router.post("/clinic-request", async (req, res) => {
     const normalizedCnpj = String(cnpj || "").trim();
 
     if (!normalizedClinicName) {
-      return res.status(400).json({ message: "Nome da clinica e obrigatorio." });
+      return res.status(400).json({ message: "Nome da clínica e obrigatorio." });
     }
 
     if (!normalizedCnpj) {
@@ -189,7 +189,7 @@ router.post("/clinic-request", async (req, res) => {
     }
 
     if (!normalizedRoleOrRelation) {
-      return res.status(400).json({ message: "Cargo ou vinculo com a clinica e obrigatorio." });
+      return res.status(400).json({ message: "Cargo ou vínculo com a clínica e obrigatorio." });
     }
 
     if (!normalizeBoolean(authorizationConfirmed)) {
@@ -197,7 +197,7 @@ router.post("/clinic-request", async (req, res) => {
     }
 
     if (!fileName || !fileContentBase64) {
-      return res.status(400).json({ message: "Envie um comprovante do CNPJ ou do vinculo com a clinica." });
+      return res.status(400).json({ message: "Envie um comprovante do CNPJ ou do vínculo com a clínica." });
     }
 
     const clinicProfile = await prisma.clinicProfile.findUnique({
@@ -205,14 +205,14 @@ router.post("/clinic-request", async (req, res) => {
     });
 
     if (!clinicProfile) {
-      return res.status(404).json({ message: "Perfil de clinica nao encontrado." });
+      return res.status(404).json({ message: "Perfil de clínica não encontrado." });
     }
 
     if (clinicProfile.userId) {
-      return res.status(400).json({ message: "Essa clinica ja esta vinculada a uma conta." });
+      return res.status(400).json({ message: "Essa clínica ja esta vinculada a uma conta." });
     }
 
-    const attachmentName = sanitizeFilename(fileName, "comprovacao-clinica.pdf");
+    const attachmentName = sanitizeFilename(fileName, "comprovação-clínica.pdf");
     const attachmentMime = String(fileMime || "application/pdf").trim() || "application/pdf";
     const base64Body = String(fileContentBase64 || "").replace(/^data:.*;base64,/, "").trim();
 
@@ -236,32 +236,32 @@ router.post("/clinic-request", async (req, res) => {
       sender: mailConfig.user,
       to: CLAIM_REVIEW_EMAIL,
       replyTo: normalizedEmail,
-      subject: "Nova solicitacao de reivindicacao de clinica - PhysioPipeline",
+      subject: "Nova solicitacao de reivindicacao de clínica - PhysioPipeline",
       text: [
-        "Nova solicitacao de reivindicacao de clinica recebida.",
+        "Nova solicitacao de reivindicacao de clínica recebida.",
         "",
         `Claim ID: ${clinicClaim.id}`,
         `Clinic profile id: ${clinicProfile.id}`,
-        `Nome da clinica: ${normalizedClinicName}`,
+        `Nome da clínica: ${normalizedClinicName}`,
         `CNPJ: ${normalizedCnpj}`,
         `Nome do responsavel: ${normalizedResponsibleName}`,
         `E-mail: ${normalizedEmail}`,
         `WhatsApp: ${normalizedWhatsapp}`,
-        `Cargo/vinculo: ${normalizedRoleOrRelation}`,
+        `Cargo/vínculo: ${normalizedRoleOrRelation}`,
         "Confirmacao de autorizacao: sim",
         `Anexo: ${attachmentName}`,
       ].join("\n"),
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.5">
-          <h2>Nova solicitacao de reivindicacao de clinica</h2>
+          <h2>Nova solicitacao de reivindicacao de clínica</h2>
           <p><strong>Claim ID:</strong> ${clinicClaim.id}</p>
           <p><strong>Clinic profile id:</strong> ${clinicProfile.id}</p>
-          <p><strong>Nome da clinica:</strong> ${normalizedClinicName}</p>
+          <p><strong>Nome da clínica:</strong> ${normalizedClinicName}</p>
           <p><strong>CNPJ:</strong> ${normalizedCnpj}</p>
           <p><strong>Nome do responsavel:</strong> ${normalizedResponsibleName}</p>
           <p><strong>E-mail:</strong> ${normalizedEmail}</p>
           <p><strong>WhatsApp:</strong> ${normalizedWhatsapp}</p>
-          <p><strong>Cargo/vinculo:</strong> ${normalizedRoleOrRelation}</p>
+          <p><strong>Cargo/vínculo:</strong> ${normalizedRoleOrRelation}</p>
           <p><strong>Confirmacao de autorizacao:</strong> sim</p>
           <p><strong>Anexo:</strong> ${attachmentName}</p>
         </div>
@@ -278,20 +278,22 @@ router.post("/clinic-request", async (req, res) => {
     });
 
     return res.status(201).json({
-      message: "Solicitacao de reivindicacao da clinica enviada com sucesso.",
+      message: "Solicitacao de reivindicacao da clínica enviada com sucesso.",
       claimRequestId: clinicClaim.id,
       emailSent: true,
     });
   } catch (error) {
-    console.error("Erro na rota de reivindicacao de clinica:", error);
+    console.error("Erro na rota de reivindicacao de clínica:", error);
 
     const detailedMessage = error?.response || error?.message || "Erro desconhecido ao enviar o e-mail.";
 
     return res.status(500).json({
-      message: `Nao foi possivel enviar a reivindicacao da clinica: ${detailedMessage}`,
+      message: `Nao foi possivel enviar a reivindicacao da clínica: ${detailedMessage}`,
       error: detailedMessage,
     });
   }
 });
 
 export default router;
+
+

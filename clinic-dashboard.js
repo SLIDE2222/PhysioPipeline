@@ -1,4 +1,4 @@
-const clinicDashboardForm = document.getElementById('clinicDashboardForm');
+﻿const clinicDashboardForm = document.getElementById('clinicDashboardForm');
 const clinicDashboardMessage = document.getElementById('clinicDashboardMessage');
 const clinicLogoInput = document.getElementById('clinicLogo');
 const clinicLogoPreview = document.getElementById('clinicLogoPreview');
@@ -59,7 +59,7 @@ async function loadClinicDashboard() {
     const clinicProfile = await window.physioApi.fetchMyClinicProfile();
     fillClinicForm(clinicProfile);
   } catch (error) {
-    setClinicMessage(error.message || 'Nao foi possivel carregar os dados da clinica.', '#b91c1c');
+    setClinicMessage(error.message || 'Não foi possível carregar os dados da clínica.', '#b91c1c');
   }
 }
 
@@ -81,7 +81,7 @@ if (clinicLogoInput) {
       clinicLogoInput.value = '';
     } catch (error) {
       console.error(error);
-      setClinicMessage('Nao foi possivel ajustar essa imagem.', '#b91c1c');
+      setClinicMessage('Não foi possível ajustar essa imagem.', '#b91c1c');
       clinicLogoInput.value = '';
     }
   }
@@ -143,9 +143,9 @@ if (clinicDashboardForm) {
         description: document.getElementById('clinicDescription').value.trim() || null,
       });
 
-      setClinicMessage('Dados da clinica salvos com sucesso!', '#166534');
+      setClinicMessage('Dados da clínica salvos com sucesso!', '#166534');
     } catch (error) {
-      setClinicMessage(error.message || 'Nao foi possivel salvar os dados da clinica.', '#b91c1c');
+      setClinicMessage(error.message || 'Não foi possível salvar os dados da clínica.', '#b91c1c');
     } finally {
       if (submitBtn) submitBtn.disabled = false;
     }
@@ -154,3 +154,5 @@ if (clinicDashboardForm) {
   clinicEditor?.setValue({ services: [], team: [] });
   loadClinicDashboard();
 }
+
+
