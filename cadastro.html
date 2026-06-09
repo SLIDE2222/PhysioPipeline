@@ -730,7 +730,11 @@
               responseText: error?.responseText,
               error,
             });
-            cadastroMensagem.textContent = error?.message || 'Não foi possível criar sua conta agora.';
+            const isClinicSignup = getSelectedAccountType() === 'clinic';
+            const isMissingClinicRoute = isClinicSignup && error?.status === 404;
+            cadastroMensagem.textContent = isMissingClinicRoute
+              ? 'Não foi possível salvar o perfil da clínica agora. Tente novamente em alguns instantes.'
+              : (error?.message || 'Não foi possível criar sua conta agora.');
             cadastroMensagem.style.color = '#b91c1c';
           } finally {
             if (submitBtn) submitBtn.disabled = false;
@@ -755,6 +759,7 @@
     </div>
   </footer></body>
 </html>
+
 
 
 

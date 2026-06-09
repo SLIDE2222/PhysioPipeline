@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
@@ -48,6 +48,22 @@ app.use("/claims", claimRoutes);
 app.use("/lead-events", leadRoutes);
 app.use("/contact", contactRoutes);
 
+// Production/static hosts sometimes configure the frontend with an /api base
+// path. Keep both route shapes available so clinic profile calls never fall
+// through to Express' HTML 404 handler because of a base-path mismatch.
+app.use("/api/auth", authRoutes);
+app.use("/api/profiles", profileRoutes);
+app.use("/api/clinics", clinicRoutes);
+app.use("/api/claims", claimRoutes);
+app.use("/api/lead-events", leadRoutes);
+app.use("/api/contact", contactRoutes);
+
+app.use((req, res) => {
+  res.status(404).json({
+    message: `Rota não encontrada: ${req.method} ${req.originalUrl}`,
+  });
+});
+
 app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(err.statusCode || 500).json({
@@ -59,3 +75,4 @@ const port = Number(process.env.PORT || 3000);
 app.listen(port, () => {
   console.log(`PhysioPipeline API running on http://localhost:${port}`);
 });
+
