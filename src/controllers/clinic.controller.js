@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { ACCOUNT_TYPES, normalizeAccountType } from "../constants/account-types.js";
 
@@ -13,7 +13,6 @@ const clinicTeamMemberSchema = z.object({
 const clinicProfileSchema = z.object({
   clinicName: z.string().min(2).max(160).optional().nullable(),
   responsibleName: z.string().min(2).max(160).optional().nullable(),
-  email: z.string().email().optional().nullable(),
   address: z.string().min(2).max(200).optional().nullable(),
   city: z.string().min(2).max(120).optional().nullable(),
   neighborhood: z.string().min(2).max(120).optional().nullable(),
@@ -37,7 +36,7 @@ function clean(value) {
 }
 
 function getClinicOnlyMessage() {
-  return "Esta área é exclusiva para contas de clínica.";
+  return "Esta Ãƒ¡rea Ãƒ© exclusiva para contas de clÃƒ­nica.";
 }
 
 function cleanOption(value, maxLength = 160) {
@@ -171,7 +170,7 @@ export async function getClinic(req, res) {
   });
 
   if (!clinicProfile) {
-    return res.status(404).json({ message: "Clínica não encontrada." });
+    return res.status(404).json({ message: "ClÃƒ­nica não encontrada." });
   }
 
   return res.json({ clinicProfile: decorateClinicProfile(clinicProfile) });
@@ -181,7 +180,7 @@ export async function getMyClinicProfile(req, res) {
   const user = await findCurrentUser(req.user.userId);
 
   if (!user) {
-    return res.status(404).json({ error: "Usuário não encontrado.", message: "Usuário não encontrado." });
+    return res.status(404).json({ error: "UsuÃƒ¡rio não encontrado.", message: "UsuÃƒ¡rio não encontrado." });
   }
 
   if (!isClinicAccount(user)) {
@@ -197,7 +196,6 @@ export async function getMyClinicProfile(req, res) {
       userId: user.id,
       clinicName: user.name || user.email,
       responsibleName: user.name || null,
-      email: user.email,
       phone: user.phone || null,
       whatsapp: user.phone || null,
       services: null,
@@ -307,8 +305,8 @@ export async function upsertMyClinicProfile(req, res) {
     const parsed = clinicProfileSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
-        error: "Dados da clínica inválidos.",
-        message: "Dados da clínica inválidos.",
+        error: "Dados da clÃƒ­nica invÃƒ¡lidos.",
+        message: "Dados da clÃƒ­nica invÃƒ¡lidos.",
         errors: parsed.error.flatten(),
       });
     }
@@ -316,7 +314,7 @@ export async function upsertMyClinicProfile(req, res) {
     const user = await findCurrentUser(req.user.userId);
 
     if (!user) {
-      return res.status(404).json({ error: "Usuário não encontrado.", message: "Usuário não encontrado." });
+      return res.status(404).json({ error: "UsuÃƒ¡rio não encontrado.", message: "UsuÃƒ¡rio não encontrado." });
     }
 
     if (!isClinicAccount(user)) {
@@ -326,7 +324,6 @@ export async function upsertMyClinicProfile(req, res) {
     const data = {
       clinicName: clean(parsed.data.clinicName),
       responsibleName: clean(parsed.data.responsibleName),
-      email: clean(parsed.data.email) || user.email,
       address: clean(parsed.data.address),
       city: clean(parsed.data.city),
       neighborhood: clean(parsed.data.neighborhood),
@@ -380,8 +377,8 @@ export async function upsertMyClinicProfile(req, res) {
     });
 
     return res.status(500).json({
-      error: error?.message || "Erro ao salvar perfil da clínica.",
-      message: error?.message || "Erro ao salvar perfil da clínica.",
+      error: error?.message || "Erro ao salvar perfil da clÃƒ­nica.",
+      message: error?.message || "Erro ao salvar perfil da clÃƒ­nica.",
       code: error?.code || undefined,
       meta: error?.meta || undefined,
     });

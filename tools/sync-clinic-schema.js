@@ -37,7 +37,6 @@ async function main() {
       "userId" TEXT,
       "clinicName" TEXT,
       "responsibleName" TEXT,
-      "email" TEXT,
       "address" TEXT,
       "city" TEXT,
       "neighborhood" TEXT,
@@ -55,7 +54,6 @@ async function main() {
 
   const clinicColumns = [
     ["responsibleName", "TEXT"],
-    ["email", "TEXT"],
     ["address", "TEXT"],
     ["city", "TEXT"],
     ["neighborhood", "TEXT"],

@@ -65,7 +65,6 @@ model ClinicProfile {
   userId              String?              @unique
   clinicName          String?
   responsibleName     String?
-  email               String?
   address             String?
   city                String?
   neighborhood        String?
