@@ -723,18 +723,23 @@
           } catch (error) {
             console.error('Cadastro falhou:', {
               accountType: getSelectedAccountType(),
-              message: error?.message,
+              requestUrl: error?.requestUrl,
+              requestMethod: error?.requestMethod,
               status: error?.status,
+              responseBody: error?.responseBody || error?.responseText,
+              responseData: error?.data,
+              responseMessage: error?.message,
               code: error?.code,
-              data: error?.data,
-              responseText: error?.responseText,
               error,
             });
-            const isClinicSignup = getSelectedAccountType() === 'clinic';
-            const isMissingClinicRoute = isClinicSignup && error?.status === 404;
-            cadastroMensagem.textContent = isMissingClinicRoute
-              ? 'Não foi possível salvar o perfil da clínica agora. Tente novamente em alguns instantes.'
-              : (error?.message || 'Não foi possível criar sua conta agora.');
+            const debugResponseBody = String(error?.responseBody || error?.responseText || '').trim();
+            const debugBackendMessage =
+              error?.data?.error ||
+              error?.data?.message ||
+              error?.message ||
+              debugResponseBody ||
+              'Não foi possível criar sua conta agora.';
+            cadastroMensagem.textContent = debugBackendMessage;
             cadastroMensagem.style.color = '#b91c1c';
           } finally {
             if (submitBtn) submitBtn.disabled = false;
@@ -759,6 +764,7 @@
     </div>
   </footer></body>
 </html>
+
 
 
 

@@ -181,11 +181,11 @@ export async function getMyClinicProfile(req, res) {
   const user = await findCurrentUser(req.user.userId);
 
   if (!user) {
-    return res.status(404).json({ message: "Usuário não encontrado." });
+    return res.status(404).json({ error: "Usuário não encontrado.", message: "Usuário não encontrado." });
   }
 
   if (!isClinicAccount(user)) {
-    return res.status(403).json({ message: getClinicOnlyMessage() });
+    return res.status(403).json({ error: getClinicOnlyMessage(), message: getClinicOnlyMessage() });
   }
 
   // Clinic accounts always need a persisted ClinicProfile linked to the
@@ -296,63 +296,95 @@ export async function listClinics(req, res) {
 }
 
 export async function upsertMyClinicProfile(req, res) {
-  const parsed = clinicProfileSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({
-      message: "Dados da clínica inválidos.",
-      errors: parsed.error.flatten(),
-    });
-  }
+  console.info("Clinic profile upsert request:", {
+    method: req.method,
+    path: req.originalUrl,
+    authUserId: req.user?.userId || null,
+    bodyKeys: Object.keys(req.body || {}),
+  });
 
-  const user = await findCurrentUser(req.user.userId);
+  try {
+    const parsed = clinicProfileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Dados da clínica inválidos.",
+        message: "Dados da clínica inválidos.",
+        errors: parsed.error.flatten(),
+      });
+    }
 
-  if (!user) {
-    return res.status(404).json({ message: "Usuário não encontrado." });
-  }
+    const user = await findCurrentUser(req.user.userId);
 
-  if (!isClinicAccount(user)) {
-    return res.status(403).json({ message: getClinicOnlyMessage() });
-  }
+    if (!user) {
+      return res.status(404).json({ error: "Usuário não encontrado.", message: "Usuário não encontrado." });
+    }
 
-  const data = {
-    clinicName: clean(parsed.data.clinicName),
-    responsibleName: clean(parsed.data.responsibleName),
-    email: clean(parsed.data.email) || user.email,
-    address: clean(parsed.data.address),
-    city: clean(parsed.data.city),
-    neighborhood: clean(parsed.data.neighborhood),
-    phone: clean(parsed.data.phone),
-    whatsapp: clean(parsed.data.whatsapp),
-    services: serializeClinicServices(parsed.data.services),
-    physioTeam: serializeClinicTeam(parsed.data.physioTeam),
-    logoUrl: clean(parsed.data.logoUrl),
-    description: clean(parsed.data.description),
-  };
+    if (!isClinicAccount(user)) {
+      return res.status(403).json({ error: getClinicOnlyMessage(), message: getClinicOnlyMessage() });
+    }
 
-  const clinicProfile = user.clinicProfile
-    ? await prisma.clinicProfile.update({
-        where: { userId: user.id },
-        data,
-      })
-    : await prisma.clinicProfile.create({
+    const data = {
+      clinicName: clean(parsed.data.clinicName),
+      responsibleName: clean(parsed.data.responsibleName),
+      email: clean(parsed.data.email) || user.email,
+      address: clean(parsed.data.address),
+      city: clean(parsed.data.city),
+      neighborhood: clean(parsed.data.neighborhood),
+      phone: clean(parsed.data.phone),
+      whatsapp: clean(parsed.data.whatsapp),
+      services: serializeClinicServices(parsed.data.services),
+      physioTeam: serializeClinicTeam(parsed.data.physioTeam),
+      logoUrl: clean(parsed.data.logoUrl),
+      description: clean(parsed.data.description),
+    };
+
+    const clinicProfile = user.clinicProfile
+      ? await prisma.clinicProfile.update({
+          where: { userId: user.id },
+          data,
+        })
+      : await prisma.clinicProfile.create({
+          data: {
+            userId: user.id,
+            ...data,
+          },
+        });
+
+    if (parsed.data.phone !== undefined || parsed.data.clinicName !== undefined) {
+      await prisma.user.update({
+        where: { id: user.id },
         data: {
-          userId: user.id,
-          ...data,
+          ...(parsed.data.phone !== undefined ? { phone: clean(parsed.data.phone) } : {}),
+          ...(parsed.data.clinicName !== undefined ? { name: clean(parsed.data.clinicName) } : {}),
         },
       });
+    }
 
-  if (parsed.data.phone !== undefined || parsed.data.clinicName !== undefined) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        ...(parsed.data.phone !== undefined ? { phone: clean(parsed.data.phone) } : {}),
-        ...(parsed.data.clinicName !== undefined ? { name: clean(parsed.data.clinicName) } : {}),
-      },
+    console.info("Clinic profile upsert succeeded:", {
+      userId: user.id,
+      clinicProfileId: clinicProfile.id,
+      method: req.method,
+      path: req.originalUrl,
+    });
+
+    return res.json({ clinicProfile: decorateClinicProfile(clinicProfile) });
+  } catch (error) {
+    console.error("Clinic profile upsert failed:", {
+      method: req.method,
+      path: req.originalUrl,
+      authUserId: req.user?.userId || null,
+      message: error?.message,
+      code: error?.code,
+      meta: error?.meta,
+      stack: error?.stack,
+    });
+
+    return res.status(500).json({
+      error: error?.message || "Erro ao salvar perfil da clínica.",
+      message: error?.message || "Erro ao salvar perfil da clínica.",
+      code: error?.code || undefined,
+      meta: error?.meta || undefined,
     });
   }
-
-  return res.json({ clinicProfile: decorateClinicProfile(clinicProfile) });
 }
-
-
 
