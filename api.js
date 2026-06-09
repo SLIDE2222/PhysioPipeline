@@ -390,9 +390,13 @@
         : {};
 
       if (!response.ok) {
-        const fallbackMessage = typeof data?.raw === 'string' && data.raw.trim()
-          ? data.raw.trim()
-          : response.statusText || `Request failed with status ${response.status}.`;
+        const rawText = typeof data?.raw === 'string' ? data.raw.trim() : '';
+        const rawLooksLikeHtml = /^<!doctype html|^<html|<pre>/i.test(rawText);
+        const rawLooksLikeExpressRouteMiss = /^Cannot\s+(GET|POST|PUT|PATCH|DELETE)\s+/i.test(rawText);
+        const safeRawMessage = rawText && !rawLooksLikeHtml && !rawLooksLikeExpressRouteMiss
+          ? rawText
+          : '';
+        const fallbackMessage = safeRawMessage || response.statusText || `Request failed with status ${response.status}.`;
         const error = new Error(data.message || fallbackMessage);
         error.status = response.status;
         error.code = data.code;
@@ -631,6 +635,27 @@
     return getProfilePath(normalizedUser);
   }
 
+  function syncStoredClinicProfile(clinicProfile) {
+    if (!clinicProfile?.id) return;
+
+    try {
+      const auth = getStoredAuth();
+      if (!auth?.user) return;
+
+      setStoredAuth({
+        ...auth,
+        user: normalizeUser({
+          ...auth.user,
+          accountType: ACCOUNT_TYPES.CLINIC,
+          name: clinicProfile.nomeClinica || clinicProfile.clinicName || auth.user.name,
+          clinicProfile,
+        }),
+      }, true);
+    } catch (_) {
+      // Storage sync is best-effort; the next /auth/me call will refresh it.
+    }
+  }
+
   function clearStoredAuth() {
     try {
       localStorage.removeItem('physioAuth');
@@ -749,12 +774,34 @@
         return normalizeProfile(data.profile || data);
       });
     },
-    updateMyClinicProfile(payload) {
-      return request('/clinics/me', {
-        method: 'PUT',
+    async updateMyClinicProfile(payload) {
+      const upsertWith = (path, method) => request(path, {
+        method,
         body: payload,
         timeoutMs: 20000,
       }).then((data) => normalizeClinicProfile(data.clinicProfile || data));
+
+      try {
+        const clinicProfile = await upsertWith('/clinics/me', 'PATCH');
+        syncStoredClinicProfile(clinicProfile);
+        return clinicProfile;
+      } catch (patchError) {
+        if (patchError.status !== 404) throw patchError;
+        console.warn('PATCH /clinics/me unavailable, trying POST /clinics/register:', patchError);
+      }
+
+      try {
+        const clinicProfile = await upsertWith('/clinics/register', 'POST');
+        syncStoredClinicProfile(clinicProfile);
+        return clinicProfile;
+      } catch (postError) {
+        if (postError.status !== 404) throw postError;
+        console.warn('POST /clinics/register unavailable, trying PUT /clinics/me:', postError);
+      }
+
+      const clinicProfile = await upsertWith('/clinics/me', 'PUT');
+      syncStoredClinicProfile(clinicProfile);
+      return clinicProfile;
     },
     fetchClinics(params = {}) {
       const searchParams = new URLSearchParams();
@@ -859,5 +906,6 @@ window.debugPhysioAuth = function () {
     return { error: error.message };
   }
 };
+
 
 
