@@ -5,15 +5,15 @@
     "type":  "module",
     "scripts":  {
                     "dev":  "node --watch src/server.js",
-                    "start":  "prisma generate \u0026\u0026 node tools/sync-clinic-schema.js \u0026\u0026 node src/server.js",
-                    "prisma:generate":  "prisma generate",
-                    "prisma:migrate":  "prisma migrate dev",
+                    "start":  "prisma generate --schema prisma/schema.prisma && prisma migrate deploy --schema prisma/schema.prisma && node tools/sync-clinic-schema.js && node src/server.js",
+                    "prisma:generate":  "prisma generate --schema prisma/schema.prisma",
+                    "prisma:migrate":  "prisma migrate dev --schema prisma/schema.prisma",
                     "prisma:studio":  "prisma studio",
                     "db:seed":  "node prisma/seed.js",
                     "taxonomy:build":  "node tools/build-search-taxonomy.js",
-                    "build":  "prisma generate \u0026\u0026 node tools/sync-clinic-schema.js",
-                    "postinstall":  "prisma generate",
-                    "prisma:push":  "prisma db push",
+                    "build":  "prisma generate --schema prisma/schema.prisma && prisma migrate deploy --schema prisma/schema.prisma && node tools/sync-clinic-schema.js",
+                    "postinstall":  "prisma generate --schema prisma/schema.prisma",
+                    "prisma:push":  "prisma db push --schema prisma/schema.prisma",
                     "db:sync-clinic":  "node tools/sync-clinic-schema.js"
                 },
     "dependencies":  {

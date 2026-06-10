@@ -8,9 +8,18 @@ async function execute(statement) {
 
 async function main() {
   // Render may start from an older production database where Prisma Client
-  // already expects account/clinic columns. Keep this sync idempotent and
+  // already expects profile/account/clinic columns. Keep this sync idempotent and
   // additive so startup can repair the missing columns without destructive
   // `prisma db push --accept-data-loss` behavior.
+  const profileColumns = [
+    ["secondarySpecialty", "TEXT"],
+    ["tertiarySpecialty", "TEXT"],
+  ];
+
+  for (const [column, type] of profileColumns) {
+    await execute(`ALTER TABLE "Profile" ADD COLUMN IF NOT EXISTS "${column}" ${type};`);
+  }
+
   await execute(`
     DO $$
     BEGIN
@@ -97,7 +106,7 @@ async function main() {
     END $$;
   `);
 
-  console.log("Clinic/account schema sync completed.");
+  console.log("Profile/clinic/account schema sync completed.");
 }
 
 main()

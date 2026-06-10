@@ -1,2 +1,2 @@
 ALTER TABLE "Profile"
-ADD COLUMN "tertiarySpecialty" TEXT;
+ADD COLUMN IF NOT EXISTS "tertiarySpecialty" TEXT;
