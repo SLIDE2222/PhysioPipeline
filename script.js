@@ -3365,9 +3365,12 @@ document.addEventListener('DOMContentLoaded', async () => {
           const displayNeighborhood = profile.bairro || profile.neighborhood || 'Não informado';
           const photoUrl = getProfileImageUrl({ foto: profile.logo, photoUrl: profile.logoUrl });
           const initials = getProfileInitials(displayName);
-          const whatsappLink = buildClinicWhatsAppLink(profile);
           const clinicTeamCount = getClinicTeamList(profile).length;
-          const servicePills = renderBadgePills(getClinicServicesList(profile));
+          const clinicSpecialties = getClinicServicesList(profile);
+          const servicePills = renderBadgePills(clinicSpecialties);
+          const teamSummary = clinicTeamCount
+            ? ` &bull; ${clinicTeamCount} ${clinicTeamCount === 1 ? 'fisioterapeuta' : 'fisioterapeutas'}`
+            : '';
 
           return `
             <article class="result-card result-card--clinic">
@@ -3382,11 +3385,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
 
                 <div class="result-card__content">
-                  <p><strong>Badge:</strong> &#127973; Clínica</p>
+                  <p><strong>Badge:</strong> &#127973; Clínica${teamSummary}</p>
+                  <p><strong>Especialidades:</strong></p>
+                  <div class="result-card__badge-row">
+                    ${clinicSpecialties.length ? servicePills : '<span class="profile-badge">Não informado</span>'}
+                  </div>
                   <p><strong>Cidade:</strong> ${escapeHtml(displayCity)}</p>
                   <p><strong>Bairro:</strong> ${escapeHtml(displayNeighborhood)}</p>
-                  <p><strong>Fisioterapeutas:</strong> ${clinicTeamCount}</p>
-                  ${servicePills ? `<div class="clinic-services-pills">${servicePills}</div>` : ''}
 
                   <div class="bio-wrapper">
                     <p class="bio collapsed">
@@ -3398,22 +3403,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </button>
                   </div>
 
-                  <div class="profile-actions">
-                    <a
-                      href="profile.html?type=clinic&id=${encodeURIComponent(profile.id)}"
-                      class="btn btn-outline"
-                    >
-                      Ver perfil
-                    </a>
-                    <a
-                      href="${escapeHtml(whatsappLink)}"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="btn btn-primary"
-                    >
-                      Falar com a clínica
-                    </a>
-                  </div>
+                  <a
+                    href="profile.html?type=clinic&id=${encodeURIComponent(profile.id)}"
+                    class="btn btn-primary"
+                  >
+                    Ver perfil
+                  </a>
                 </div>
               </div>
             </article>

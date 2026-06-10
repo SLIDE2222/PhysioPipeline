@@ -4590,6 +4590,11 @@ img.result-card__avatar {
   margin: 0.35rem 0 0.75rem;
 }
 
+.results-page-body .result-card__badge-row {
+  max-height: 82px;
+  overflow: hidden;
+}
+
 .clinic-team-section {
   margin-bottom: 1rem;
   padding: 1.1rem;
