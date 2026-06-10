@@ -3385,7 +3385,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 </div>
 
                 <div class="result-card__content">
-                  <p><strong>Badge:</strong> &#127973; Clínica${teamSummary}</p>
+                  <p><strong>Badge:</strong> <span class="profile-badge">&#127973; Clínica</span>${teamSummary}</p>
                   <p><strong>Especialidades:</strong></p>
                   <div class="result-card__badge-row">
                     ${clinicSpecialties.length ? servicePills : '<span class="profile-badge">Não informado</span>'}

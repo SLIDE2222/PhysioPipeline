@@ -224,11 +224,11 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
           <h1>${escapeHtml(clinicName)}</h1>
           <p class="profile-specialty">${escapeHtml(clinic.responsavel || 'Clínica')}</p>
           <p class="profile-city">${escapeHtml(getClinicLocationBadge(clinic))}</p>
-          <p class="profile-city">${escapeHtml(getAccountBadge('clinic'))}</p>
         </div>
       </div>
 
       <div class="profile-badges">
+        <span class="profile-badge">${escapeHtml(getAccountBadge('clinic'))}</span>
         ${clinic.cidade ? `<span class="profile-badge">${escapeHtml(clinic.cidade)}</span>` : ''}
         ${clinic.bairro ? `<span class="profile-badge">${escapeHtml(clinic.bairro)}</span>` : ''}
         ${renderBadgeList(services)}
