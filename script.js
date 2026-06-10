@@ -2302,6 +2302,9 @@ async function renderAuthArea() {
   const profileHref = getUserProfileHref(user);
   const editHref = isClinicAccount ? 'clinic-dashboard.html' : 'editar-perfil.html';
   const profileLabel = 'Meu perfil';
+  const profileMenuItem = isClinicAccount
+    ? ''
+    : `<a role="menuitem" href="${profileHref}">${profileLabel}</a>`;
 
   authArea.innerHTML = `
     <span class="user-greeting">Olá, ${escapeHtml(greetingName)}</span>
@@ -2318,8 +2321,8 @@ async function renderAuthArea() {
         <span></span>
       </button>
       <div class="account-menu__panel" role="menu" data-account-menu-panel hidden>
-        <a role="menuitem" href="${profileHref}">${profileLabel}</a>
-        <a role="menuitem" href="${editHref}">Editar perfil</a>
+        ${profileMenuItem}
+        <a role="menuitem" href="${editHref}">${isClinicAccount ? 'Editar dados da clínica' : 'Editar perfil'}</a>
         <a role="menuitem" href="planos.html">Planos</a>
         <button role="menuitem" type="button" onclick="logout()">Sair</button>
       </div>
