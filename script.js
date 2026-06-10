@@ -2206,6 +2206,22 @@ function getUserProfileHref(user) {
   return window.physioApi?.resolveUserHomePath?.(user) || 'profile.html';
 }
 
+function isOwnPublicClinicProfilePage(user) {
+  if (user?.accountType !== 'clinic') return false;
+
+  const pageName = window.location.pathname.split('/').pop() || 'index.html';
+  if (pageName !== 'profile.html') return false;
+
+  const params = new URLSearchParams(window.location.search);
+  if ((params.get('type') || '').toLowerCase() !== 'clinic') return false;
+
+  const currentProfileId = params.get('id');
+  const ownClinicProfileId = user.clinicProfile?.id || user.clinicProfileId || null;
+
+  // Clinic owners already are on their public profile here, so keep only edit/plans/logout.
+  return Boolean(currentProfileId && ownClinicProfileId && currentProfileId === String(ownClinicProfileId));
+}
+
 
 function updateProfileButtons(user) {
   const heroBtn = document.getElementById('heroProfileBtn');
@@ -2301,8 +2317,9 @@ async function renderAuthArea() {
   const greetingName = isClinicAccount ? displayName : displayName.split(' ')[0];
   const profileHref = getUserProfileHref(user);
   const editHref = isClinicAccount ? 'clinic-dashboard.html' : 'editar-perfil.html';
-  const profileLabel = 'Meu perfil';
-  const profileMenuItem = isClinicAccount
+  const hideClinicDashboardItem = isOwnPublicClinicProfilePage(user);
+  const profileLabel = isClinicAccount ? 'Dashboard da clínica' : 'Meu perfil';
+  const profileMenuItem = isClinicAccount && hideClinicDashboardItem
     ? ''
     : `<a role="menuitem" href="${profileHref}">${profileLabel}</a>`;
 
