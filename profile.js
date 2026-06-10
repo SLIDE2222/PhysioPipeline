@@ -208,6 +208,75 @@ function renderTeamMembers(team) {
   `;
 }
 
+function renderLinkedPhysiotherapists(links) {
+  const acceptedLinks = Array.isArray(links)
+    ? links.filter((link) => link?.profile?.id)
+    : [];
+
+  if (!acceptedLinks.length) return '';
+
+  return acceptedLinks.map((link) => {
+    const profile = link.profile;
+    const specialties = Array.isArray(profile.specialties)
+      ? profile.specialties
+      : [profile.specialty].filter(Boolean);
+
+    return `
+      <article class="clinic-team-card">
+        <strong>${escapeHtml(profile.name || 'Fisioterapeuta')}</strong>
+        <span>${escapeHtml(specialties.join(' • ') || 'Especialidade não informada')}</span>
+        <a href="profile.html?id=${encodeURIComponent(profile.id)}" class="profile-inline-link">Ver perfil</a>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderClinicTeamSection(clinic, manualTeam) {
+  const linkedHtml = renderLinkedPhysiotherapists(clinic?.linkedPhysiotherapists);
+  const manualMembers = Array.isArray(manualTeam)
+    ? manualTeam.filter((member) => member?.name && member?.specialty)
+    : [];
+  const manualHtml = manualMembers.map((member) => `
+    <article class="clinic-team-card">
+      <strong>${escapeHtml(member.name)}</strong>
+      <span>${escapeHtml(member.specialty)}</span>
+    </article>
+  `).join('');
+
+  if (!linkedHtml && !manualMembers.length) {
+    return '<p>Essa clínica ainda não adicionou fisioterapeutas da equipe.</p>';
+  }
+
+  return `<div class="clinic-team-list">${linkedHtml}${manualHtml}</div>`;
+}
+
+function renderLinkedClinics(links) {
+  const acceptedLinks = Array.isArray(links)
+    ? links.filter((link) => link?.clinic?.id)
+    : [];
+
+  if (!acceptedLinks.length) return '';
+
+  return `
+    <section class="profile-section">
+      <h3>Clínicas vinculadas</h3>
+      <div class="clinic-team-list">
+        ${acceptedLinks.map((link) => {
+          const clinic = link.clinic;
+          const location = [clinic.city, clinic.neighborhood].filter(Boolean).join(' • ') || 'Localização não informada';
+          return `
+            <article class="clinic-team-card">
+              <strong>${escapeHtml(clinic.clinicName || 'Clínica')}</strong>
+              <span>${escapeHtml(location)}</span>
+              <a href="profile.html?type=clinic&id=${encodeURIComponent(clinic.id)}" class="profile-inline-link">Ver clínica</a>
+            </article>
+          `;
+        }).join('')}
+      </div>
+    </section>
+  `;
+}
+
 function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
   const clinicName = clinic?.nomeClinica || clinic?.nome || 'Clínica';
   const services = clinic?.servicesList || clinic?.servicosLista || [];
@@ -241,7 +310,7 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
 
       <section class="profile-section">
         <h3>Fisioterapeutas da clínica</h3>
-        ${renderTeamMembers(team)}
+        ${renderClinicTeamSection(clinic, team)}
       </section>
 
       <section class="profile-section">
@@ -303,6 +372,7 @@ function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton) {
       </section>
 
       ${isOwner ? renderLeadSummaryCard() : ''}
+      ${renderLinkedClinics(profissional.linkedClinics)}
 
       <section class="profile-section">
         <h3>Contato</h3>

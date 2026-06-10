@@ -30,13 +30,25 @@ const clinicProfileSchema = z.object({
   description: z.string().max(2000).optional().nullable(),
 });
 
+const linkRequestSchema = z.object({
+  profileId: z.string().min(1),
+  message: z.string().max(600).optional().nullable(),
+});
+
+const physioSearchSchema = z.object({
+  query: z.string().max(120).optional().default(""),
+  name: z.string().max(120).optional().default(""),
+  city: z.string().max(120).optional().default(""),
+  specialty: z.string().max(120).optional().default(""),
+});
+
 function clean(value) {
   if (value === "") return null;
   return value ?? null;
 }
 
 function getClinicOnlyMessage() {
-  return "Esta Ãƒ¡rea Ãƒ© exclusiva para contas de clÃƒ­nica.";
+  return "Esta área é exclusiva para contas de clínica.";
 }
 
 function cleanOption(value, maxLength = 160) {
@@ -130,11 +142,57 @@ function serializeClinicTeam(value) {
   return team.length ? JSON.stringify(team) : null;
 }
 
+function getProfileSpecialties(profile) {
+  return uniqueSortedOptions([
+    profile?.specialty,
+    profile?.secondarySpecialty,
+    profile?.tertiarySpecialty,
+  ]);
+}
+
+function decorateProfileSummary(profile) {
+  if (!profile) return null;
+
+  return {
+    id: profile.id,
+    name: profile.name,
+    specialty: profile.specialty,
+    secondarySpecialty: profile.secondarySpecialty,
+    tertiarySpecialty: profile.tertiarySpecialty,
+    specialties: getProfileSpecialties(profile),
+    city: profile.city,
+    neighborhood: profile.neighborhood,
+    photoUrl: profile.photoUrl,
+  };
+}
+
+function decorateClinicLink(link) {
+  if (!link) return null;
+
+  return {
+    id: link.id,
+    status: link.status,
+    message: link.message,
+    createdAt: link.createdAt,
+    updatedAt: link.updatedAt,
+    acceptedAt: link.acceptedAt,
+    rejectedAt: link.rejectedAt,
+    unlinkedAt: link.unlinkedAt,
+    profile: decorateProfileSummary(link.profile),
+  };
+}
+
 function decorateClinicProfile(profile) {
   if (!profile) return profile;
 
   const servicesList = normalizeClinicServices(profile.services);
   const physioTeamList = normalizeClinicTeam(profile.physioTeam);
+  const linkedPhysiotherapists = Array.isArray(profile.physiotherapistLinks)
+    ? profile.physiotherapistLinks
+        .filter((link) => link.status === "ACCEPTED")
+        .map(decorateClinicLink)
+        .filter(Boolean)
+    : [];
 
   return {
     ...profile,
@@ -142,6 +200,7 @@ function decorateClinicProfile(profile) {
     servicesList,
     physioTeam: profile.physioTeam ?? null,
     physioTeamList,
+    linkedPhysiotherapists,
     isClaimable: typeof profile.isClaimable === "boolean" ? profile.isClaimable : !profile.userId,
   };
 }
@@ -164,9 +223,56 @@ function isClinicAccount(user) {
   return normalizeAccountType(user?.accountType) === ACCOUNT_TYPES.CLINIC;
 }
 
+async function getOwnedClinicProfile(userId) {
+  const user = await findCurrentUser(userId);
+
+  if (!user) {
+    const error = new Error("Usuário não encontrado.");
+    error.status = 404;
+    throw error;
+  }
+
+  if (!isClinicAccount(user)) {
+    const error = new Error(getClinicOnlyMessage());
+    error.status = 403;
+    throw error;
+  }
+
+  const clinicProfile = user.clinicProfile || await prisma.clinicProfile.create({
+    data: {
+      userId: user.id,
+      clinicName: user.name || user.email,
+      responsibleName: user.name || null,
+      phone: user.phone || null,
+      whatsapp: user.phone || null,
+      services: null,
+      physioTeam: null,
+    },
+  });
+
+  return { user, clinicProfile };
+}
+
+function sendControllerError(res, error, fallbackMessage = "Erro ao processar solicitação.") {
+  const status = error?.status || 500;
+  if (status >= 500) console.error(fallbackMessage, error);
+
+  return res.status(status).json({
+    error: error?.message || fallbackMessage,
+    message: error?.message || fallbackMessage,
+  });
+}
+
 export async function getClinic(req, res) {
   const clinicProfile = await prisma.clinicProfile.findUnique({
     where: { id: req.params.id },
+    include: {
+      physiotherapistLinks: {
+        where: { status: "ACCEPTED" },
+        include: { profile: true },
+        orderBy: { acceptedAt: "desc" },
+      },
+    },
   });
 
   if (!clinicProfile) {
@@ -287,10 +393,169 @@ export async function listClinics(req, res) {
           ]
         : undefined,
     },
+    include: {
+      physiotherapistLinks: {
+        where: { status: "ACCEPTED" },
+        include: { profile: true },
+      },
+    },
     orderBy: { updatedAt: "desc" },
   });
 
   return res.json({ clinics: clinics.map(decorateClinicProfile) });
+}
+
+export async function searchPhysiotherapistsForClinic(req, res) {
+  try {
+    const { query, name, city, specialty } = physioSearchSchema.parse(req.query);
+    const nameTerm = cleanOption(name || query, 120);
+    const cityTerm = cleanOption(city, 120);
+    const specialtyTerm = cleanOption(specialty || query, 120);
+    const filters = [
+      ...(nameTerm ? [{ name: { contains: nameTerm, mode: "insensitive" } }] : []),
+      ...(cityTerm ? [{ city: { contains: cityTerm, mode: "insensitive" } }] : []),
+      ...(specialtyTerm
+        ? [
+            { specialty: { contains: specialtyTerm, mode: "insensitive" } },
+            { secondarySpecialty: { contains: specialtyTerm, mode: "insensitive" } },
+            { tertiarySpecialty: { contains: specialtyTerm, mode: "insensitive" } },
+          ]
+        : []),
+    ];
+
+    const profiles = await prisma.profile.findMany({
+      where: filters.length ? { OR: filters } : undefined,
+      orderBy: { updatedAt: "desc" },
+      take: 20,
+    });
+
+    return res.json({ profiles: profiles.map(decorateProfileSummary) });
+  } catch (error) {
+    return sendControllerError(res, error, "Erro ao buscar fisioterapeutas.");
+  }
+}
+
+export async function listMyClinicPhysioLinks(req, res) {
+  try {
+    const { clinicProfile } = await getOwnedClinicProfile(req.user.userId);
+    const links = await prisma.clinicPhysiotherapistLink.findMany({
+      where: { clinicId: clinicProfile.id },
+      include: { profile: true },
+      orderBy: { updatedAt: "desc" },
+    });
+
+    return res.json({ links: links.map(decorateClinicLink) });
+  } catch (error) {
+    return sendControllerError(res, error, "Erro ao carregar vínculos da clínica.");
+  }
+}
+
+export async function requestClinicPhysioLink(req, res) {
+  try {
+    const parsed = linkRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Dados da solicitação inválidos.",
+        message: "Dados da solicitação inválidos.",
+        errors: parsed.error.flatten(),
+      });
+    }
+
+    const { user, clinicProfile } = await getOwnedClinicProfile(req.user.userId);
+    const profile = await prisma.profile.findUnique({ where: { id: parsed.data.profileId } });
+
+    if (!profile) {
+      return res.status(404).json({ error: "Fisioterapeuta não encontrado.", message: "Fisioterapeuta não encontrado." });
+    }
+
+    if (profile.ownerUserId === user.id) {
+      return res.status(403).json({
+        error: "Uma clínica não pode solicitar vínculo com um perfil do mesmo usuário.",
+        message: "Uma clínica não pode solicitar vínculo com um perfil do mesmo usuário.",
+      });
+    }
+
+    const manualCount = normalizeClinicTeam(clinicProfile.physioTeam).length;
+    const acceptedCount = await prisma.clinicPhysiotherapistLink.count({
+      where: { clinicId: clinicProfile.id, status: "ACCEPTED" },
+    });
+
+    if (manualCount + acceptedCount >= MAX_CLINIC_TEAM) {
+      return res.status(400).json({
+        error: "Limite de 5 fisioterapeutas atingido.",
+        message: "Limite de 5 fisioterapeutas atingido.",
+      });
+    }
+
+    const existing = await prisma.clinicPhysiotherapistLink.findUnique({
+      where: {
+        clinicId_profileId: {
+          clinicId: clinicProfile.id,
+          profileId: profile.id,
+        },
+      },
+      include: { profile: true },
+    });
+
+    if (existing && ["PENDING", "ACCEPTED"].includes(existing.status)) {
+      const message = existing.status === "PENDING"
+        ? "Já existe uma solicitação pendente para este fisioterapeuta."
+        : "Este fisioterapeuta já está vinculado à clínica.";
+      return res.status(409).json({ error: message, message });
+    }
+
+    const link = existing
+      ? await prisma.clinicPhysiotherapistLink.update({
+          where: { id: existing.id },
+          data: {
+            status: "PENDING",
+            message: clean(parsed.data.message),
+            acceptedAt: null,
+            rejectedAt: null,
+            unlinkedAt: null,
+          },
+          include: { profile: true },
+        })
+      : await prisma.clinicPhysiotherapistLink.create({
+          data: {
+            clinicId: clinicProfile.id,
+            profileId: profile.id,
+            message: clean(parsed.data.message),
+          },
+          include: { profile: true },
+        });
+
+    return res.status(201).json({ link: decorateClinicLink(link) });
+  } catch (error) {
+    return sendControllerError(res, error, "Erro ao enviar solicitação de vínculo.");
+  }
+}
+
+export async function unlinkClinicPhysioFromClinic(req, res) {
+  try {
+    const { clinicProfile } = await getOwnedClinicProfile(req.user.userId);
+    const link = await prisma.clinicPhysiotherapistLink.findUnique({
+      where: { id: req.params.linkId },
+      include: { profile: true },
+    });
+
+    if (!link || link.clinicId !== clinicProfile.id) {
+      return res.status(404).json({ error: "Vínculo não encontrado.", message: "Vínculo não encontrado." });
+    }
+
+    const updated = await prisma.clinicPhysiotherapistLink.update({
+      where: { id: link.id },
+      data: {
+        status: "UNLINKED",
+        unlinkedAt: new Date(),
+      },
+      include: { profile: true },
+    });
+
+    return res.json({ link: decorateClinicLink(updated) });
+  } catch (error) {
+    return sendControllerError(res, error, "Erro ao desvincular fisioterapeuta.");
+  }
 }
 
 export async function upsertMyClinicProfile(req, res) {
@@ -305,8 +570,8 @@ export async function upsertMyClinicProfile(req, res) {
     const parsed = clinicProfileSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({
-        error: "Dados da clÃƒ­nica invÃƒ¡lidos.",
-        message: "Dados da clÃƒ­nica invÃƒ¡lidos.",
+        error: "Dados da clínica inválidos.",
+        message: "Dados da clínica inválidos.",
         errors: parsed.error.flatten(),
       });
     }
@@ -377,8 +642,8 @@ export async function upsertMyClinicProfile(req, res) {
     });
 
     return res.status(500).json({
-      error: error?.message || "Erro ao salvar perfil da clÃƒ­nica.",
-      message: error?.message || "Erro ao salvar perfil da clÃƒ­nica.",
+      error: error?.message || "Erro ao salvar perfil da clínica.",
+      message: error?.message || "Erro ao salvar perfil da clínica.",
       code: error?.code || undefined,
       meta: error?.meta || undefined,
     });

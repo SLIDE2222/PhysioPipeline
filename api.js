@@ -499,6 +499,11 @@
       atendimento: profile.attendance ?? profile.atendimento ?? '',
       isClaimed: Boolean(profile.isClaimed),
       ownerUserId: profile.ownerUserId ?? null,
+      linkedClinics: Array.isArray(profile.linkedClinics)
+        ? profile.linkedClinics
+        : Array.isArray(profile.clinicLinks)
+          ? profile.clinicLinks
+          : [],
     };
   }
 
@@ -571,6 +576,11 @@
     const physioTeamList = normalizeClinicTeamList(
       clinic.physioTeamList ?? clinic.fisioterapeutas ?? clinic.physioTeam
     );
+    const linkedPhysiotherapists = Array.isArray(clinic.linkedPhysiotherapists)
+      ? clinic.linkedPhysiotherapists
+      : Array.isArray(clinic.physiotherapistLinks)
+        ? clinic.physiotherapistLinks
+        : [];
 
     return {
       ...clinic,
@@ -594,6 +604,7 @@
       fisioterapeutas: physioTeamList,
       physioTeamList,
       physioTeam: clinic.physioTeam ?? null,
+      linkedPhysiotherapists,
       logo: clinic.logoUrl ?? clinic.logo ?? clinic.foto ?? '',
       descricao: clinic.description ?? clinic.descricao ?? '',
       userId: clinic.userId ?? null,
@@ -833,10 +844,52 @@
         timeoutMs: 10000,
       }).then((data) => normalizeClinicProfile(data.clinicProfile || data));
     },
+    searchPhysiotherapistsForClinic(params = {}) {
+      const searchParams = new URLSearchParams();
+      if (params.query) searchParams.set('query', params.query);
+      if (params.name) searchParams.set('name', params.name);
+      if (params.city) searchParams.set('city', params.city);
+      if (params.specialty) searchParams.set('specialty', params.specialty);
+
+      const query = searchParams.toString();
+      return request(`/clinics/physiotherapists/search${query ? `?${query}` : ''}`, {
+        timeoutMs: 10000,
+      }).then((data) => (data.profiles || []).map(normalizeProfile));
+    },
+    fetchMyClinicPhysioLinks() {
+      return request('/clinics/me/physio-links', {
+        timeoutMs: 10000,
+      }).then((data) => data.links || []);
+    },
+    requestClinicPhysioLink(payload) {
+      return request('/clinics/me/physio-links', {
+        method: 'POST',
+        body: payload,
+        timeoutMs: 15000,
+      }).then((data) => data.link || data);
+    },
+    unlinkClinicPhysioLink(linkId) {
+      return request(`/clinics/me/physio-links/${encodeURIComponent(linkId)}`, {
+        method: 'DELETE',
+        timeoutMs: 15000,
+      }).then((data) => data.link || data);
+    },
     async fetchProfile(id) {
       try {
         const profile = await fetchPublicProfileFromSupabase(id);
-        if (profile) return profile;
+        if (profile) {
+          try {
+            const backendData = await request(`/profiles/${id}`, { timeoutMs: 5000 });
+            const backendProfile = normalizeProfile(backendData.profile || backendData);
+            return {
+              ...profile,
+              linkedClinics: backendProfile?.linkedClinics || profile.linkedClinics || [],
+            };
+          } catch (backendError) {
+            console.warn('Could not merge backend profile link data:', backendError);
+            return profile;
+          }
+        }
       } catch (error) {
         console.warn('Using Render fallback for public profile:', error);
       }
@@ -870,6 +923,29 @@
     },
     fetchMyLeadSummary() {
       return request('/lead-events/me/summary');
+    },
+    fetchMyClinicLinkRequests() {
+      return request('/profiles/me/clinic-links', {
+        timeoutMs: 10000,
+      }).then((data) => data.links || []);
+    },
+    acceptClinicLinkRequest(linkId) {
+      return request(`/profiles/me/clinic-links/${encodeURIComponent(linkId)}/accept`, {
+        method: 'POST',
+        timeoutMs: 15000,
+      }).then((data) => data.link || data);
+    },
+    rejectClinicLinkRequest(linkId) {
+      return request(`/profiles/me/clinic-links/${encodeURIComponent(linkId)}/reject`, {
+        method: 'POST',
+        timeoutMs: 15000,
+      }).then((data) => data.link || data);
+    },
+    unlinkClinicFromProfile(linkId) {
+      return request(`/profiles/me/clinic-links/${encodeURIComponent(linkId)}`, {
+        method: 'DELETE',
+        timeoutMs: 15000,
+      }).then((data) => data.link || data);
     },
     sendContactMessage(payload) {
       return request('/contact', {

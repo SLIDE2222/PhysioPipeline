@@ -92,14 +92,36 @@
               <label for="clinicTeamRows">Fisioterapeutas da clínica</label>
               <p class="form-hint">Adicione até 5 fisioterapeutas com nome e especialidade.</p>
             </div>
+            <div class="clinic-link-request-box">
+              <h3>Vincular fisioterapeuta à clínica</h3>
+              <p class="form-hint">Envie solicitações para vincular fisioterapeutas reais à sua clínica ou adicione membros manualmente.</p>
+              <div class="clinic-link-search-grid">
+                <input type="text" id="clinicPhysioSearchName" placeholder="Nome do fisioterapeuta" />
+                <input type="text" id="clinicPhysioSearchCity" placeholder="Cidade" />
+                <input type="text" id="clinicPhysioSearchSpecialty" placeholder="Especialidade" />
+                <button type="button" class="btn btn-outline" id="clinicPhysioSearchButton">Buscar fisioterapeuta cadastrado</button>
+              </div>
+              <div id="clinicPhysioSearchResults" class="clinic-link-results"></div>
+              <p id="clinicPhysioLinkMessage" class="form-hint" aria-live="polite"></p>
+            </div>
+
+            <div class="clinic-link-request-box">
+              <h3>Vínculos e solicitações</h3>
+              <div id="clinicPhysioLinksList" class="clinic-link-results"></div>
+            </div>
+
+            <div class="clinic-link-request-box">
+              <h3>Adicionar membro manualmente</h3>
+              <p class="form-hint">Membros manuais não vinculam perfis reais e não exigem aprovação.</p>
+            </div>
             <div id="clinicTeamRows" class="clinic-team-rows"></div>
             <button type="button" class="btn btn-outline clinic-team-add-btn" id="addClinicTeamRow">
               + Adicionar fisioterapeuta
             </button>
           </div>
 
-          <label for="clinicDescription">Descricao</label>
-          <textarea id="clinicDescription" name="clinicDescription" rows="5" placeholder="Fale sobre a clinica, servicos e diferenciais."></textarea>
+          <label for="clinicDescription">Descrição</label>
+          <textarea id="clinicDescription" name="clinicDescription" rows="5" placeholder="Fale sobre a clínica, serviços e diferenciais."></textarea>
 
           <button type="submit" class="btn btn-primary btn-block">Salvar dados da clinica</button>
           <p id="clinicDashboardMessage" class="success-message"></p>

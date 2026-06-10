@@ -20,6 +20,13 @@ enum ClaimStatus {
   EXPIRED
 }
 
+enum ClinicPhysioLinkStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  UNLINKED
+}
+
 model User {
   id             String        @id @default(cuid())
   email          String        @unique
@@ -56,6 +63,7 @@ model Profile {
   ownerUser          User?          @relation(fields: [ownerUserId], references: [id])
   claimRequests      ClaimRequest[]
   leadEvents         LeadEvent[]
+  clinicLinks        ClinicPhysiotherapistLink[]
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 }
@@ -79,6 +87,27 @@ model ClinicProfile {
 
   user                User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
   clinicClaimRequests ClinicClaimRequest[]
+  physiotherapistLinks ClinicPhysiotherapistLink[]
+}
+
+model ClinicPhysiotherapistLink {
+  id         String                  @id @default(cuid())
+  clinicId  String
+  profileId String
+  status     ClinicPhysioLinkStatus @default(PENDING)
+  message    String?
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+  acceptedAt DateTime?
+  rejectedAt DateTime?
+  unlinkedAt DateTime?
+
+  clinic  ClinicProfile @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  profile Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([clinicId, profileId])
+  @@index([clinicId, status])
+  @@index([profileId, status])
 }
 
 model ClaimRequest {

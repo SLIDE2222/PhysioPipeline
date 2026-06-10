@@ -2,6 +2,10 @@
 const clinicDashboardMessage = document.getElementById('clinicDashboardMessage');
 const clinicLogoInput = document.getElementById('clinicLogo');
 const clinicLogoPreview = document.getElementById('clinicLogoPreview');
+const clinicPhysioSearchButton = document.getElementById('clinicPhysioSearchButton');
+const clinicPhysioSearchResults = document.getElementById('clinicPhysioSearchResults');
+const clinicPhysioLinksList = document.getElementById('clinicPhysioLinksList');
+const clinicPhysioLinkMessage = document.getElementById('clinicPhysioLinkMessage');
 const clinicEditor = window.PhysioClinicForm?.createClinicEditor?.({
   serviceInputId: 'clinicServiceInput',
   serviceListId: 'clinicServicesTags',
@@ -13,6 +17,22 @@ const clinicEditor = window.PhysioClinicForm?.createClinicEditor?.({
 });
 
 let clinicLogoBase64 = '';
+
+const CLINIC_LINK_STATUS_LABELS = {
+  PENDING: 'Pendente',
+  ACCEPTED: 'Aceito',
+  REJECTED: 'Recusado',
+  UNLINKED: 'Desvinculado',
+};
+
+function escapeClinicDashboardHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 function setClinicMessage(text, color) {
   if (!clinicDashboardMessage) return;
@@ -42,6 +62,91 @@ function fillClinicForm(profile) {
   }
 }
 
+function setClinicLinkMessage(text, color = '#475569') {
+  if (!clinicPhysioLinkMessage) return;
+  clinicPhysioLinkMessage.textContent = text;
+  clinicPhysioLinkMessage.style.color = color;
+}
+
+function getPhysioSpecialtyText(profile) {
+  const specialties = Array.isArray(profile?.specialties)
+    ? profile.specialties
+    : [profile?.specialty, profile?.secondarySpecialty, profile?.tertiarySpecialty].filter(Boolean);
+
+  return specialties.filter(Boolean).join(' • ') || 'Especialidade não informada';
+}
+
+async function loadClinicPhysioLinks() {
+  if (!clinicPhysioLinksList || !window.physioApi?.fetchMyClinicPhysioLinks) return;
+
+  try {
+    const links = await window.physioApi.fetchMyClinicPhysioLinks();
+
+    if (!links.length) {
+      clinicPhysioLinksList.innerHTML = '<p class="form-hint">Nenhuma solicitação enviada ainda.</p>';
+      return;
+    }
+
+    clinicPhysioLinksList.innerHTML = links.map((link) => {
+      const profile = link.profile || {};
+      const status = CLINIC_LINK_STATUS_LABELS[link.status] || link.status || 'Pendente';
+      const canUnlink = link.status === 'ACCEPTED' || link.status === 'PENDING';
+
+      return `
+        <article class="clinic-link-card">
+          <strong>${escapeClinicDashboardHtml(profile.name || 'Fisioterapeuta')}</strong>
+          <p class="clinic-link-card__meta">${escapeClinicDashboardHtml(getPhysioSpecialtyText(profile))}</p>
+          <span class="profile-badge clinic-link-status">${escapeClinicDashboardHtml(status)}</span>
+          ${canUnlink ? `
+            <div class="clinic-link-actions">
+              <button type="button" class="btn btn-outline" data-unlink-clinic-physio="${escapeClinicDashboardHtml(link.id)}">Desvincular</button>
+            </div>
+          ` : ''}
+        </article>
+      `;
+    }).join('');
+  } catch (error) {
+    clinicPhysioLinksList.innerHTML = '<p class="form-hint">Não foi possível carregar os vínculos agora.</p>';
+    console.error('Clinic physio links load failed:', error);
+  }
+}
+
+async function searchClinicPhysios() {
+  if (!clinicPhysioSearchResults || !window.physioApi?.searchPhysiotherapistsForClinic) return;
+
+  setClinicLinkMessage('');
+  clinicPhysioSearchResults.innerHTML = '<p class="form-hint">Buscando fisioterapeutas...</p>';
+
+  try {
+    const profiles = await window.physioApi.searchPhysiotherapistsForClinic({
+      name: document.getElementById('clinicPhysioSearchName')?.value.trim(),
+      city: document.getElementById('clinicPhysioSearchCity')?.value.trim(),
+      specialty: document.getElementById('clinicPhysioSearchSpecialty')?.value.trim(),
+    });
+
+    if (!profiles.length) {
+      clinicPhysioSearchResults.innerHTML = '<p class="form-hint">Nenhum fisioterapeuta encontrado.</p>';
+      return;
+    }
+
+    clinicPhysioSearchResults.innerHTML = profiles.map((profile) => `
+      <article class="clinic-link-card">
+        <strong>${escapeClinicDashboardHtml(profile.nome || profile.name || 'Fisioterapeuta')}</strong>
+        <p class="clinic-link-card__meta">${escapeClinicDashboardHtml(getPhysioSpecialtyText(profile))}</p>
+        <p class="clinic-link-card__meta">${escapeClinicDashboardHtml([profile.cidade || profile.city, profile.bairro || profile.neighborhood].filter(Boolean).join(' • ') || 'Localização não informada')}</p>
+        <div class="clinic-link-actions">
+          <button type="button" class="btn btn-primary" data-request-clinic-physio="${escapeClinicDashboardHtml(profile.id)}">
+            Enviar solicitação de vínculo
+          </button>
+        </div>
+      </article>
+    `).join('');
+  } catch (error) {
+    clinicPhysioSearchResults.innerHTML = '<p class="form-hint">Não foi possível buscar fisioterapeutas agora.</p>';
+    console.error('Clinic physio search failed:', error);
+  }
+}
+
 async function loadClinicDashboard() {
   const loggedUser = await (window.getLoggedUser ? window.getLoggedUser(true) : Promise.resolve(null));
 
@@ -58,9 +163,58 @@ async function loadClinicDashboard() {
   try {
     const clinicProfile = await window.physioApi.fetchMyClinicProfile();
     fillClinicForm(clinicProfile);
+    await loadClinicPhysioLinks();
   } catch (error) {
     setClinicMessage(error.message || 'Não foi possível carregar os dados da clínica.', '#b91c1c');
   }
+}
+
+if (clinicPhysioSearchButton) {
+  clinicPhysioSearchButton.addEventListener('click', searchClinicPhysios);
+}
+
+if (clinicPhysioSearchResults) {
+  clinicPhysioSearchResults.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-request-clinic-physio]');
+    if (!button) return;
+
+    button.disabled = true;
+    setClinicLinkMessage('');
+
+    try {
+      await window.physioApi.requestClinicPhysioLink({
+        profileId: button.dataset.requestClinicPhysio,
+      });
+      setClinicLinkMessage('Solicitação enviada', '#166534');
+      await loadClinicPhysioLinks();
+    } catch (error) {
+      console.error('Clinic physio request failed:', error);
+      setClinicLinkMessage(error.message || 'Não foi possível enviar a solicitação.', '#b91c1c');
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
+if (clinicPhysioLinksList) {
+  clinicPhysioLinksList.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-unlink-clinic-physio]');
+    if (!button) return;
+
+    button.disabled = true;
+    setClinicLinkMessage('');
+
+    try {
+      await window.physioApi.unlinkClinicPhysioLink(button.dataset.unlinkClinicPhysio);
+      setClinicLinkMessage('Vínculo atualizado.', '#166534');
+      await loadClinicPhysioLinks();
+    } catch (error) {
+      console.error('Clinic physio unlink failed:', error);
+      setClinicLinkMessage(error.message || 'Não foi possível desvincular.', '#b91c1c');
+    } finally {
+      button.disabled = false;
+    }
+  });
 }
 
 if (clinicLogoInput) {

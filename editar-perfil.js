@@ -2,8 +2,19 @@ const editarForm = document.getElementById('editarPerfilForm');
 const editarMensagem = document.getElementById('editarMensagem');
 const fotoInput = document.getElementById('foto');
 const fotoPreview = document.getElementById('fotoPreview');
+const profileClinicLinkRequests = document.getElementById('profileClinicLinkRequests');
+const profileLinkedClinics = document.getElementById('profileLinkedClinics');
 
 let fotoBase64 = '';
+
+function escapeEditarHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -170,6 +181,51 @@ async function loadMyProfile() {
   }
 }
 
+function renderClinicLinkCard(link, actions = '') {
+  const clinic = link.clinic || {};
+  const location = [clinic.city, clinic.neighborhood].filter(Boolean).join(' • ') || 'Localização não informada';
+
+  return `
+    <article class="clinic-link-card">
+      <strong>${escapeEditarHtml(clinic.clinicName || 'Clínica')}</strong>
+      <p class="clinic-link-card__meta">${escapeEditarHtml(location)}</p>
+      ${link.message ? `<p class="clinic-link-card__meta">${escapeEditarHtml(link.message)}</p>` : ''}
+      ${actions ? `<div class="clinic-link-actions">${actions}</div>` : ''}
+    </article>
+  `;
+}
+
+async function loadClinicLinkRequests() {
+  if (!profileClinicLinkRequests || !profileLinkedClinics || !window.physioApi?.fetchMyClinicLinkRequests) return;
+
+  try {
+    const links = await window.physioApi.fetchMyClinicLinkRequests();
+    const pending = links.filter((link) => link.status === 'PENDING');
+    const accepted = links.filter((link) => link.status === 'ACCEPTED');
+
+    profileClinicLinkRequests.innerHTML = pending.length
+      ? pending.map((link) => renderClinicLinkCard(
+          link,
+          `
+            <button type="button" class="btn btn-primary" data-accept-clinic-link="${escapeEditarHtml(link.id)}">Aceitar vínculo</button>
+            <button type="button" class="btn btn-outline" data-reject-clinic-link="${escapeEditarHtml(link.id)}">Recusar vínculo</button>
+          `
+        )).join('')
+      : '<p class="form-hint">Nenhuma solicitação pendente.</p>';
+
+    profileLinkedClinics.innerHTML = accepted.length
+      ? accepted.map((link) => renderClinicLinkCard(
+          link,
+          `<button type="button" class="btn btn-outline" data-unlink-clinic-link="${escapeEditarHtml(link.id)}">Desvincular clínica</button>`
+        )).join('')
+      : '<p class="form-hint">Nenhuma clínica vinculada.</p>';
+  } catch (error) {
+    console.error('Profile clinic links load failed:', error);
+    profileClinicLinkRequests.innerHTML = '<p class="form-hint">Não foi possível carregar solicitações agora.</p>';
+    profileLinkedClinics.innerHTML = '';
+  }
+}
+
 if (fotoInput) {
   async function openPhotoEditor(source) {
     try {
@@ -261,7 +317,35 @@ if (editarForm) {
       return;
     }
 
-    loadMyProfile();
+    loadMyProfile().then(() => loadClinicLinkRequests());
+  });
+
+  document.addEventListener('click', async (event) => {
+    const acceptButton = event.target.closest('[data-accept-clinic-link]');
+    const rejectButton = event.target.closest('[data-reject-clinic-link]');
+    const unlinkButton = event.target.closest('[data-unlink-clinic-link]');
+    const button = acceptButton || rejectButton || unlinkButton;
+    if (!button) return;
+
+    button.disabled = true;
+
+    try {
+      if (acceptButton) {
+        await window.physioApi.acceptClinicLinkRequest(acceptButton.dataset.acceptClinicLink);
+      } else if (rejectButton) {
+        await window.physioApi.rejectClinicLinkRequest(rejectButton.dataset.rejectClinicLink);
+      } else {
+        await window.physioApi.unlinkClinicFromProfile(unlinkButton.dataset.unlinkClinicLink);
+      }
+
+      await loadClinicLinkRequests();
+    } catch (error) {
+      console.error('Clinic link action failed:', error);
+      editarMensagem.textContent = error.message || 'Não foi possível atualizar o vínculo.';
+      editarMensagem.style.color = '#b91c1c';
+    } finally {
+      button.disabled = false;
+    }
   });
 
   editarForm.addEventListener('submit', async (event) => {

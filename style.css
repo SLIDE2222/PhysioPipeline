@@ -4653,6 +4653,69 @@ img.result-card__avatar {
   background: rgba(239, 246, 255, 0.55);
 }
 
+.profile-inline-link {
+  color: var(--primary);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.profile-inline-link:hover {
+  text-decoration: underline;
+}
+
+.clinic-link-request-box {
+  display: grid;
+  gap: 12px;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(191, 219, 254, 0.86);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.clinic-link-request-box h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.clinic-link-search-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.clinic-link-results {
+  display: grid;
+  gap: 10px;
+}
+
+.clinic-link-card {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(191, 219, 254, 0.82);
+  border-radius: 16px;
+  background: rgba(239, 246, 255, 0.62);
+}
+
+.clinic-link-card__meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.clinic-link-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.clinic-link-status {
+  justify-self: start;
+}
+
 .clinic-services-pills {
   display: flex;
   flex-wrap: wrap;
@@ -4749,6 +4812,10 @@ img.result-card__avatar {
   }
 
   .clinic-team-row {
+    grid-template-columns: 1fr;
+  }
+
+  .clinic-link-search-grid {
     grid-template-columns: 1fr;
   }
 
