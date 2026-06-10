@@ -584,6 +584,7 @@
       bairro: clinic.neighborhood ?? clinic.bairro ?? '',
       telefone: clinic.phone ?? clinic.telefone ?? '',
       whatsapp: clinic.whatsapp ?? '',
+      instagram: clinic.instagram ?? '',
       servicos: servicesList.join(', '),
       servicosLista: servicesList,
       services: clinic.services ?? clinic.servicos ?? '',

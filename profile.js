@@ -27,6 +27,42 @@ function buildClinicWhatsAppLink(clinic) {
   return `https://wa.me/55${digits}?text=${encodeURIComponent(message)}`;
 }
 
+function getClinicLocationParts(clinic) {
+  return [
+    clinic?.endereco || clinic?.address,
+    clinic?.bairro || clinic?.neighborhood,
+    clinic?.cidade || clinic?.city,
+  ]
+    .map((part) => String(part || '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+
+function buildClinicMapsUrl(clinic) {
+  const query = getClinicLocationParts(clinic).join(', ');
+  if (!query) return '';
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+function renderClinicMapSection(clinic) {
+  const locationParts = getClinicLocationParts(clinic);
+  const mapsUrl = buildClinicMapsUrl(clinic);
+
+  if (!locationParts.length || !mapsUrl) return '';
+
+  return `
+    <section class="profile-section clinic-map-section">
+      <h3>Localização</h3>
+      <div class="clinic-map-card">
+        <div>
+          <strong>Endereço da clínica</strong>
+          <p>${escapeHtml(locationParts.join(', '))}</p>
+        </div>
+        <a href="${escapeHtml(mapsUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">Ver no Google Maps</a>
+      </div>
+    </section>
+  `;
+}
+
 function getNeighborhoodBadge(profissional) {
   return [profissional.cidade, profissional.bairro].filter(Boolean).join(' â€¢ ') || 'Localizacao nao informada';
 }
@@ -219,12 +255,15 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
 
         <div class="profile-actions">
           ${clinic.whatsapp || clinic.telefone ? `<a href="${buildClinicWhatsAppLink(clinic)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Falar no WhatsApp</a>` : ''}
+          ${clinic.instagram ? `<a href="${escapeHtml(clinic.instagram)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">Instagram</a>` : ''}
           ${showClaimButton ? `<a href="claim-clinic.html?id=${encodeURIComponent(clinic.id)}" class="btn btn-outline">Reivindicar clínica</a>` : ''}
           ${isOwner ? '<a href="clinic-dashboard.html" class="btn btn-secondary">Editar dados da clínica</a>' : ''}
           <a href="buscar.html" class="btn btn-secondary">Voltar</a>
         </div>
-        ${showClaimButton ? '<p class="claim-profile-warning"><strong>Essa clínica é sua?</strong> Envie uma comprovação de vínculo com o CNPJ para solicitar acesso ao perfil.</p>' : ''}
+        ${showClaimButton ? '<p class="claim-profile-warning">Esta clínica é sua? Reivindique para atualizar as informações.</p>' : ''}
       </section>
+
+      ${renderClinicMapSection(clinic)}
     </article>
   `;
 }
@@ -280,7 +319,7 @@ function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton) {
           ${isOwner ? '<a href="editar-perfil.html" class="btn btn-secondary">Editar perfil</a>' : ''}
           ${showClaimButton ? `<a href="claim-profile.html?id=${encodeURIComponent(profissional.id)}" class="btn btn-outline">Reivindicar perfil</a>` : ''}
           <a href="buscar.html" class="btn btn-secondary">Voltar</a>
-          ${showClaimButton ? '<p class="claim-profile-warning">Esse perfil e seu? Reivindique para atualizar as informacoes.</p>' : ''}
+          ${showClaimButton ? '<p class="claim-profile-warning">Esse perfil é seu? Reivindique para atualizar as informações.</p>' : ''}
         </div>
       </section>
     </article>
