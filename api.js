@@ -626,11 +626,18 @@
       : 'profile.html';
   }
 
+  function getClinicProfilePath(user) {
+    const clinicProfileId = user?.clinicProfile?.id || user?.clinicProfileId || null;
+    return clinicProfileId
+      ? `profile.html?type=clinic&id=${encodeURIComponent(clinicProfileId)}`
+      : 'profile.html';
+  }
+
   function resolveUserHomePath(user) {
     const normalizedUser = normalizeUser(user);
 
     if (normalizedUser?.accountType === ACCOUNT_TYPES.CLINIC) {
-      return 'clinic-dashboard.html';
+      return getClinicProfilePath(normalizedUser);
     }
 
     return getProfilePath(normalizedUser);

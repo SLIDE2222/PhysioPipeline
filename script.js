@@ -2214,7 +2214,7 @@ function updateProfileButtons(user) {
   const profileCtas = Array.from(document.querySelectorAll('[data-profile-cta]'));
 
   const profileHref = getUserProfileHref(user);
-  const text = user?.accountType === 'clinic' ? 'Dashboard da clínica' : 'Meu perfil';
+  const text = 'Meu perfil';
 
   [heroBtn, ctaBtn, pageProfileBtn, ...profileCtas].forEach((btn) => {
     if (!btn) return;
@@ -2301,7 +2301,7 @@ async function renderAuthArea() {
   const greetingName = isClinicAccount ? displayName : displayName.split(' ')[0];
   const profileHref = getUserProfileHref(user);
   const editHref = isClinicAccount ? 'clinic-dashboard.html' : 'editar-perfil.html';
-  const profileLabel = isClinicAccount ? 'Dashboard da clínica' : 'Meu perfil';
+  const profileLabel = 'Meu perfil';
 
   authArea.innerHTML = `
     <span class="user-greeting">Olá, ${escapeHtml(greetingName)}</span>
