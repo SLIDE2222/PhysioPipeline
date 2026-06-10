@@ -2319,7 +2319,7 @@ async function renderAuthArea() {
       </button>
       <div class="account-menu__panel" role="menu" data-account-menu-panel hidden>
         <a role="menuitem" href="${profileHref}">${profileLabel}</a>
-        <a role="menuitem" href="${editHref}">${isClinicAccount ? 'Editar dados da clínica' : 'Editar perfil'}</a>
+        <a role="menuitem" href="${editHref}">Editar perfil</a>
         <a role="menuitem" href="planos.html">Planos</a>
         <button role="menuitem" type="button" onclick="logout()">Sair</button>
       </div>

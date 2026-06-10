@@ -257,7 +257,7 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
           ${clinic.whatsapp || clinic.telefone ? `<a href="${buildClinicWhatsAppLink(clinic)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Falar no WhatsApp</a>` : ''}
           ${clinic.instagram ? `<a href="${escapeHtml(clinic.instagram)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">Instagram</a>` : ''}
           ${showClaimButton ? `<a href="claim-clinic.html?id=${encodeURIComponent(clinic.id)}" class="btn btn-outline">Reivindicar clínica</a>` : ''}
-          ${isOwner ? '<a href="clinic-dashboard.html" class="btn btn-secondary">Editar dados da clínica</a>' : ''}
+          ${isOwner ? '<a href="clinic-dashboard.html" class="btn btn-secondary">Editar perfil</a>' : ''}
           <a href="buscar.html" class="btn btn-secondary">Voltar</a>
         </div>
         ${showClaimButton ? '<p class="claim-profile-warning">Esta clínica é sua? Reivindique para atualizar as informações.</p>' : ''}
