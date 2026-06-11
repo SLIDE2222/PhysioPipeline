@@ -117,6 +117,8 @@ function decorateProfileClinicLink(link) {
     acceptedAt: link.acceptedAt,
     rejectedAt: link.rejectedAt,
     unlinkedAt: link.unlinkedAt,
+    readByClinic: link.readByClinic,
+    readByPhysio: link.readByPhysio,
     clinic: decorateClinicSummary(link.clinic),
   };
 }
@@ -475,6 +477,10 @@ async function updateOwnedClinicLink(req, res, nextStatus) {
       where: { id: link.id },
       data: {
         status: nextStatus,
+        readByPhysio: true,
+        readByClinic: nextStatus === "ACCEPTED" || nextStatus === "REJECTED" || nextStatus === "UNLINKED"
+          ? false
+          : link.readByClinic,
         acceptedAt: nextStatus === "ACCEPTED" ? new Date() : link.acceptedAt,
         rejectedAt: nextStatus === "REJECTED" ? new Date() : link.rejectedAt,
         unlinkedAt: nextStatus === "UNLINKED" ? new Date() : link.unlinkedAt,

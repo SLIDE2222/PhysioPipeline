@@ -178,6 +178,8 @@ function decorateClinicLink(link) {
     acceptedAt: link.acceptedAt,
     rejectedAt: link.rejectedAt,
     unlinkedAt: link.unlinkedAt,
+    readByClinic: link.readByClinic,
+    readByPhysio: link.readByPhysio,
     profile: decorateProfileSummary(link.profile),
   };
 }
@@ -510,6 +512,8 @@ export async function requestClinicPhysioLink(req, res) {
           data: {
             status: "PENDING",
             message: clean(parsed.data.message),
+            readByClinic: true,
+            readByPhysio: false,
             acceptedAt: null,
             rejectedAt: null,
             unlinkedAt: null,
@@ -521,6 +525,8 @@ export async function requestClinicPhysioLink(req, res) {
             clinicId: clinicProfile.id,
             profileId: profile.id,
             message: clean(parsed.data.message),
+            readByClinic: true,
+            readByPhysio: false,
           },
           include: { profile: true },
         });
@@ -547,6 +553,8 @@ export async function unlinkClinicPhysioFromClinic(req, res) {
       where: { id: link.id },
       data: {
         status: "UNLINKED",
+        readByClinic: true,
+        readByPhysio: false,
         unlinkedAt: new Date(),
       },
       include: { profile: true },

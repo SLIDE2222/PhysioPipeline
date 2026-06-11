@@ -2,7 +2,9 @@ import { Router } from "express";
 import {
   login,
   logout,
+  markNotificationRead,
   me,
+  notifications,
   register,
   forgotPassword,
   updatePassword,
@@ -17,6 +19,8 @@ router.post("/login", login);
 router.post("/google", googleLogin);
 router.post("/logout", logout);
 router.get("/me", requireAuth, me);
+router.get("/notifications", requireAuth, notifications);
+router.post("/notifications/:id/read", requireAuth, markNotificationRead);
 router.post("/forgot-password", forgotPassword);
 router.post("/update-password", updatePassword);
 

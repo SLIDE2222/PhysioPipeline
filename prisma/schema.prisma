@@ -96,6 +96,8 @@ model ClinicPhysiotherapistLink {
   profileId String
   status     ClinicPhysioLinkStatus @default(PENDING)
   message    String?
+  readByClinic Boolean              @default(false)
+  readByPhysio Boolean              @default(false)
   createdAt  DateTime               @default(now())
   updatedAt  DateTime               @updatedAt
   acceptedAt DateTime?

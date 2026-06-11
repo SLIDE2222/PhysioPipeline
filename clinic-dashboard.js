@@ -90,7 +90,8 @@ async function loadClinicPhysioLinks() {
     clinicPhysioLinksList.innerHTML = links.map((link) => {
       const profile = link.profile || {};
       const status = CLINIC_LINK_STATUS_LABELS[link.status] || link.status || 'Pendente';
-      const canUnlink = link.status === 'ACCEPTED' || link.status === 'PENDING';
+      const canUnlink = link.status !== 'UNLINKED';
+      const actionLabel = link.status === 'REJECTED' ? 'Remover' : 'Desvincular';
 
       return `
         <article class="clinic-link-card">
@@ -99,7 +100,7 @@ async function loadClinicPhysioLinks() {
           <span class="profile-badge clinic-link-status">${escapeClinicDashboardHtml(status)}</span>
           ${canUnlink ? `
             <div class="clinic-link-actions">
-              <button type="button" class="btn btn-outline" data-unlink-clinic-physio="${escapeClinicDashboardHtml(link.id)}">Desvincular</button>
+              <button type="button" class="btn btn-outline" data-unlink-clinic-physio="${escapeClinicDashboardHtml(link.id)}">${actionLabel}</button>
             </div>
           ` : ''}
         </article>

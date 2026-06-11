@@ -2259,6 +2259,19 @@ function closeAccountMenus(exceptMenu = null) {
   });
 }
 
+function closeNotificationMenus(exceptMenu = null) {
+  document.querySelectorAll('[data-notification-menu]').forEach((menu) => {
+    if (menu === exceptMenu) return;
+
+    const button = menu.querySelector('[data-notification-toggle]');
+    const panel = menu.querySelector('[data-notification-panel]');
+    if (!button || !panel) return;
+
+    button.setAttribute('aria-expanded', 'false');
+    panel.hidden = true;
+  });
+}
+
 function setupAccountMenuEvents() {
   if (window.__physioAccountMenuReady) return;
   window.__physioAccountMenuReady = true;
@@ -2273,20 +2286,128 @@ function setupAccountMenuEvents() {
 
       const willOpen = panel.hidden;
       closeAccountMenus(menu);
+      closeNotificationMenus();
       toggle.setAttribute('aria-expanded', String(willOpen));
       panel.hidden = !willOpen;
       return;
     }
 
-    if (!event.target.closest('[data-account-menu]')) {
+    const notificationToggle = event.target.closest('[data-notification-toggle]');
+    if (notificationToggle) {
+      const menu = notificationToggle.closest('[data-notification-menu]');
+      const panel = menu?.querySelector('[data-notification-panel]');
+      if (!menu || !panel) return;
+
+      const willOpen = panel.hidden;
+      closeNotificationMenus(menu);
       closeAccountMenus();
+      notificationToggle.setAttribute('aria-expanded', String(willOpen));
+      panel.hidden = !willOpen;
+      return;
+    }
+
+    if (!event.target.closest('[data-account-menu]') && !event.target.closest('[data-notification-menu]')) {
+      closeAccountMenus();
+      closeNotificationMenus();
     }
   });
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeAccountMenus();
+    if (event.key === 'Escape') {
+      closeAccountMenus();
+      closeNotificationMenus();
+    }
   });
 }
+
+function renderNotificationItem(notification, isClinicAccount) {
+  const unreadClass = notification.unread ? ' is-unread' : '';
+  const location = notification.clinicLocation ? `<span>${escapeHtml(notification.clinicLocation)}</span>` : '';
+  const actions = !isClinicAccount && notification.status === 'PENDING'
+    ? `
+      <div class="notification-menu__actions">
+        <button type="button" data-notification-accept="${escapeHtml(notification.id)}">Aceitar</button>
+        <button type="button" data-notification-reject="${escapeHtml(notification.id)}">Recusar</button>
+      </div>
+    `
+    : '';
+
+  return `
+    <article class="notification-menu__item${unreadClass}" data-notification-id="${escapeHtml(notification.id)}">
+      <strong>${escapeHtml(notification.title || 'Notificação')}</strong>
+      <p>${escapeHtml(notification.message || '')}</p>
+      ${location}
+      ${actions}
+    </article>
+  `;
+}
+
+async function buildNotificationMenu(user) {
+  if (!window.physioApi?.fetchNotifications) return '';
+
+  try {
+    const data = await window.physioApi.fetchNotifications();
+    const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
+    const unreadCount = Number(data?.unreadCount || 0);
+    const isClinicAccount = user.accountType === 'clinic';
+    const panelContent = notifications.length
+      ? notifications.map((item) => renderNotificationItem(item, isClinicAccount)).join('')
+      : '<p class="notification-menu__empty">Nenhuma notificação no momento.</p>';
+
+    return `
+      <div class="notification-menu" data-notification-menu>
+        <button
+          class="notification-menu__button"
+          type="button"
+          aria-label="Notificações"
+          aria-expanded="false"
+          data-notification-toggle
+        >
+          <span aria-hidden="true">🔔</span>
+          ${unreadCount > 0 ? `<strong class="notification-menu__badge">${unreadCount}</strong>` : ''}
+        </button>
+        <div class="notification-menu__panel" role="menu" data-notification-panel hidden>
+          <h3>Notificações</h3>
+          ${panelContent}
+        </div>
+      </div>
+    `;
+  } catch (error) {
+    console.warn('Could not load notifications:', error);
+    return '';
+  }
+}
+
+document.addEventListener('click', async (event) => {
+  const acceptButton = event.target.closest('[data-notification-accept]');
+  const rejectButton = event.target.closest('[data-notification-reject]');
+  const item = event.target.closest('[data-notification-id]');
+
+  if (!acceptButton && !rejectButton && !item) return;
+  if (!window.physioApi) return;
+
+  const id = acceptButton?.dataset.notificationAccept ||
+    rejectButton?.dataset.notificationReject ||
+    item?.dataset.notificationId;
+
+  if (!id) return;
+
+  try {
+    if (acceptButton) {
+      acceptButton.disabled = true;
+      await window.physioApi.acceptClinicLinkRequest(id);
+    } else if (rejectButton) {
+      rejectButton.disabled = true;
+      await window.physioApi.rejectClinicLinkRequest(id);
+    } else if (!event.target.closest('button')) {
+      await window.physioApi.markNotificationRead(id);
+    }
+
+    await renderAuthArea();
+  } catch (error) {
+    console.error('Notification action failed:', error);
+  }
+});
 
 
 async function renderAuthArea() {
@@ -2329,9 +2450,11 @@ async function renderAuthArea() {
   const profileMenuItem = isClinicAccount && hideClinicDashboardItem
     ? ''
     : `<a role="menuitem" href="${profileHref}">${profileLabel}</a>`;
+  const notificationMenu = await buildNotificationMenu(user);
 
   authArea.innerHTML = `
     <span class="user-greeting">Olá, ${escapeHtml(greetingName)}</span>
+    ${notificationMenu}
     <div class="account-menu" data-account-menu>
       <button
         class="account-menu__button"
@@ -2353,6 +2476,8 @@ async function renderAuthArea() {
     </div>
   `;
 }
+
+window.renderAuthArea = renderAuthArea;
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (document.getElementById('resultsGrid')) {

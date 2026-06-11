@@ -732,6 +732,15 @@
         user: normalizeUser(data?.user || data),
       }));
     },
+    fetchNotifications() {
+      return request('/auth/notifications', { timeoutMs: 10000 });
+    },
+    markNotificationRead(id) {
+      return request(`/auth/notifications/${encodeURIComponent(id)}/read`, {
+        method: 'POST',
+        timeoutMs: 10000,
+      });
+    },
     fetchMyProfile() {
       return request('/profiles/me').then((data) => normalizeProfile(data.profile));
     },

@@ -70,6 +70,52 @@ function cleanOptionalString(value, maxLength = 2000) {
   return normalized.slice(0, maxLength);
 }
 
+function formatClinicLinkNotification(link, accountType) {
+  const clinicName = link.clinic?.clinicName || "A clínica";
+  const profileName = link.profile?.name || "fisioterapeuta";
+  const clinicLocation = [link.clinic?.city, link.clinic?.neighborhood].filter(Boolean).join(" • ");
+
+  if (accountType === ACCOUNT_TYPES.CLINIC) {
+    const statusText = link.status === "ACCEPTED"
+      ? `${profileName} aceitou o vínculo com sua clínica.`
+      : link.status === "REJECTED"
+        ? `${profileName} recusou o vínculo com sua clínica.`
+        : link.status === "UNLINKED"
+          ? `${profileName} foi desvinculado da sua clínica.`
+          : `Solicitação pendente para ${profileName}.`;
+
+    return {
+      id: link.id,
+      type: "clinic_physio_link",
+      status: link.status,
+      unread: !link.readByClinic,
+      title: "Vínculo com fisioterapeuta",
+      message: statusText,
+      linkId: link.id,
+      profileId: link.profileId,
+      profileName,
+      clinicId: link.clinicId,
+      createdAt: link.createdAt,
+      updatedAt: link.updatedAt,
+    };
+  }
+
+  return {
+    id: link.id,
+    type: "clinic_physio_link_request",
+    status: link.status,
+    unread: !link.readByPhysio,
+    title: "Solicitação de vínculo",
+    message: `A clínica ${clinicName} quer vincular seu perfil à equipe dela.`,
+    linkId: link.id,
+    clinicId: link.clinicId,
+    clinicName,
+    clinicLocation,
+    createdAt: link.createdAt,
+    updatedAt: link.updatedAt,
+  };
+}
+
 function normalizeClinicServicesForRegister(value) {
   const rawValues = Array.isArray(value)
     ? value
@@ -639,6 +685,121 @@ export async function updatePassword(req, res) {
     return res.status(500).json({
       message: error.message || "NÃƒÂ£o foi possÃƒÂ­vel atualizar a senha.",
     });
+  }
+}
+
+export async function notifications(req, res) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      include: {
+        clinicProfile: true,
+        profiles: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuário não encontrado." });
+    }
+
+    const accountType = normalizeAccountType(user.accountType);
+    let links = [];
+
+    if (accountType === ACCOUNT_TYPES.CLINIC && user.clinicProfile?.id) {
+      links = await prisma.clinicPhysiotherapistLink.findMany({
+        where: {
+          clinicId: user.clinicProfile.id,
+          status: { in: ["PENDING", "ACCEPTED", "REJECTED", "UNLINKED"] },
+        },
+        include: { profile: true, clinic: true },
+        orderBy: { updatedAt: "desc" },
+        take: 20,
+      });
+    } else {
+      const profile = user.profiles?.[0] || await prisma.profile.findFirst({
+        where: { ownerUserId: user.id },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (profile?.id) {
+        links = await prisma.clinicPhysiotherapistLink.findMany({
+          where: {
+            profileId: profile.id,
+            status: { in: ["PENDING", "ACCEPTED"] },
+          },
+          include: { clinic: true, profile: true },
+          orderBy: { updatedAt: "desc" },
+          take: 20,
+        });
+      }
+    }
+
+    const notifications = links.map((link) => formatClinicLinkNotification(link, accountType));
+
+    return res.json({
+      notifications,
+      unreadCount: notifications.filter((item) => item.unread).length,
+    });
+  } catch (error) {
+    console.error("Notifications route error:", error);
+    return res.status(500).json({ message: error.message || "Não foi possível carregar notificações." });
+  }
+}
+
+export async function markNotificationRead(req, res) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      include: {
+        clinicProfile: true,
+        profiles: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuário não encontrado." });
+    }
+
+    const link = await prisma.clinicPhysiotherapistLink.findUnique({
+      where: { id: req.params.id },
+      include: { clinic: true, profile: true },
+    });
+
+    if (!link) {
+      return res.status(404).json({ message: "Notificação não encontrada." });
+    }
+
+    const accountType = normalizeAccountType(user.accountType);
+    const ownedProfile = user.profiles?.[0] || await prisma.profile.findFirst({
+      where: { ownerUserId: user.id },
+      orderBy: { createdAt: "desc" },
+    });
+    const canReadAsClinic = accountType === ACCOUNT_TYPES.CLINIC && user.clinicProfile?.id === link.clinicId;
+    const canReadAsPhysio = ownedProfile?.id === link.profileId;
+
+    if (!canReadAsClinic && !canReadAsPhysio) {
+      return res.status(403).json({ message: "Você não pode alterar esta notificação." });
+    }
+
+    const updated = await prisma.clinicPhysiotherapistLink.update({
+      where: { id: link.id },
+      data: {
+        ...(canReadAsClinic ? { readByClinic: true } : {}),
+        ...(canReadAsPhysio ? { readByPhysio: true } : {}),
+      },
+      include: { clinic: true, profile: true },
+    });
+
+    return res.json({ notification: formatClinicLinkNotification(updated, accountType) });
+  } catch (error) {
+    console.error("Mark notification read error:", error);
+    return res.status(500).json({ message: error.message || "Não foi possível atualizar a notificação." });
   }
 }
 
