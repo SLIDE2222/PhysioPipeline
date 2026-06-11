@@ -47,6 +47,7 @@
     'publicEmail',
     'attendance',
     'isClaimed',
+    'ownerUserId',
   ].join(',');
   const PUBLIC_PROFILE_CARD_SOURCES = ['Profile', 'public_profiles', 'public_profile_cards'];
   const PUBLIC_PROFILE_DETAIL_SOURCES = ['Profile', 'public_profiles', 'public_profile_details'];
@@ -868,13 +869,21 @@
     fetchMyClinicPhysioLinks() {
       return request('/clinics/me/physio-links', {
         timeoutMs: 10000,
+      }).catch((error) => {
+        if (error.status !== 404) throw error;
+        return request('/api/clinics/me/physio-links', { timeoutMs: 10000 });
       }).then((data) => data.links || []);
     },
     requestClinicPhysioLink(payload) {
-      return request('/clinics/me/physio-links', {
+      const options = {
         method: 'POST',
         body: payload,
         timeoutMs: 15000,
+      };
+
+      return request('/clinics/me/physio-links', options).catch((error) => {
+        if (error.status !== 404) throw error;
+        return request('/api/clinics/me/physio-links', options);
       }).then((data) => data.link || data);
     },
     unlinkClinicPhysioLink(linkId) {
@@ -892,6 +901,8 @@
             const backendProfile = normalizeProfile(backendData.profile || backendData);
             return {
               ...profile,
+              ownerUserId: backendProfile?.ownerUserId || profile.ownerUserId || null,
+              isClaimed: Boolean(backendProfile?.isClaimed || profile.isClaimed),
               linkedClinics: backendProfile?.linkedClinics || profile.linkedClinics || [],
             };
           } catch (backendError) {

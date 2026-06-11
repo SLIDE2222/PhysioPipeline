@@ -2343,10 +2343,10 @@ function renderNotificationItem(notification, isClinicAccount) {
 }
 
 async function buildNotificationMenu(user) {
-  if (!window.physioApi?.fetchNotifications) return '';
-
   try {
-    const data = await window.physioApi.fetchNotifications();
+    const data = window.physioApi?.fetchNotifications
+      ? await window.physioApi.fetchNotifications()
+      : { notifications: [], unreadCount: 0 };
     const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
     const unreadCount = Number(data?.unreadCount || 0);
     const isClinicAccount = user.accountType === 'clinic';
@@ -2374,7 +2374,23 @@ async function buildNotificationMenu(user) {
     `;
   } catch (error) {
     console.warn('Could not load notifications:', error);
-    return '';
+    return `
+      <div class="notification-menu" data-notification-menu>
+        <button
+          class="notification-menu__button"
+          type="button"
+          aria-label="Notificações"
+          aria-expanded="false"
+          data-notification-toggle
+        >
+          <span aria-hidden="true">🔔</span>
+        </button>
+        <div class="notification-menu__panel" role="menu" data-notification-panel hidden>
+          <h3>Notificações</h3>
+          <p class="notification-menu__empty">Nenhuma notificação no momento.</p>
+        </div>
+      </div>
+    `;
   }
 }
 

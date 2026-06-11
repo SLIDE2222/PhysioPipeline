@@ -339,6 +339,7 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
 
 function renderClinicLinkRequestCta(profissional, clinicLinkState) {
   if (!clinicLinkState?.isClinicViewer) return '';
+  if (!profissional?.ownerUserId) return '';
 
   const status = clinicLinkState.status || 'NONE';
   const profileId = encodeURIComponent(profissional.id);
@@ -504,7 +505,7 @@ function setupProfileClinicLinkRequest() {
     } catch (error) {
       button.disabled = false;
       if (message) {
-        message.textContent = error.message || 'Não foi possível enviar a solicitação.';
+        message.textContent = 'Não foi possível enviar a solicitação agora. Tente novamente mais tarde.';
         message.style.color = '#b91c1c';
       }
       console.error('Profile clinic link request failed:', error);

@@ -426,7 +426,10 @@ export async function searchPhysiotherapistsForClinic(req, res) {
     ];
 
     const profiles = await prisma.profile.findMany({
-      where: filters.length ? { OR: filters } : undefined,
+      where: {
+        ownerUserId: { not: null },
+        ...(filters.length ? { OR: filters } : {}),
+      },
       orderBy: { updatedAt: "desc" },
       take: 20,
     });
@@ -468,6 +471,20 @@ export async function requestClinicPhysioLink(req, res) {
 
     if (!profile) {
       return res.status(404).json({ error: "Fisioterapeuta não encontrado.", message: "Fisioterapeuta não encontrado." });
+    }
+
+    if (!profile.ownerUserId) {
+      return res.status(403).json({
+        error: "Este perfil ainda não pertence a um fisioterapeuta cadastrado.",
+        message: "Este perfil ainda não pertence a um fisioterapeuta cadastrado.",
+      });
+    }
+
+    if (!profile.ownerUserId) {
+      return res.status(403).json({
+        error: "Este perfil já pertence a um fisioterapeuta cadastrado.",
+        message: "Este perfil já pertence a um fisioterapeuta cadastrado.",
+      });
     }
 
     if (profile.ownerUserId === user.id) {
