@@ -2222,6 +2222,13 @@ function isOwnPublicClinicProfilePage(user) {
   return Boolean(currentProfileId && ownClinicProfileId && currentProfileId === String(ownClinicProfileId));
 }
 
+function isClinicDashboardPage(user) {
+  if (user?.accountType !== 'clinic') return false;
+
+  const pageName = window.location.pathname.split('/').pop() || 'index.html';
+  return pageName === 'clinic-dashboard.html';
+}
+
 
 function updateProfileButtons(user) {
   const heroBtn = document.getElementById('heroProfileBtn');
@@ -2317,7 +2324,7 @@ async function renderAuthArea() {
   const greetingName = isClinicAccount ? displayName : displayName.split(' ')[0];
   const profileHref = getUserProfileHref(user);
   const editHref = isClinicAccount ? 'clinic-dashboard.html' : 'editar-perfil.html';
-  const hideClinicDashboardItem = isOwnPublicClinicProfilePage(user);
+  const hideClinicDashboardItem = isOwnPublicClinicProfilePage(user) || isClinicDashboardPage(user);
   const profileLabel = isClinicAccount ? 'Dashboard da clínica' : 'Meu perfil';
   const profileMenuItem = isClinicAccount && hideClinicDashboardItem
     ? ''
