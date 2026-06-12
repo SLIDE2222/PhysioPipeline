@@ -7,7 +7,7 @@
   <meta name="description" content="Finalizando seu login com Google no PhysioPipeline." />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
-  <link rel="stylesheet" href="style.css?v=google-click-fix3" />
+  <link rel="stylesheet" href="style.css?v=google-click-fix4" />
 </head>
 <body class="product-form-page login-page">
   <main class="page-main">
@@ -25,33 +25,68 @@
   <script src="account-types.js?v=accounttype1"></script>
   <script src="api.js?v=rankedfallback2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-client.js?v=supabase-client1"></script>
+  <script src="supabase-client.js?v=supabase-client2"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const message = document.getElementById('authCallbackMessage');
 
       try {
+        const searchParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const hasCode = searchParams.has('code');
+
         console.log('Supabase library:', window.supabase);
         console.log('Supabase client:', window.supabaseClient);
         console.log('Google OAuth client auth:', window.supabaseClient?.auth);
+        console.log('OAuth callback URL:', window.location.href);
+        console.log('OAuth callback search params:', Object.fromEntries(searchParams.entries()));
+        console.log('OAuth callback hash params:', Object.fromEntries(hashParams.entries()));
 
         if (!window.supabaseClient?.auth) {
           throw new Error('Supabase client auth is not available on the callback page.');
         }
 
-        const { data, error } = await window.supabaseClient.auth.getSession();
-        console.log('Supabase OAuth callback session:', { data, error });
+        let exchangeResult = null;
 
-        if (error) throw error;
+        if (hasCode) {
+          exchangeResult = await window.supabaseClient.auth.exchangeCodeForSession(window.location.href);
+          console.log('Supabase OAuth exchangeCodeForSession result:', exchangeResult);
 
-        if (!data?.session?.access_token) {
+          if (exchangeResult.error) {
+            throw exchangeResult.error;
+          }
+        } else {
+          console.log('Supabase OAuth exchangeCodeForSession result:', {
+            skipped: true,
+            reason: 'No code search param found in callback URL.',
+          });
+        }
+
+        const sessionResult = await window.supabaseClient.auth.getSession();
+        console.log('Supabase OAuth getSession result:', sessionResult);
+
+        if (sessionResult.error) throw sessionResult.error;
+
+        const session =
+          sessionResult.data?.session ||
+          exchangeResult?.data?.session ||
+          null;
+
+        if (!session?.access_token) {
+          console.error('Supabase OAuth session not found after callback processing:', {
+            href: window.location.href,
+            searchParams: Object.fromEntries(searchParams.entries()),
+            hashParams: Object.fromEntries(hashParams.entries()),
+            exchangeResult,
+            sessionResult,
+          });
           message.textContent = 'Sessão do Google não encontrada. Tente entrar novamente.';
           return;
         }
 
         const accountType = sessionStorage.getItem('pendingGoogleAccountType') || 'physio';
         const authData = await window.physioApi.loginWithSupabase(
-          data.session.access_token,
+          session.access_token,
           accountType
         );
 
