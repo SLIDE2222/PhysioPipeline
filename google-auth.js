@@ -1,4 +1,8 @@
 (function () {
+  const GOOGLE_OAUTH_REDIRECT_URL =
+    window.PHYSIO_GOOGLE_REDIRECT_URL ||
+    'https://physio-pipeline.vercel.app/auth-callback.html';
+
   function showMessage(text, color = '#b91c1c') {
     const targets = [
       document.getElementById('cadastroMensagem'),
@@ -49,7 +53,7 @@
     const { data, error } = await client.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth-callback.html`,
+        redirectTo: GOOGLE_OAUTH_REDIRECT_URL,
       },
     });
 

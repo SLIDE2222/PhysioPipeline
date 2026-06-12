@@ -793,7 +793,7 @@
           const { data, error } = await client.auth.signInWithOAuth({
             provider: "google",
             options: {
-              redirectTo: window.location.origin + "/auth-callback.html"
+              redirectTo: window.PHYSIO_GOOGLE_REDIRECT_URL || "https://physio-pipeline.vercel.app/auth-callback.html"
             }
           });
 

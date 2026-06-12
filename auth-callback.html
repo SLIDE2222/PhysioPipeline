@@ -16,7 +16,7 @@
         <div class="form-card">
           <p class="eyebrow">Google</p>
           <h1>Finalizando login</h1>
-          <p id="authCallbackMessage">Aguarde enquanto confirmamos sua sessão.</p>
+          <p id="authCallbackMessage">Aguarde enquanto confirmamos sua sess&atilde;o.</p>
         </div>
       </div>
     </section>
@@ -33,17 +33,43 @@
       try {
         const searchParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+        const paramsObject = Object.fromEntries(searchParams.entries());
+        const hashObject = Object.fromEntries(hashParams.entries());
         const hasCode = searchParams.has('code');
+        const oauthError = searchParams.get('error') || hashParams.get('error');
+        const oauthErrorCode = searchParams.get('error_code') || hashParams.get('error_code');
+        const oauthErrorDescription =
+          searchParams.get('error_description') ||
+          hashParams.get('error_description');
 
         console.log('Supabase library:', window.supabase);
         console.log('Supabase client:', window.supabaseClient);
         console.log('Google OAuth client auth:', window.supabaseClient?.auth);
         console.log('OAuth callback URL:', window.location.href);
-        console.log('OAuth callback search params:', Object.fromEntries(searchParams.entries()));
-        console.log('OAuth callback hash params:', Object.fromEntries(hashParams.entries()));
+        console.log('OAuth callback search params:', paramsObject);
+        console.log('OAuth callback hash params:', hashObject);
 
         if (!window.supabaseClient?.auth) {
           throw new Error('Supabase client auth is not available on the callback page.');
+        }
+
+        if (oauthError) {
+          console.error('Supabase OAuth returned an error before session exchange:', {
+            error: oauthError,
+            error_code: oauthErrorCode,
+            error_description: oauthErrorDescription,
+            href: window.location.href,
+            searchParams: paramsObject,
+            hashParams: hashObject,
+          });
+
+          const sessionResult = await window.supabaseClient.auth.getSession();
+          console.log('Supabase OAuth getSession result:', sessionResult);
+
+          message.textContent =
+            oauthErrorDescription ||
+            'O Google retornou um erro de configura&ccedil;&atilde;o OAuth. Verifique Client ID, Client Secret e Redirect URI no Supabase/Google Cloud.';
+          return;
         }
 
         let exchangeResult = null;
@@ -75,12 +101,12 @@
         if (!session?.access_token) {
           console.error('Supabase OAuth session not found after callback processing:', {
             href: window.location.href,
-            searchParams: Object.fromEntries(searchParams.entries()),
-            hashParams: Object.fromEntries(hashParams.entries()),
+            searchParams: paramsObject,
+            hashParams: hashObject,
             exchangeResult,
             sessionResult,
           });
-          message.textContent = 'Sessão do Google não encontrada. Tente entrar novamente.';
+          message.textContent = 'Sess&atilde;o do Google n&atilde;o encontrada. Tente entrar novamente.';
           return;
         }
 
@@ -98,7 +124,7 @@
         window.location.replace(targetPath);
       } catch (error) {
         console.error('OAuth callback error:', error);
-        message.textContent = error.message || 'Não foi possível concluir o login com Google.';
+        message.textContent = error.message || 'N&atilde;o foi poss&iacute;vel concluir o login com Google.';
       }
     });
   </script>
