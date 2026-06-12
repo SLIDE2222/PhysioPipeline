@@ -1,11 +1,4 @@
 (function () {
-  let initAttempts = 0;
-  let googleInitialized = false;
-
-  function getClientId() {
-    return document.querySelector('meta[name="google-client-id"]')?.content?.trim() || '';
-  }
-
   function showMessage(text, color = '#b91c1c') {
     const targets = [
       document.getElementById('cadastroMensagem'),
@@ -18,21 +11,6 @@
     });
   }
 
-
-  function encodeBase64Url(value) {
-    const bytes = new TextEncoder().encode(String(value || ''));
-    let binary = '';
-
-    bytes.forEach((byte) => {
-      binary += String.fromCharCode(byte);
-    });
-
-    return btoa(binary)
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/g, '');
-  }
-
   function getSelectedAccountType() {
     const selected = document.querySelector('input[name="accountType"]:checked');
     return window.PhysioAccountTypes?.normalizeAccountType
@@ -40,106 +18,54 @@
       : 'physio';
   }
 
-  async function handleCredentialResponse(response) {
-    try {
-      if (!response?.credential) {
-        showMessage('Não foi possível receber a credencial do Google.');
-        return;
-      }
+  function getSupabaseOAuthClient() {
+    const client = window.supabaseClient;
 
-      const data = await window.physioApi.loginWithGoogle(
-        response.credential,
-        getSelectedAccountType()
-      );
+    console.log('Supabase library:', window.supabase);
+    console.log('Supabase client:', client);
+    console.log('Google OAuth client auth:', client?.auth);
 
-      if (!data?.token) {
-        showMessage('Login recebido, mas o token não veio do servidor.', '#b91c1c');
-        return;
-      }
-
-      const profileId = data?.user?.profiles?.[0]?.id || null;
-      const accountType = window.PhysioAccountTypes?.normalizeAccountType
-        ? window.PhysioAccountTypes.normalizeAccountType(data?.user?.accountType)
-        : 'physio';
-
-      const authPayload = {
-        token: data.token,
-        user: {
-          ...(data?.user || {}),
-          id: data?.user?.id || null,
-          email: data?.user?.email || '',
-          accountType,
-          name: data?.user?.name || '',
-          emailVerified: Boolean(data?.user?.emailVerified),
-          profiles: profileId ? [{ id: profileId }] : [],
-          clinicProfile: data?.user?.clinicProfile || null,
-          clinicProfileId: data?.user?.clinicProfileId || data?.user?.clinicProfile?.id || null,
-        },
-      };
-
-      try {
-        window.physioApi.setStoredAuth?.(authPayload, true);
-        localStorage.setItem('physioAuth', JSON.stringify(authPayload));
-        sessionStorage.setItem('physioAuth', JSON.stringify(authPayload));
-      } catch (_) {
-        // ignore storage write issues
-      }
-
-      showMessage('Login com Google realizado com sucesso.', '#166534');
-
-      const packedAuth = encodeBase64Url(JSON.stringify(authPayload));
-
-      setTimeout(() => {
-        const targetPath = window.physioApi?.resolveUserHomePath?.(authPayload.user) || 'profile.html';
-        window.location.href = profileId || accountType === 'clinic'
-          ? `${targetPath}#auth=${packedAuth}`
-          : `cadastro.html?completeProfile=true#auth=${packedAuth}`;
-      }, 600);
-    } catch (error) {
-      console.error('OAuth error:', error);
-      showMessage(error.message || 'Não foi possível entrar com Google.');
+    if (!client?.auth?.signInWithOAuth) {
+      console.error('Google OAuth client auth is not available. Check Supabase CDN, supabase-client.js, and script order.');
+      showMessage('Google ainda está carregando. Tente novamente em alguns segundos.');
+      return null;
     }
+
+    return client;
   }
 
-  function startGoogleOAuth() {
+  async function startGoogleOAuth() {
     console.log('Starting Google OAuth');
-    console.log('Supabase object:', window.supabase);
-    console.log('Supabase client:', window.supabaseClient);
 
-    if (!window.google?.accounts?.id) {
-      const error = new Error('Google Identity Services ainda não carregou.');
-      console.error('OAuth error:', error);
-      showMessage('Google ainda está carregando. Tente novamente em alguns segundos.');
-      initGoogleAuth();
-      throw error;
+    const client = getSupabaseOAuthClient();
+    if (!client) return;
+
+    try {
+      sessionStorage.setItem('pendingGoogleAccountType', getSelectedAccountType());
+    } catch (_) {
+      // Account type persistence is best-effort; OAuth can still continue.
     }
 
-    window.google.accounts.id.prompt((notification) => {
-      if (notification?.isNotDisplayed?.()) {
-        console.error('OAuth error:', {
-          type: 'prompt_not_displayed',
-          reason: notification.getNotDisplayedReason?.(),
-        });
-      }
-
-      if (notification?.isSkippedMoment?.()) {
-        console.error('OAuth error:', {
-          type: 'prompt_skipped',
-          reason: notification.getSkippedReason?.(),
-        });
-      }
-
-      if (notification?.isDismissedMoment?.()) {
-        console.error('OAuth error:', {
-          type: 'prompt_dismissed',
-          reason: notification.getDismissedReason?.(),
-        });
-      }
+    const { data, error } = await client.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth-callback.html`,
+      },
     });
+
+    console.log('Google OAuth response:', { data, error });
+
+    if (error) {
+      console.error('OAuth error:', error.message, error);
+      showMessage(error.message || 'Não foi possível iniciar o login com Google.');
+    }
   }
 
   function bindGoogleButton() {
-    const googleBtn = document.getElementById('googleSignupButton');
+    const googleBtn =
+      document.getElementById('googleSignupButton') ||
+      document.getElementById('googleLoginBtn') ||
+      document.querySelector('[data-google-auth-trigger]');
 
     if (!googleBtn) {
       console.warn('Google button not found');
@@ -148,77 +74,23 @@
 
     console.log('Google button found');
 
+    if ('type' in googleBtn) googleBtn.type = 'button';
     if (googleBtn.dataset.googleAuthBound === 'true') return;
+
     googleBtn.dataset.googleAuthBound = 'true';
 
     googleBtn.addEventListener('click', (event) => {
       event.preventDefault();
       console.log('Google button clicked');
 
-      try {
-        startGoogleOAuth();
-      } catch (error) {
+      startGoogleOAuth().catch((error) => {
         console.error('OAuth error:', error);
-      }
+        showMessage(error.message || 'Não foi possível iniciar o login com Google.');
+      });
     });
   }
 
   function initGoogleAuth() {
-    bindGoogleButton();
-
-    const clientId = getClientId();
-    if (!clientId) return;
-
-    if (!window.google?.accounts?.id) {
-      initAttempts += 1;
-      if (initAttempts <= 20) window.setTimeout(initGoogleAuth, 250);
-      return;
-    }
-
-    if (googleInitialized) return;
-    googleInitialized = true;
-
-    window.google.accounts.id.initialize({
-      client_id: clientId,
-      callback: handleCredentialResponse,
-      auto_select: false,
-      cancel_on_tap_outside: true,
-      use_fedcm_for_prompt: true,
-    });
-
-    document.querySelectorAll('[data-google-auth]').forEach((container) => {
-      const customButton = container.closest('.google-auth-card')?.querySelector('.google-full-btn');
-      const measuredWidth = customButton?.offsetWidth || Number(container.dataset.width || 400);
-      const width = Number(container.dataset.width || measuredWidth || 400);
-
-      container.innerHTML = '';
-      window.google.accounts.id.renderButton(container, {
-        theme: 'outline',
-        size: 'large',
-        type: 'standard',
-        shape: 'pill',
-        text: 'continue_with',
-        logo_alignment: 'left',
-        width: Math.min(Math.max(width, 240), 400),
-        click_listener: () => {
-          console.log('Google button clicked');
-          console.log('Starting Google OAuth');
-        },
-      });
-
-      if (container.dataset.googleAuthBound !== 'true') {
-        container.dataset.googleAuthBound = 'true';
-        container.addEventListener('click', () => {
-          console.log('Google button clicked');
-          try {
-            startGoogleOAuth();
-          } catch (error) {
-            console.error('OAuth error:', error);
-          }
-        });
-      }
-    });
-
     bindGoogleButton();
   }
 
@@ -235,5 +107,4 @@
 
   window.addEventListener('load', initGoogleAuth);
   window.setTimeout(initGoogleAuth, 500);
-  window.setTimeout(initGoogleAuth, 1500);
 })();

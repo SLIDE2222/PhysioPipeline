@@ -13,7 +13,7 @@
   <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de medição. -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
-  <link rel="stylesheet" href="style.css?v=google-click-fix2" />
+  <link rel="stylesheet" href="style.css?v=google-click-fix3" />
  <meta name="google-client-id" content="197182747757-6tm1e8vhu44fkpf89pvvsbooodl48t3o.apps.googleusercontent.com" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -264,8 +264,9 @@
 
   <script src="account-types.js?v=accounttype1"></script>
   <script src="api.js?v=rankedfallback2"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="google-auth.js?v=google-click-fix2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js?v=supabase-client1"></script>
+  <script src="google-auth.js?v=google-click-fix3"></script>
   <script src="image-cropper.js?v=imagecrop1"></script>
   <script src="clinic-form-ui.js?v=clinicui1"></script>
   <script src="search-taxonomy.generated.js?v=taxonomy2"></script>
@@ -771,13 +772,14 @@
 
         console.log("GOOGLE BUTTON CLICKED");
 
-        console.log("Supabase object:", window.supabase);
+        console.log("Supabase library:", window.supabase);
         console.log("Supabase client:", window.supabaseClient);
+        console.log("Google OAuth client auth:", window.supabaseClient?.auth);
 
         if (window.PhysioGoogleAuth?.start) {
           try {
             console.log("Starting Google OAuth");
-            window.PhysioGoogleAuth.start();
+            await window.PhysioGoogleAuth.start();
           } catch (error) {
             console.error("Google OAuth error:", error);
           }
@@ -785,13 +787,13 @@
           return;
         }
 
-        const client = window.supabaseClient || window.supabase;
+        const client = window.supabaseClient;
 
         if (client?.auth?.signInWithOAuth) {
           const { data, error } = await client.auth.signInWithOAuth({
             provider: "google",
             options: {
-              redirectTo: window.location.origin + "/profile.html"
+              redirectTo: window.location.origin + "/auth-callback.html"
             }
           });
 

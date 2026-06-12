@@ -723,6 +723,24 @@
 
       return data;
     },
+    async loginWithSupabase(accessToken, accountType) {
+      const data = await request('/auth/supabase', {
+        method: 'POST',
+        body: {
+          accessToken,
+          accountType:
+            window.PhysioAccountTypes?.normalizeAccountType?.(accountType) ||
+            ACCOUNT_TYPES.PHYSIO,
+        },
+        timeoutMs: 15000,
+      });
+
+      if (data?.token) {
+        setStoredAuth({ token: data.token, user: normalizeUser(data.user) }, true);
+      }
+
+      return data;
+    },
     logout() {
       clearStoredAuth();
       return request('/auth/logout', { method: 'POST' });

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { createClient } from "@supabase/supabase-js";
 import { prisma } from "../lib/prisma.js";
 import { mailConfig, sendMailOrThrow } from "../lib/mail.js";
 import {
@@ -10,6 +11,8 @@ import {
 } from "../constants/account-types.js";
 
 const COOKIE_NAME = "token";
+const SUPABASE_URL = String(process.env.SUPABASE_URL || "").trim();
+const SUPABASE_ANON_KEY = String(process.env.SUPABASE_ANON_KEY || "").trim();
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
@@ -68,6 +71,31 @@ function cleanOptionalString(value, maxLength = 2000) {
   const normalized = String(value ?? "").replace(/\s+/g, " ").trim();
   if (!normalized) return null;
   return normalized.slice(0, maxLength);
+}
+
+async function getSupabaseUserFromAccessToken(accessToken) {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    const error = new Error("Supabase auth is not configured on the backend.");
+    error.status = 500;
+    throw error;
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+
+  const { data, error } = await supabase.auth.getUser(accessToken);
+
+  if (error || !data?.user) {
+    const authError = new Error(error?.message || "Supabase session is invalid.");
+    authError.status = 401;
+    throw authError;
+  }
+
+  return data.user;
 }
 
 function formatClinicLinkNotification(link, accountType) {
@@ -684,6 +712,137 @@ export async function updatePassword(req, res) {
     console.error("Update password error:", error);
     return res.status(500).json({
       message: error.message || "NÃƒÂ£o foi possÃƒÂ­vel atualizar a senha.",
+    });
+  }
+}
+
+export async function supabaseLogin(req, res) {
+  try {
+    const accessToken = String(req.body?.accessToken || "").trim();
+    const rawAccountType = req.body?.accountType;
+
+    if (!accessToken) {
+      return res.status(400).json({ message: "Token do Supabase é obrigatório." });
+    }
+
+    if (rawAccountType !== undefined && !isValidAccountType(rawAccountType)) {
+      return res.status(400).json({ message: "Tipo de conta invalido." });
+    }
+
+    const requestedAccountType = normalizeAccountType(rawAccountType);
+    const supabaseUser = await getSupabaseUserFromAccessToken(accessToken);
+    const email = normalizeEmail(supabaseUser.email);
+
+    if (!email) {
+      return res.status(401).json({ message: "A conta Google não retornou um e-mail." });
+    }
+
+    const metadata = supabaseUser.user_metadata || {};
+    const fullName = cleanOptionalString(
+      metadata.full_name || metadata.name || metadata.display_name || email.split("@")[0],
+      160
+    ) || "Profissional";
+    const firstName = fullName.split(/\s+/)[0] || "Profissional";
+    const avatarUrl = cleanOptionalString(metadata.avatar_url || metadata.picture, 2000);
+    const supabaseSub = supabaseUser.id ? `supabase:${supabaseUser.id}` : null;
+
+    let user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        profiles: true,
+        clinicProfile: true,
+      },
+    });
+
+    if (!user) {
+      const randomPassword = crypto.randomBytes(32).toString("hex");
+      const passwordHash = await bcrypt.hash(randomPassword, 10);
+
+      user = await prisma.user.create({
+        data: {
+          email,
+          passwordHash,
+          emailVerified: Boolean(supabaseUser.email_confirmed_at) || true,
+          accountType: requestedAccountType,
+          name: firstName,
+          googleSub: supabaseSub,
+          clinicProfile:
+            requestedAccountType === ACCOUNT_TYPES.CLINIC
+              ? {
+                  create: {
+                    clinicName: fullName,
+                    responsibleName: fullName,
+                    phone: null,
+                    whatsapp: null,
+                  },
+                }
+              : undefined,
+        },
+        include: {
+          profiles: true,
+          clinicProfile: true,
+        },
+      });
+    } else {
+      const userUpdateData = {};
+
+      if (!user.emailVerified) userUpdateData.emailVerified = true;
+      if (!user.name) userUpdateData.name = firstName;
+      if (!user.googleSub && supabaseSub) userUpdateData.googleSub = supabaseSub;
+
+      if (Object.keys(userUpdateData).length) {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: userUpdateData,
+          include: {
+            profiles: true,
+            clinicProfile: true,
+          },
+        });
+      }
+    }
+
+    user = await ensureClinicProfileForUser(user, {
+      clinicName: fullName,
+      responsibleName: fullName,
+      phone: user.phone || null,
+      whatsapp: user.phone || null,
+    });
+
+    if (normalizeAccountType(user.accountType) === ACCOUNT_TYPES.PHYSIO && !user.profiles?.length) {
+      const profile = await prisma.profile.create({
+        data: {
+          name: firstName,
+          specialty: "Não informado",
+          city: "Não informado",
+          neighborhood: null,
+          phone: user.phone || null,
+          bio: "Perfil criado com Google. Complete seus dados profissionais para aparecer melhor nas buscas.",
+          photoUrl: avatarUrl,
+          publicEmail: email,
+          ownerUserId: user.id,
+          isClaimed: true,
+        },
+      });
+
+      user = {
+        ...user,
+        profiles: [profile],
+      };
+    }
+
+    const resolvedUser = await ensureClinicProfileForUser(user);
+    const token = createToken(resolvedUser);
+    res.cookie(COOKIE_NAME, token, getCookieOptions());
+
+    return res.json({
+      user: sanitizeUser(resolvedUser),
+      token,
+    });
+  } catch (error) {
+    console.error("Supabase OAuth login error:", error);
+    return res.status(error.status || 500).json({
+      message: error.message || "Não foi possível entrar com Google.",
     });
   }
 }
