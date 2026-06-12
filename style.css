@@ -5210,3 +5210,72 @@ img.result-card__avatar {
     min-width: 0;
   }
 }
+
+/* Codex final segmented-control sizing guard */
+.hero-card .search-box,
+.search-box {
+  max-width: 540px;
+}
+
+.search-mode-toggle,
+.search-mode-toggle--triple,
+.results-search-inline .results-mode-toggle,
+.results-page-body .results-search-inline .results-mode-toggle {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.search-mode-toggle label,
+.search-mode-toggle--triple label,
+.results-search-inline .results-mode-toggle label,
+.results-page-body .results-search-inline .results-mode-toggle label {
+  display: flex !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.search-mode-toggle span,
+.search-mode-toggle--triple span,
+.results-search-inline .results-mode-toggle span,
+.results-page-body .results-search-inline .results-mode-toggle span,
+.search-mode-toggle input:checked + span,
+.search-mode-toggle--triple input:checked + span,
+.results-search-inline .results-mode-toggle input:checked + span,
+.results-page-body .results-search-inline .results-mode-toggle input:checked + span {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  box-sizing: border-box !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 768px) {
+  .search-mode-toggle span,
+  .search-mode-toggle--triple span,
+  .results-search-inline .results-mode-toggle span,
+  .results-page-body .results-search-inline .results-mode-toggle span,
+  .search-mode-toggle input:checked + span,
+  .search-mode-toggle--triple input:checked + span,
+  .results-search-inline .results-mode-toggle input:checked + span,
+  .results-page-body .results-search-inline .results-mode-toggle input:checked + span {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    font-size: 0.84rem !important;
+    line-height: 1.12 !important;
+    white-space: normal !important;
+  }
+}
