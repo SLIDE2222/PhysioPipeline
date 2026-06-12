@@ -1,5 +1,6 @@
 (function () {
   let initAttempts = 0;
+  let googleInitialized = false;
 
   function getClientId() {
     return document.querySelector('meta[name="google-client-id"]')?.content?.trim() || '';
@@ -95,11 +96,74 @@
           : `cadastro.html?completeProfile=true#auth=${packedAuth}`;
       }, 600);
     } catch (error) {
+      console.error('OAuth error:', error);
       showMessage(error.message || 'Não foi possível entrar com Google.');
     }
   }
 
+  function startGoogleOAuth() {
+    console.log('Starting Google OAuth');
+
+    if (!window.google?.accounts?.id) {
+      const error = new Error('Google Identity Services ainda não carregou.');
+      console.error('OAuth error:', error);
+      showMessage('Google ainda está carregando. Tente novamente em alguns segundos.');
+      initGoogleAuth();
+      throw error;
+    }
+
+    window.google.accounts.id.prompt((notification) => {
+      if (notification?.isNotDisplayed?.()) {
+        console.error('OAuth error:', {
+          type: 'prompt_not_displayed',
+          reason: notification.getNotDisplayedReason?.(),
+        });
+      }
+
+      if (notification?.isSkippedMoment?.()) {
+        console.error('OAuth error:', {
+          type: 'prompt_skipped',
+          reason: notification.getSkippedReason?.(),
+        });
+      }
+
+      if (notification?.isDismissedMoment?.()) {
+        console.error('OAuth error:', {
+          type: 'prompt_dismissed',
+          reason: notification.getDismissedReason?.(),
+        });
+      }
+    });
+  }
+
+  function bindGoogleButton() {
+    const googleBtn = document.getElementById('googleSignupButton');
+
+    if (!googleBtn) {
+      console.warn('Google button not found');
+      return;
+    }
+
+    console.log('Google button found');
+
+    if (googleBtn.dataset.googleAuthBound === 'true') return;
+    googleBtn.dataset.googleAuthBound = 'true';
+
+    googleBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      console.log('Google button clicked');
+
+      try {
+        startGoogleOAuth();
+      } catch (error) {
+        console.error('OAuth error:', error);
+      }
+    });
+  }
+
   function initGoogleAuth() {
+    bindGoogleButton();
+
     const clientId = getClientId();
     if (!clientId) return;
 
@@ -108,6 +172,9 @@
       if (initAttempts <= 20) window.setTimeout(initGoogleAuth, 250);
       return;
     }
+
+    if (googleInitialized) return;
+    googleInitialized = true;
 
     window.google.accounts.id.initialize({
       client_id: clientId,
@@ -131,26 +198,40 @@
         text: 'continue_with',
         logo_alignment: 'left',
         width: Math.min(Math.max(width, 240), 400),
+        click_listener: () => {
+          console.log('Google button clicked');
+          console.log('Starting Google OAuth');
+        },
       });
 
-      container.addEventListener('click', () => {
-        window.google.accounts.id.prompt();
-      });
-    });
-
-    const customButton = document.getElementById('googleSignupButton');
-    if (customButton) {
-      customButton.addEventListener('click', () => {
-        window.google.accounts.id.prompt((notification) => {
-          if (notification.isNotDisplayed?.() || notification.isSkippedMoment?.()) {
-            const hiddenHost = document.querySelector('[data-google-auth]:not(.google-hidden-render)');
-            const iframe = hiddenHost?.querySelector('iframe');
-            if (iframe) iframe.focus();
+      if (container.dataset.googleAuthBound !== 'true') {
+        container.dataset.googleAuthBound = 'true';
+        container.addEventListener('click', () => {
+          console.log('Google button clicked');
+          try {
+            startGoogleOAuth();
+          } catch (error) {
+            console.error('OAuth error:', error);
           }
         });
-      });
-    }
+      }
+    });
+
+    bindGoogleButton();
+  }
+
+  window.PhysioGoogleAuth = {
+    init: initGoogleAuth,
+    start: startGoogleOAuth,
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGoogleAuth);
+  } else {
+    initGoogleAuth();
   }
 
   window.addEventListener('load', initGoogleAuth);
+  window.setTimeout(initGoogleAuth, 500);
+  window.setTimeout(initGoogleAuth, 1500);
 })();
