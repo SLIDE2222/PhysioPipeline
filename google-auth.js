@@ -1,4 +1,6 @@
 (function () {
+  let initAttempts = 0;
+
   function getClientId() {
     return document.querySelector('meta[name="google-client-id"]')?.content?.trim() || '';
   }
@@ -62,12 +64,15 @@
       const authPayload = {
         token: data.token,
         user: {
+          ...(data?.user || {}),
           id: data?.user?.id || null,
           email: data?.user?.email || '',
           accountType,
           name: data?.user?.name || '',
           emailVerified: Boolean(data?.user?.emailVerified),
           profiles: profileId ? [{ id: profileId }] : [],
+          clinicProfile: data?.user?.clinicProfile || null,
+          clinicProfileId: data?.user?.clinicProfileId || data?.user?.clinicProfile?.id || null,
         },
       };
 
@@ -96,7 +101,13 @@
 
   function initGoogleAuth() {
     const clientId = getClientId();
-    if (!clientId || !window.google?.accounts?.id) return;
+    if (!clientId) return;
+
+    if (!window.google?.accounts?.id) {
+      initAttempts += 1;
+      if (initAttempts <= 20) window.setTimeout(initGoogleAuth, 250);
+      return;
+    }
 
     window.google.accounts.id.initialize({
       client_id: clientId,
@@ -107,8 +118,11 @@
     });
 
     document.querySelectorAll('[data-google-auth]').forEach((container) => {
-      if (container.classList.contains('google-hidden-render')) return;
-      const width = Number(container.dataset.width || 400);
+      const customButton = container.closest('.google-auth-card')?.querySelector('.google-full-btn');
+      const measuredWidth = customButton?.offsetWidth || Number(container.dataset.width || 400);
+      const width = Number(container.dataset.width || measuredWidth || 400);
+
+      container.innerHTML = '';
       window.google.accounts.id.renderButton(container, {
         theme: 'outline',
         size: 'large',
@@ -117,6 +131,10 @@
         text: 'continue_with',
         logo_alignment: 'left',
         width: Math.min(Math.max(width, 240), 400),
+      });
+
+      container.addEventListener('click', () => {
+        window.google.accounts.id.prompt();
       });
     });
 

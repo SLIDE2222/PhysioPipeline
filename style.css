@@ -2155,6 +2155,7 @@ body:has(#cadastroForm) .form-card {
 .google-auth-card {
   width: 100%;
   margin-bottom: 1.25rem;
+  position: relative;
 }
 
 .google-full-btn {
@@ -2196,12 +2197,14 @@ body:has(#cadastroForm) .form-card {
 
 .google-hidden-render {
   position: absolute !important;
-  left: -9999px !important;
-  width: 1px !important;
-  height: 1px !important;
+  inset: 0 0 auto 0 !important;
+  min-height: 58px !important;
+  display: flex !important;
+  justify-content: center !important;
+  opacity: 0.01 !important;
   overflow: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
+  z-index: 2 !important;
 }
 
 
