@@ -7,7 +7,7 @@
   <meta name="description" content="Finalizando seu login com Google no PhysioPipeline." />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
-  <link rel="stylesheet" href="style.css?v=google-click-fix4" />
+  <link rel="stylesheet" href="style.css?v=google-click-fix5" />
 </head>
 <body class="product-form-page login-page">
   <main class="page-main">
@@ -25,29 +25,35 @@
   <script src="account-types.js?v=accounttype1"></script>
   <script src="api.js?v=rankedfallback2"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-client.js?v=supabase-client2"></script>
+  <script src="supabase-client.js?v=supabase-client3"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const message = document.getElementById('authCallbackMessage');
 
+      function paramsToObject(params) {
+        return Object.fromEntries(params.entries());
+      }
+
       try {
         const searchParams = new URLSearchParams(window.location.search);
         const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-        const paramsObject = Object.fromEntries(searchParams.entries());
-        const hashObject = Object.fromEntries(hashParams.entries());
-        const hasCode = searchParams.has('code');
+        const paramsObject = paramsToObject(searchParams);
+        const hashObject = paramsToObject(hashParams);
         const oauthError = searchParams.get('error') || hashParams.get('error');
         const oauthErrorCode = searchParams.get('error_code') || hashParams.get('error_code');
         const oauthErrorDescription =
           searchParams.get('error_description') ||
           hashParams.get('error_description');
+        const code = searchParams.get('code');
+        const hashAccessToken = hashParams.get('access_token');
+        const hashRefreshToken = hashParams.get('refresh_token');
 
-        console.log('Supabase library:', window.supabase);
-        console.log('Supabase client:', window.supabaseClient);
-        console.log('Google OAuth client auth:', window.supabaseClient?.auth);
         console.log('OAuth callback URL:', window.location.href);
         console.log('OAuth callback search params:', paramsObject);
         console.log('OAuth callback hash params:', hashObject);
+        console.log('Supabase library:', window.supabase);
+        console.log('Supabase client:', window.supabaseClient);
+        console.log('Google OAuth client auth:', window.supabaseClient?.auth);
 
         if (!window.supabaseClient?.auth) {
           throw new Error('Supabase client auth is not available on the callback page.');
@@ -68,23 +74,46 @@
 
           message.textContent =
             oauthErrorDescription ||
-            'O Google retornou um erro de configura&ccedil;&atilde;o OAuth. Verifique Client ID, Client Secret e Redirect URI no Supabase/Google Cloud.';
+            'O Google retornou um erro OAuth antes de criar a sess&atilde;o.';
           return;
         }
 
         let exchangeResult = null;
+        let setSessionResult = null;
 
-        if (hasCode) {
-          exchangeResult = await window.supabaseClient.auth.exchangeCodeForSession(window.location.href);
-          console.log('Supabase OAuth exchangeCodeForSession result:', exchangeResult);
+        if (hashAccessToken && hashRefreshToken) {
+          setSessionResult = await window.supabaseClient.auth.setSession({
+            access_token: hashAccessToken,
+            refresh_token: hashRefreshToken,
+          });
+          console.log('Supabase OAuth hash setSession result:', setSessionResult);
 
-          if (exchangeResult.error) {
-            throw exchangeResult.error;
+          if (setSessionResult.error) {
+            throw setSessionResult.error;
+          }
+        } else if (code) {
+          const codeStorageKey = `physioSupabaseOAuthCodeExchanged:${code}`;
+          const codeAlreadyExchanged = sessionStorage.getItem(codeStorageKey) === 'true';
+
+          if (codeAlreadyExchanged) {
+            console.log('Supabase OAuth exchangeCodeForSession result:', {
+              skipped: true,
+              reason: 'Code was already exchanged in this browser session.',
+            });
+          } else {
+            exchangeResult = await window.supabaseClient.auth.exchangeCodeForSession(window.location.href);
+            console.log('Supabase OAuth exchangeCodeForSession result:', exchangeResult);
+
+            if (exchangeResult.error) {
+              throw exchangeResult.error;
+            }
+
+            sessionStorage.setItem(codeStorageKey, 'true');
           }
         } else {
           console.log('Supabase OAuth exchangeCodeForSession result:', {
             skipped: true,
-            reason: 'No code search param found in callback URL.',
+            reason: 'No code search param and no hash access_token found in callback URL.',
           });
         }
 
@@ -96,6 +125,7 @@
         const session =
           sessionResult.data?.session ||
           exchangeResult?.data?.session ||
+          setSessionResult?.data?.session ||
           null;
 
         if (!session?.access_token) {
@@ -104,6 +134,7 @@
             searchParams: paramsObject,
             hashParams: hashObject,
             exchangeResult,
+            setSessionResult,
             sessionResult,
           });
           message.textContent = 'Sess&atilde;o do Google n&atilde;o encontrada. Tente entrar novamente.';
