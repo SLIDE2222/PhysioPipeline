@@ -103,6 +103,8 @@
 
   function startGoogleOAuth() {
     console.log('Starting Google OAuth');
+    console.log('Supabase object:', window.supabase);
+    console.log('Supabase client:', window.supabaseClient);
 
     if (!window.google?.accounts?.id) {
       const error = new Error('Google Identity Services ainda não carregou.');
