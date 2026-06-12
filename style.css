@@ -2203,8 +2203,8 @@ body:has(#cadastroForm) .form-card {
   justify-content: center !important;
   opacity: 0.01 !important;
   overflow: hidden !important;
-  pointer-events: auto !important;
-  z-index: 2 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
 }
 
 
