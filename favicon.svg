@@ -10,7 +10,7 @@
   <circle cx="256" cy="256" r="248" fill="#ffffff"/>
   <circle cx="256" cy="256" r="214" fill="url(#physioBlue)"/>
 
-  <g>
+  <g transform="translate(256 256) scale(0.8) translate(-301 -213)">
     <path
       fill="#00245f"
       opacity="0.55"
