@@ -804,7 +804,7 @@ textarea {
   list-style: none;
   padding: 8px 0;
   display: none;
-  z-index: 50;
+  z-index: 9999;
   max-height: 240px;
   overflow-y: auto;
 }
@@ -4764,6 +4764,12 @@ img.result-card__avatar {
 .tag-autocomplete-wrapper {
   position: relative;
   margin-bottom: 1rem;
+  overflow: visible;
+}
+
+body:has(#cadastroForm) .form-card,
+body:has(#cadastroForm) .tag-input-shell {
+  overflow: visible;
 }
 
 .tag-autocomplete-wrapper .tag-input-shell {

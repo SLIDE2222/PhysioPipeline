@@ -315,6 +315,26 @@
         suggestions.style.display = 'none';
       }
 
+      function openSuggestionsAfterMobileFocus() {
+        // Mobile Safari/Chrome can keep the keyboard open but skip the next
+        // focus-render cycle after a tag is added. Reopen explicitly after
+        // layout settles so users can add the next specialty without re-tapping.
+        const reopen = () => {
+          if (input.disabled || input.closest('[hidden]')) return;
+          input.focus({ preventScroll: true });
+          renderSuggestions();
+        };
+
+        requestAnimationFrame(reopen);
+        setTimeout(reopen, 60);
+
+        if (window.visualViewport) {
+          const refreshAfterViewportMove = () => renderSuggestions();
+          window.visualViewport.addEventListener('resize', refreshAfterViewportMove, { once: true });
+          window.visualViewport.addEventListener('scroll', refreshAfterViewportMove, { once: true });
+        }
+      }
+
       function applySelection(option) {
         if (onSelect) {
           onSelect(option);
@@ -354,7 +374,7 @@
 
       input.addEventListener('input', renderSuggestions);
       input.addEventListener('focus', renderSuggestions);
-      input.addEventListener('tag-editor:add', closeSuggestions);
+      input.addEventListener('tag-editor:add', openSuggestionsAfterMobileFocus);
 
       input.addEventListener('blur', () => {
         setTimeout(closeSuggestions, 120);
