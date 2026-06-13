@@ -2347,11 +2347,11 @@ function renderNotificationIcon(unreadCount = 0) {
   const badgeText = safeCount > 9 ? '9+' : String(safeCount);
 
   return `
-    <span class="notification-menu__mark" aria-hidden="true">
-      <svg class="notification-menu__p-icon" viewBox="0 0 64 64" focusable="false">
-        <path class="notification-menu__p-curve" d="M16 27 C26 15 51 14 52 32 C53 48 33 52 24 43" />
-        <path class="notification-menu__p-slash" d="M33 24 L21 54" />
-        <circle class="notification-menu__p-dot" cx="36" cy="53" r="4" />
+    <span class="notification-menu__mark${safeCount > 0 ? ' has-unread' : ''}" aria-hidden="true">
+      <svg class="notification-menu__p-icon" viewBox="0 0 72 72" focusable="false">
+        <path class="notification-menu__p-curve" d="M12 31 C25 14 60 13 61 36 C62 57 35 62 23 50" />
+        <path class="notification-menu__p-slash" d="M36 27 L20 63" />
+        <circle class="notification-menu__p-dot" cx="39" cy="62" r="5.4" />
       </svg>
       ${safeCount > 0 ? `<strong class="notification-menu__badge">${badgeText}</strong>` : ''}
     </span>
