@@ -5214,7 +5214,7 @@ img.result-card__avatar {
 /* Codex final segmented-control sizing guard */
 .hero-card .search-box,
 .search-box {
-  max-width: 540px;
+  max-width: 600px;
 }
 
 .search-mode-toggle,
@@ -5225,7 +5225,9 @@ img.result-card__avatar {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   width: 100% !important;
   min-width: 0 !important;
+  max-width: 100% !important;
   box-sizing: border-box !important;
+  gap: 6px !important;
 }
 
 .search-mode-toggle label,
@@ -5255,8 +5257,8 @@ img.result-card__avatar {
   max-width: 100% !important;
   height: 52px !important;
   min-height: 52px !important;
-  padding-left: 16px !important;
-  padding-right: 16px !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
   box-sizing: border-box !important;
   text-align: center !important;
   white-space: nowrap !important;
@@ -5274,7 +5276,7 @@ img.result-card__avatar {
   .results-page-body .results-search-inline .results-mode-toggle input:checked + span {
     padding-left: 10px !important;
     padding-right: 10px !important;
-    font-size: 0.84rem !important;
+    font-size: 0.82rem !important;
     line-height: 1.12 !important;
     white-space: normal !important;
   }
