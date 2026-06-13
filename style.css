@@ -96,13 +96,16 @@ textarea {
 
 .logo::before {
   content: "";
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
   display: inline-block;
   margin-right: 0.62rem;
   background: url("favicon.svg") center / contain no-repeat;
+  background-size: contain;
   filter: drop-shadow(0 8px 16px rgba(37, 99, 235, 0.18));
+  image-rendering: auto;
+  transform: translateZ(0);
 }
 
 .logo span {
@@ -1539,9 +1542,9 @@ body.cropper-open {
   }
 
   .logo::before {
-    width: 36px;
-    height: 36px;
-    flex-basis: 36px;
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
   }
 
   .nav-links {

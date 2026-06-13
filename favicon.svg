@@ -1,21 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PhysioPipeline">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="PhysioPipeline">
   <defs>
-    <radialGradient id="blue" cx="43%" cy="34%" r="76%">
-      <stop offset="0" stop-color="#28c8ff"/>
+    <radialGradient id="blue" cx="38%" cy="30%" r="78%">
+      <stop offset="0" stop-color="#38d5ff"/>
       <stop offset="0.46" stop-color="#0878ff"/>
       <stop offset="1" stop-color="#0052ff"/>
     </radialGradient>
-    <filter id="pShadow" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="10" stdDeviation="7" flood-color="#001a66" flood-opacity="0.55"/>
-      <feDropShadow dx="0" dy="-2" stdDeviation="1.5" flood-color="#ffffff" flood-opacity="0.38"/>
-    </filter>
   </defs>
-  <circle cx="256" cy="256" r="252" fill="#ffffff"/>
-  <circle cx="256" cy="256" r="221" fill="url(#blue)"/>
+  <circle cx="512" cy="512" r="504" fill="#ffffff"/>
+  <circle cx="512" cy="512" r="442" fill="url(#blue)"/>
   <path
     fill="#111111"
-    filter="url(#pShadow)"
-    transform="matrix(0.93 0 0 0.93 -30 54)"
-    d="M171 395c10-71 44-126 103-166 25-17 51-30 78-42 30-14 45-32 45-56 0-31-29-51-73-51-40 0-84 8-132 23l4-45c45-14 89-21 132-21 75 0 123 36 123 91 0 48-28 82-84 106-65 28-105 52-127 73-23 22-38 51-45 88h-24Zm87 0h-39l9-47c11-11 27-23 48-36l-18 83Zm1-146 40-150h54l-33 131-61 19Z"
+    d="M320 805c20-142 88-252 206-332 50-34 102-60 156-84 60-28 90-64 90-112 0-62-58-102-146-102-80 0-168 16-264 46l8-90c90-28 178-42 264-42 150 0 246 72 246 182 0 96-56 164-168 212-130 56-210 104-254 146-46 44-76 102-90 176h-48Zm174 0h-78l18-94c22-22 54-46 96-72l-36 166Zm2-292 80-300h108l-66 262-122 38Z"
   />
 </svg>
