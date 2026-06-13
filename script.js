@@ -2351,7 +2351,7 @@ function renderNotificationIcon(unreadCount = 0) {
       <svg class="notification-menu__p-icon" viewBox="0 0 72 72" focusable="false">
         <path class="notification-menu__p-curve" d="M12 31 C25 14 60 13 61 36 C62 57 35 62 23 50" />
         <path class="notification-menu__p-slash" d="M36 27 L20 63" />
-        <circle class="notification-menu__p-dot" cx="39" cy="62" r="5.4" />
+        <circle class="notification-menu__p-dot" cx="41" cy="67" r="4.6" />
       </svg>
       ${safeCount > 0 ? `<strong class="notification-menu__badge">${badgeText}</strong>` : ''}
     </span>
