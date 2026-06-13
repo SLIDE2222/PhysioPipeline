@@ -96,9 +96,9 @@ textarea {
 
 .logo::before {
   content: "";
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
   display: inline-block;
   margin-right: 0.62rem;
   background: url("logo.svg?v=logo-balanced-p2") center / contain no-repeat;
@@ -1542,9 +1542,9 @@ body.cropper-open {
   }
 
   .logo::before {
-    width: 34px;
-    height: 34px;
-    flex-basis: 34px;
+    width: 39px;
+    height: 39px;
+    flex-basis: 39px;
   }
 
   .nav-links {
