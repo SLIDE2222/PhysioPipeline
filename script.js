@@ -2342,6 +2342,22 @@ function renderNotificationItem(notification, isClinicAccount) {
   `;
 }
 
+function renderNotificationIcon(unreadCount = 0) {
+  const safeCount = Math.max(0, Number(unreadCount || 0));
+  const badgeText = safeCount > 9 ? '9+' : String(safeCount);
+
+  return `
+    <span class="notification-menu__mark" aria-hidden="true">
+      <svg class="notification-menu__p-icon" viewBox="0 0 64 64" focusable="false">
+        <path class="notification-menu__p-curve" d="M16 27 C26 15 51 14 52 32 C53 48 33 52 24 43" />
+        <path class="notification-menu__p-slash" d="M33 24 L21 54" />
+        <circle class="notification-menu__p-dot" cx="36" cy="53" r="4" />
+      </svg>
+      ${safeCount > 0 ? `<strong class="notification-menu__badge">${badgeText}</strong>` : ''}
+    </span>
+  `;
+}
+
 async function buildNotificationMenu(user) {
   try {
     const data = window.physioApi?.fetchNotifications
@@ -2359,12 +2375,11 @@ async function buildNotificationMenu(user) {
         <button
           class="notification-menu__button"
           type="button"
-          aria-label="Notificações"
+          aria-label="Notifications"
           aria-expanded="false"
           data-notification-toggle
         >
-          <span aria-hidden="true">🔔</span>
-          ${unreadCount > 0 ? `<strong class="notification-menu__badge">${unreadCount}</strong>` : ''}
+          ${renderNotificationIcon(unreadCount)}
         </button>
         <div class="notification-menu__panel" role="menu" data-notification-panel hidden>
           <h3>Notificações</h3>
@@ -2379,11 +2394,11 @@ async function buildNotificationMenu(user) {
         <button
           class="notification-menu__button"
           type="button"
-          aria-label="Notificações"
+          aria-label="Notifications"
           aria-expanded="false"
           data-notification-toggle
         >
-          <span aria-hidden="true">🔔</span>
+          ${renderNotificationIcon(0)}
         </button>
         <div class="notification-menu__panel" role="menu" data-notification-panel hidden>
           <h3>Notificações</h3>

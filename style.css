@@ -209,33 +209,143 @@ textarea {
 
 .notification-menu__button {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
+  padding: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  background: var(--white);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: transform 200ms ease;
+}
+
+.notification-menu__button:hover {
+  transform: translateY(-1px) scale(1.05);
+}
+
+.notification-menu__button:active {
+  transform: scale(0.95);
+}
+
+.notification-menu__button:focus-visible {
+  outline: 2px solid rgba(37, 99, 235, 0.42);
+  outline-offset: 4px;
+  border-radius: 10px;
+}
+
+.notification-menu__mark {
+  position: relative;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  pointer-events: none;
+}
+
+.notification-menu__p-icon {
+  width: 32px;
+  height: 32px;
+  display: block;
+  overflow: visible;
+}
+
+.notification-menu__p-curve,
+.notification-menu__p-slash {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.notification-menu__p-curve {
+  stroke: #0D1B2A;
+  stroke-width: 8;
+}
+
+.notification-menu__p-slash {
+  stroke: #2563EB;
+  stroke-width: 8;
+}
+
+.notification-menu__p-dot {
+  fill: #0D1B2A;
 }
 
 .notification-menu__badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  min-width: 20px;
-  height: 20px;
+  top: -3px;
+  right: -5px;
+  min-width: 17px;
+  height: 17px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 6px;
+  padding: 0 5px;
   border-radius: 999px;
-  background: #ef4444;
+  background: #EF4444;
   color: #fff;
-  font-size: 0.72rem;
+  font-size: 0.62rem;
+  font-weight: 900;
   line-height: 1;
+  box-shadow: 0 0 0 2px #ffffff;
+  animation: notificationBadgePop 360ms cubic-bezier(0.2, 0.9, 0.25, 1.35), notificationBadgePulse 1.9s ease-in-out infinite 380ms;
+  transform-origin: center;
+}
+
+@keyframes notificationBadgePop {
+  0% {
+    opacity: 0;
+    transform: scale(0);
+  }
+
+  70% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes notificationBadgePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 0 rgba(239, 68, 68, 0.38);
+  }
+
+  50% {
+    box-shadow: 0 0 0 2px #ffffff, 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+}
+
+@media (max-width: 640px) {
+  .notification-menu__button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .notification-menu__mark,
+  .notification-menu__p-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .notification-menu__badge {
+    top: -4px;
+    right: -6px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 0.58rem;
+  }
 }
 
 .notification-menu__panel {
