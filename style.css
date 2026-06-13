@@ -101,9 +101,9 @@ textarea {
   flex: 0 0 55px;
   display: inline-block;
   margin-right: 0.62rem;
-  background: url("logo.svg?v=logo-highlight-p4") center / contain no-repeat;
+  background: url("logo.svg?v=logo-contained-shine-p5") center / contain no-repeat;
   background-size: contain;
-  filter: drop-shadow(0 8px 16px rgba(37, 99, 235, 0.18));
+  filter: none;
   image-rendering: auto;
   transform: translateZ(0);
 }
@@ -1528,17 +1528,19 @@ body.cropper-open {
   }
 
   .nav {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     justify-content: space-between;
-    gap: 0.75rem;
-    padding: 0.75rem 0;
-    min-height: auto;
+    gap: 0.45rem;
+    padding: 0;
+    min-height: 78px;
   }
 
   .logo {
-    gap: 0.5rem;
-    font-size: 1.18rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 0;
+    font-size: clamp(1rem, 3.7vw, 1.18rem);
   }
 
   .logo::before {
@@ -1554,9 +1556,12 @@ body.cropper-open {
   #authArea {
     width: auto;
     display: flex;
-    flex-wrap: wrap;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    align-items: center;
     justify-content: flex-end;
-    gap: 0.45rem !important;
+    gap: 0.28rem !important;
+    min-width: 0;
   }
 
   #authArea .btn,
@@ -1569,17 +1574,32 @@ body.cropper-open {
 
   #authArea .user-greeting {
     width: auto;
+    max-width: clamp(58px, 18vw, 120px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .user-greeting {
     text-align: right;
     padding: 0.1rem 0;
-    font-size: 0.9rem;
+    font-size: clamp(0.78rem, 2.7vw, 0.9rem);
+  }
+
+  #authArea .notification-menu__button {
+    width: 40px;
+    height: 40px;
+    padding: 2px 3px;
+  }
+
+  #authArea .notification-menu__mark {
+    width: 34px;
+    height: 34px;
   }
 
   #authArea .account-menu__button {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     padding: 0;
     border-radius: 14px;
   }
