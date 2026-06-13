@@ -1,16 +1,77 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="PhysioPipeline">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PhysioPipeline">
   <defs>
-    <radialGradient id="blue" cx="38%" cy="30%" r="78%">
-      <stop offset="0" stop-color="#38d5ff"/>
-      <stop offset="0.46" stop-color="#0878ff"/>
-      <stop offset="1" stop-color="#0052ff"/>
+    <radialGradient id="physioBlue" cx="34%" cy="24%" r="78%">
+      <stop offset="0" stop-color="#4FE1FF"/>
+      <stop offset="0.42" stop-color="#1687FF"/>
+      <stop offset="1" stop-color="#004DFF"/>
     </radialGradient>
   </defs>
-  <circle cx="512" cy="512" r="504" fill="#ffffff"/>
-  <circle cx="512" cy="512" r="442" fill="url(#blue)"/>
-  <path
-    fill="#111111"
-    transform="translate(512 512) scale(0.85) translate(-512 -512)"
-    d="M320 805c20-142 88-252 206-332 50-34 102-60 156-84 60-28 90-64 90-112 0-62-58-102-146-102-80 0-168 16-264 46l8-90c90-28 178-42 264-42 150 0 246 72 246 182 0 96-56 164-168 212-130 56-210 104-254 146-46 44-76 102-90 176h-48Zm174 0h-78l18-94c22-22 54-46 96-72l-36 166Zm2-292 80-300h108l-66 262-122 38Z"
-  />
+
+  <circle cx="256" cy="256" r="248" fill="#ffffff"/>
+  <circle cx="256" cy="256" r="214" fill="url(#physioBlue)"/>
+
+  <g>
+    <path
+      fill="#00245f"
+      opacity="0.55"
+      transform="translate(7 10)"
+      d="
+      M 184 356
+      C 190 314 209 281 240 255
+      C 261 237 289 225 318 212
+      C 352 197 369 177 369 150
+      C 369 115 337 93 288 93
+      C 254 93 219 99 183 111
+      L 188 66
+      C 224 55 259 50 293 50
+      C 371 50 421 88 421 148
+      C 421 199 391 234 331 260
+      C 287 279 257 296 241 314
+      C 226 331 216 351 211 376
+      L 181 376
+      Z
+
+      M 239 376
+      L 213 376
+      L 222 335
+      C 232 326 245 317 260 308
+      Z
+
+      M 248 262
+      L 290 106
+      L 337 106
+      L 303 239
+      Z
+    "/>
+    <path
+      fill="#111111"
+      d="
+      M 184 356
+      C 190 314 209 281 240 255
+      C 261 237 289 225 318 212
+      C 352 197 369 177 369 150
+      C 369 115 337 93 288 93
+      C 254 93 219 99 183 111
+      L 188 66
+      C 224 55 259 50 293 50
+      C 371 50 421 88 421 148
+      C 421 199 391 234 331 260
+      C 287 279 257 296 241 314
+      C 226 331 216 351 211 376
+      L 181 376
+      Z
+
+      M 239 376
+      L 213 376
+      L 222 335
+      C 232 326 245 317 260 308
+      Z
+
+      M 248 262
+      L 290 106
+      L 337 106
+      L 303 239
+      Z
+    "/>
+  </g>
 </svg>

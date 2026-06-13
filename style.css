@@ -101,7 +101,7 @@ textarea {
   flex: 0 0 36px;
   display: inline-block;
   margin-right: 0.62rem;
-  background: url("logo.svg?v=logo-safe-p1") center / contain no-repeat;
+  background: url("logo.svg?v=logo-depth1") center / contain no-repeat;
   background-size: contain;
   filter: drop-shadow(0 8px 16px rgba(37, 99, 235, 0.18));
   image-rendering: auto;
