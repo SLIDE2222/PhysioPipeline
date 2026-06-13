@@ -5,10 +5,37 @@
       <stop offset="0.42" stop-color="#1687FF"/>
       <stop offset="1" stop-color="#004DFF"/>
     </radialGradient>
+    <linearGradient id="glossSweep" x1="116" y1="96" x2="330" y2="286" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.58"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="blueSphereClip">
+      <circle cx="256" cy="256" r="210"/>
+    </clipPath>
   </defs>
 
   <circle cx="256" cy="256" r="248" fill="#ffffff"/>
-  <circle cx="256" cy="256" r="214" fill="url(#physioBlue)"/>
+  <circle cx="256" cy="256" r="210" fill="url(#physioBlue)"/>
+  <g clip-path="url(#blueSphereClip)">
+    <path
+      d="M 126 168 C 166 111 250 84 323 112"
+      fill="none"
+      stroke="url(#glossSweep)"
+      stroke-width="20"
+      stroke-linecap="round"
+      opacity="0.62"
+    />
+    <path
+      d="M 112 222 C 153 176 217 154 282 166"
+      fill="none"
+      stroke="#ffffff"
+      stroke-width="9"
+      stroke-linecap="round"
+      opacity="0.22"
+    />
+    <ellipse cx="183" cy="137" rx="54" ry="22" fill="#ffffff" opacity="0.12" transform="rotate(-24 183 137)"/>
+  </g>
 
   <g transform="translate(256 256) scale(0.92) translate(-301 -213)">
     <path

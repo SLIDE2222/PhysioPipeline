@@ -96,12 +96,12 @@ textarea {
 
 .logo::before {
   content: "";
-  width: 50px;
-  height: 50px;
-  flex: 0 0 50px;
+  width: 55px;
+  height: 55px;
+  flex: 0 0 55px;
   display: inline-block;
   margin-right: 0.62rem;
-  background: url("logo.svg?v=logo-balanced-p2") center / contain no-repeat;
+  background: url("logo.svg?v=logo-premium-p3") center / contain no-repeat;
   background-size: contain;
   filter: drop-shadow(0 8px 16px rgba(37, 99, 235, 0.18));
   image-rendering: auto;
@@ -1542,9 +1542,9 @@ body.cropper-open {
   }
 
   .logo::before {
-    width: 46px;
-    height: 46px;
-    flex-basis: 46px;
+    width: 51px;
+    height: 51px;
+    flex-basis: 51px;
   }
 
   .nav-links {
