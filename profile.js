@@ -277,7 +277,30 @@ function renderLinkedClinics(links) {
   `;
 }
 
-function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
+function renderPhysioClinicRequestCta(clinic, clinicLinkState) {
+  if (!clinicLinkState?.isPhysioViewer) return '';
+  if (!clinic?.userId) return '';
+
+  const clinicId = encodeURIComponent(clinic.id);
+  const status = clinicLinkState.status || 'NONE';
+
+  if (status === 'PENDING') {
+    return '<button type="button" class="btn btn-outline" disabled>Solicitação enviada</button>';
+  }
+
+  if (status === 'ACCEPTED') {
+    return '<button type="button" class="btn btn-outline" disabled>Vínculo ativo</button>';
+  }
+
+  return `
+    <button type="button" class="btn btn-primary" data-request-clinic-link="${clinicId}">
+      Solicitar vínculo
+    </button>
+    <span class="form-hint" data-clinic-link-request-message aria-live="polite"></span>
+  `;
+}
+
+function renderClinicProfileMarkup(clinic, isOwner, showClaimButton, clinicLinkState = null) {
   const clinicName = clinic?.nomeClinica || clinic?.nome || 'Clínica';
   const services = clinic?.servicesList || clinic?.servicosLista || [];
   const team = clinic?.physioTeamList || clinic?.fisioterapeutas || [];
@@ -325,6 +348,7 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton) {
         <div class="profile-actions">
           ${clinic.whatsapp || clinic.telefone ? `<a href="${buildClinicWhatsAppLink(clinic)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Falar no WhatsApp</a>` : ''}
           ${clinic.instagram ? `<a href="${escapeHtml(clinic.instagram)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">Instagram</a>` : ''}
+          ${renderPhysioClinicRequestCta(clinic, clinicLinkState)}
           ${showClaimButton ? `<a href="claim-clinic.html?id=${encodeURIComponent(clinic.id)}" class="btn btn-outline">Reivindicar clínica</a>` : ''}
           ${isOwner ? '<a href="clinic-dashboard.html" class="btn btn-secondary">Editar perfil</a>' : ''}
           <a href="buscar.html" class="btn btn-secondary">Voltar</a>
@@ -476,6 +500,33 @@ async function getClinicLinkStateForProfile(loggedUser, profileId) {
   }
 }
 
+async function getPhysioLinkStateForClinic(loggedUser, clinicId) {
+  if (loggedUser?.accountType !== 'physio' || !window.physioApi?.fetchMyPhysioClinicLinkRequests) {
+    return { isPhysioViewer: false, status: null };
+  }
+
+  const resolvedProfile = loggedUser?.profile?.id
+    ? loggedUser.profile
+    : await resolvePhysioProfileForSession(loggedUser);
+
+  if (!resolvedProfile?.id) {
+    return { isPhysioViewer: false, status: null };
+  }
+
+  try {
+    const links = await window.physioApi.fetchMyPhysioClinicLinkRequests();
+    const link = links.find((item) => item?.clinic?.id === clinicId || item?.clinicProfileId === clinicId);
+    return {
+      isPhysioViewer: true,
+      status: link?.status || 'NONE',
+      link,
+    };
+  } catch (error) {
+    console.warn('Could not load physio clinic link state for clinic:', error);
+    return { isPhysioViewer: true, status: 'NONE' };
+  }
+}
+
 function setupProfileClinicLinkRequest() {
   const button = document.querySelector('[data-request-profile-clinic-link]');
   const message = document.querySelector('[data-profile-clinic-link-message]');
@@ -509,6 +560,66 @@ function setupProfileClinicLinkRequest() {
         message.style.color = '#b91c1c';
       }
       console.error('Profile clinic link request failed:', error);
+    }
+  });
+}
+
+function setupClinicProfileLinkRequest() {
+  const button = document.querySelector('[data-request-clinic-link]');
+  const message = document.querySelector('[data-clinic-link-request-message]');
+  if (!button || !window.physioApi?.createClinicLinkRequest) return;
+
+  button.addEventListener('click', async () => {
+    button.disabled = true;
+    if (message) {
+      message.textContent = '';
+      message.style.color = '';
+    }
+
+    try {
+      await window.physioApi.createClinicLinkRequest({
+        clinicProfileId: button.dataset.requestClinicLink,
+      });
+
+      button.textContent = 'Solicitação enviada';
+      button.classList.remove('btn-primary');
+      button.classList.add('btn-outline');
+      if (message) {
+        message.textContent = 'Solicitação enviada para a clínica.';
+        message.style.color = '#166534';
+      }
+
+      if (window.renderAuthArea) await window.renderAuthArea();
+    } catch (error) {
+      const duplicateStatus = error?.data?.link?.status || null;
+      if (error?.status === 409 && duplicateStatus === 'PENDING') {
+        button.textContent = 'Solicitação enviada';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline');
+        if (message) {
+          message.textContent = 'Já existe uma solicitação pendente para esta clínica.';
+          message.style.color = '#166534';
+        }
+        return;
+      }
+
+      if (error?.status === 409 && duplicateStatus === 'ACCEPTED') {
+        button.textContent = 'Vínculo ativo';
+        button.classList.remove('btn-primary');
+        button.classList.add('btn-outline');
+        if (message) {
+          message.textContent = 'Esta clínica já aceitou o vínculo.';
+          message.style.color = '#166534';
+        }
+        return;
+      }
+
+      button.disabled = false;
+      if (message) {
+        message.textContent = 'Não foi possível enviar a solicitação agora. Tente novamente mais tarde.';
+        message.style.color = '#b91c1c';
+      }
+      console.error('Clinic profile link request failed:', error);
     }
   });
 }
@@ -580,7 +691,11 @@ async function renderProfilePage() {
 
       const isClinicOwner = loggedUser?.accountType === 'clinic' && loggedUser?.id === clinic?.userId;
       const showClinicClaimButton = !isClinicOwner && Boolean(clinic?.isClaimable);
-      profileContainer.innerHTML = renderClinicProfileMarkup(clinic, isClinicOwner, showClinicClaimButton);
+      const physioClinicLinkState = !isClinicOwner
+        ? await getPhysioLinkStateForClinic(loggedUser, clinic.id)
+        : { isPhysioViewer: false, status: null };
+      profileContainer.innerHTML = renderClinicProfileMarkup(clinic, isClinicOwner, showClinicClaimButton, physioClinicLinkState);
+      setupClinicProfileLinkRequest();
       setupImageModal();
       return;
     }

@@ -967,6 +967,26 @@
         timeoutMs: 10000,
       }).then((data) => data.links || []);
     },
+    fetchMyPhysioClinicLinkRequests() {
+      return request('/clinic-link-requests/my', {
+        timeoutMs: 10000,
+      }).catch((error) => {
+        if (error.status !== 404) throw error;
+        return request('/api/clinic-link-requests/my', { timeoutMs: 10000 });
+      }).then((data) => data.links || []);
+    },
+    createClinicLinkRequest(payload) {
+      const options = {
+        method: 'POST',
+        body: payload,
+        timeoutMs: 15000,
+      };
+
+      return request('/clinic-link-requests', options).catch((error) => {
+        if (error.status !== 404) throw error;
+        return request('/api/clinic-link-requests', options);
+      }).then((data) => data.link || data);
+    },
     acceptClinicLinkRequest(linkId) {
       return request(`/profiles/me/clinic-links/${encodeURIComponent(linkId)}/accept`, {
         method: 'POST',
