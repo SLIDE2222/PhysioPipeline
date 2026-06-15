@@ -279,7 +279,6 @@ function renderLinkedClinics(links) {
 
 function renderPhysioClinicRequestCta(clinic, clinicLinkState) {
   if (!clinicLinkState?.isPhysioViewer) return '';
-  if (!clinic?.userId) return '';
 
   const clinicId = encodeURIComponent(clinic.id);
   const status = clinicLinkState.status || 'NONE';
@@ -510,7 +509,7 @@ async function getPhysioLinkStateForClinic(loggedUser, clinicId) {
     : await resolvePhysioProfileForSession(loggedUser);
 
   if (!resolvedProfile?.id) {
-    return { isPhysioViewer: false, status: null };
+    return { isPhysioViewer: true, status: 'NONE' };
   }
 
   try {
