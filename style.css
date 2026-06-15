@@ -1540,7 +1540,12 @@ body.cropper-open {
     flex: 1 1 auto;
     min-width: 0;
     gap: 0;
-    font-size: clamp(1rem, 3.7vw, 1.18rem);
+    font-size: clamp(0.96rem, 3.7vw, 1.18rem);
+    letter-spacing: 0.25px;
+  }
+
+  .logo span {
+    margin-left: 3px;
   }
 
   .logo::before {
@@ -1574,7 +1579,7 @@ body.cropper-open {
 
   #authArea .user-greeting {
     width: auto;
-    max-width: clamp(58px, 18vw, 120px);
+    max-width: clamp(64px, 20vw, 128px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1583,7 +1588,7 @@ body.cropper-open {
   .user-greeting {
     text-align: right;
     padding: 0.1rem 0;
-    font-size: clamp(0.78rem, 2.7vw, 0.9rem);
+    font-size: clamp(0.86rem, 3vw, 1rem);
   }
 
   #authArea .notification-menu__button {
