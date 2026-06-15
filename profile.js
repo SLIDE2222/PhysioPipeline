@@ -410,7 +410,7 @@ function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton, clini
         </div>
 
         <div class="profile-actions">
-          ${profissional.telefone ? `<a href="${whatsappLink}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" data-lead-type="WHATSAPP_CLICK">Falar no WhatsApp</a>` : ''}
+          ${!isOwner && profissional.telefone ? `<a href="${whatsappLink}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" data-lead-type="WHATSAPP_CLICK">Falar no WhatsApp</a>` : ''}
           ${profissional.instagram ? `<a href="${escapeHtml(profissional.instagram)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" data-lead-type="INSTAGRAM_CLICK">Instagram</a>` : ''}
           ${profissional.linkedin ? `<a href="${escapeHtml(profissional.linkedin)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline" data-lead-type="LINKEDIN_CLICK">LinkedIn</a>` : ''}
           ${renderClinicLinkRequestCta(profissional, clinicLinkState)}
@@ -589,7 +589,13 @@ async function renderProfilePage() {
     if (!profissional) throw new Error('Esse perfil não existe ou não pode ser carregado.');
 
     const linkedProfileId = loggedUser?.profile?.id || null;
-    const isOwner = linkedProfileId === profissional.id;
+    const loggedUserId = loggedUser?.id || null;
+    const isOwner =
+      linkedProfileId === profissional.id ||
+      (Boolean(loggedUserId) &&
+        [profissional.ownerUserId, profissional.userId, profissional.ownerId]
+          .filter(Boolean)
+          .includes(loggedUserId));
     const showClaimButton = !isOwner && !profissional.isClaimed;
     const clinicLinkState = !isOwner
       ? await getClinicLinkStateForProfile(loggedUser, profissional.id)
