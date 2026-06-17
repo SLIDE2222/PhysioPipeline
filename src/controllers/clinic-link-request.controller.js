@@ -6,6 +6,7 @@ const createClinicLinkRequestSchema = z.object({
   clinicProfileId: z.string().min(1).optional().nullable(),
   clinicId: z.string().min(1).optional().nullable(),
   physioProfileId: z.string().min(1).optional().nullable(),
+  physioId: z.string().min(1).optional().nullable(),
   requesterUserId: z.string().min(1).optional().nullable(),
   message: z.string().max(600).optional().nullable(),
 }).refine(
@@ -141,7 +142,7 @@ export async function createClinicLinkRequest(req, res) {
 
     const { user, profile: ownedProfile } = await resolveOwnedProfileOrThrow(req.user.userId);
     const requestedClinicId = parsed.data.clinicProfileId || parsed.data.clinicId;
-    const requestedPhysioProfileId = clean(parsed.data.physioProfileId);
+    const requestedPhysioProfileId = clean(parsed.data.physioProfileId || parsed.data.physioId);
     const profile = requestedPhysioProfileId
       ? await prisma.profile.findUnique({ where: { id: requestedPhysioProfileId } })
       : ownedProfile;
@@ -194,6 +195,7 @@ export async function createClinicLinkRequest(req, res) {
         : "Vínculo ativo com esta clínica.";
 
       return res.status(409).json({
+        success: false,
         error: message,
         message,
         link: decorateClinicLinkRequest(existing),
@@ -226,6 +228,7 @@ export async function createClinicLinkRequest(req, res) {
         });
 
     return res.status(201).json({
+      success: true,
       message: "Vínculo solicitado com sucesso, caso aceito ou negado será notificado",
       link: decorateClinicLinkRequest(link),
     });

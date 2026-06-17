@@ -9,6 +9,11 @@ import clinicLinkRequestRoutes from "./routes/clinic-link-request.routes.js";
 import claimRoutes from "./routes/claim.routes.js";
 import leadRoutes from "./routes/lead.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
+import {
+  createClinicLinkRequest,
+  listMyClinicLinkRequests,
+} from "./controllers/clinic-link-request.controller.js";
+import { requireAuth } from "./middleware/auth.middleware.js";
 
 dotenv.config();
 
@@ -60,6 +65,13 @@ app.use("/api/clinic-link-requests", clinicLinkRequestRoutes);
 app.use("/api/claims", claimRoutes);
 app.use("/api/lead-events", leadRoutes);
 app.use("/api/contact", contactRoutes);
+
+// Keep explicit aliases here as a safety net so this endpoint still resolves
+// even if a deployment ends up with stale router wiring.
+app.post("/clinic-link-requests", requireAuth, createClinicLinkRequest);
+app.get("/clinic-link-requests/my", requireAuth, listMyClinicLinkRequests);
+app.post("/api/clinic-link-requests", requireAuth, createClinicLinkRequest);
+app.get("/api/clinic-link-requests/my", requireAuth, listMyClinicLinkRequests);
 
 app.use((req, res) => {
   res.status(404).json({
