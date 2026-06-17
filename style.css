@@ -390,6 +390,14 @@ textarea {
   color: var(--text);
 }
 
+.notification-card {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+}
+
 .notification-menu__item--clickable {
   cursor: pointer;
   pointer-events: auto;
@@ -435,6 +443,12 @@ textarea {
   display: grid;
   gap: 0.35rem;
   min-width: 0;
+}
+
+.notification-menu__item-copy small {
+  color: #2563eb;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .notification-menu__item p,

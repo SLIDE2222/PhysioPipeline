@@ -361,6 +361,53 @@ export async function getClinicLinkRequest(req, res) {
   }
 }
 
+export async function getPendingClinicLinkRequestForClinic(req, res) {
+  try {
+    const { clinicProfile } = await resolveOwnedClinicOrThrow(req.user.userId);
+    const link = await prisma.clinicPhysiotherapistLink.findFirst({
+      where: {
+        clinicId: clinicProfile.id,
+        status: "PENDING",
+      },
+      include: {
+        clinic: true,
+        profile: true,
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+
+    if (!link) {
+      return res.status(404).json({
+        error: "Nenhuma solicitação pendente encontrada para esta clínica.",
+        message: "Nenhuma solicitação pendente encontrada para esta clínica.",
+      });
+    }
+
+    return res.json({
+      id: link.id,
+      status: link.status,
+      clinicId: link.clinicId,
+      physioProfileId: link.profileId,
+      requesterUserId: link.profile?.ownerUserId || null,
+      physio: link.profile
+        ? {
+            id: link.profile.id,
+            name: link.profile.name,
+            city: link.profile.city || null,
+            neighborhood: link.profile.neighborhood || null,
+            specialty: link.profile.specialty || null,
+            bio: link.profile.bio || null,
+            avatarUrl: link.profile.photoUrl || null,
+          }
+        : null,
+    });
+  } catch (error) {
+    return sendControllerError(res, error, "Erro ao carregar a solicitação pendente da clínica.");
+  }
+}
+
 async function resolveOwnedClinicOrThrow(userId) {
   const user = await prisma.user.findUnique({
     where: { id: userId },

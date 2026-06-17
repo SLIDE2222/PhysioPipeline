@@ -2397,8 +2397,22 @@ function renderNotificationItem(notification, isClinicAccount) {
     `
     : '';
 
+  if (isClickableClinicRequest) {
+    return `
+      <button type="button" class="notification-card notification-card-clickable notification-menu__item${unreadClass}" data-notification-id="${escapeHtml(notification.id)}" data-clinic-link-review="true">
+        ${iconMarkup}
+        <div class="notification-menu__item-copy">
+          <strong>${escapeHtml(notification.title || 'Nova solicitação de vínculo')}</strong>
+          <p>${escapeHtml(notification.message || '')}</p>
+          <small>Clique para revisar</small>
+          ${actions}
+        </div>
+      </button>
+    `;
+  }
+
   return `
-    <article class="notification-menu__item${unreadClass}${isClickableClinicRequest ? ' notification-menu__item--clickable' : ''}" data-notification-id="${escapeHtml(notification.id)}" ${isClickableClinicRequest ? 'data-clinic-link-review="true"' : ''}>
+    <article class="notification-menu__item${unreadClass}" data-notification-id="${escapeHtml(notification.id)}">
       ${iconMarkup}
       <div class="notification-menu__item-copy">
         <strong>${escapeHtml(notification.title || 'Notificação')}</strong>
@@ -2457,6 +2471,14 @@ async function loadClinicLinkNotificationDetails(notification) {
       detailData = await window.physioApi.fetchClinicLinkRequest(requestId);
     } catch (error) {
       console.warn('Could not load clinic link request details:', error);
+    }
+  }
+
+  if (!detailData && window.physioApi?.fetchPendingClinicLinkRequestForClinic) {
+    try {
+      detailData = await window.physioApi.fetchPendingClinicLinkRequestForClinic();
+    } catch (error) {
+      console.warn('Could not load pending clinic link request fallback:', error);
     }
   }
 
@@ -2545,6 +2567,10 @@ function renderClinicLinkNotificationModal(notification) {
       });
     }
   });
+}
+
+function openClinicLinkRequestModal(notification) {
+  return renderClinicLinkNotificationModal(notification);
 }
 
 function renderNotificationIcon(unreadCount = 0) {
@@ -2647,7 +2673,7 @@ document.addEventListener('click', async (event) => {
         console.log('relatedRequestId:', notification.relatedRequestId || notification.clinicLinkRequestId || null);
         console.log('relatedPhysioId:', notification.relatedPhysioId || notification.physioProfileId || notification.requesterProfileId || null);
         const hydratedNotification = await loadClinicLinkNotificationDetails(notification);
-        renderClinicLinkNotificationModal(hydratedNotification);
+        openClinicLinkRequestModal(hydratedNotification);
         await window.physioApi.markNotificationRead(id).catch(() => {});
       }
     } else if (!event.target.closest('button')) {

@@ -3,6 +3,7 @@ import {
   acceptClinicLinkRequest,
   createClinicLinkRequest,
   getClinicLinkRequest,
+  getPendingClinicLinkRequestForClinic,
   listMyClinicLinkRequests,
   rejectClinicLinkRequest,
 } from "../controllers/clinic-link-request.controller.js";
@@ -12,6 +13,7 @@ const router = Router();
 
 router.post("/", requireAuth, createClinicLinkRequest);
 router.get("/my", requireAuth, listMyClinicLinkRequests);
+router.get("/pending-for-clinic", requireAuth, getPendingClinicLinkRequestForClinic);
 router.get("/:id", requireAuth, getClinicLinkRequest);
 router.post("/:linkId/accept", requireAuth, acceptClinicLinkRequest);
 router.post("/:linkId/reject", requireAuth, rejectClinicLinkRequest);

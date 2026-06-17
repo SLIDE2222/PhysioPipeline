@@ -996,6 +996,15 @@
         return request(`/api${primaryPath}`, { timeoutMs: 10000 });
       });
     },
+    fetchPendingClinicLinkRequestForClinic() {
+      const primaryPath = '/clinic-link-requests/pending-for-clinic';
+      return request(primaryPath, {
+        timeoutMs: 10000,
+      }).catch((error) => {
+        if (error.status !== 404) throw error;
+        return request(`/api${primaryPath}`, { timeoutMs: 10000 });
+      });
+    },
     acceptClinicLinkRequest(linkId) {
       const primaryPath = `/clinic-link-requests/${encodeURIComponent(linkId)}/accept`;
       const options = {
