@@ -2272,6 +2272,9 @@ function closeNotificationMenus(exceptMenu = null) {
   });
 }
 
+const notificationDetailsById = new Map();
+let activeClinicLinkNotificationModal = null;
+
 function setupAccountMenuEvents() {
   if (window.__physioAccountMenuReady) return;
   window.__physioAccountMenuReady = true;
@@ -2324,6 +2327,7 @@ function renderNotificationItem(notification, isClinicAccount) {
   const unreadClass = notification.unread ? ' is-unread' : '';
   const location = notification.clinicLocation ? `<span>${escapeHtml(notification.clinicLocation)}</span>` : '';
   const usesPhysioPipelineIcon = notification.type === 'clinic_link_request';
+  const isClickableClinicRequest = isClinicAccount && notification.type === 'clinic_link_request';
   const iconMarkup = usesPhysioPipelineIcon
     ? `
       <span class="notification-menu__item-icon" aria-hidden="true">
@@ -2349,7 +2353,7 @@ function renderNotificationItem(notification, isClinicAccount) {
     : '';
 
   return `
-    <article class="notification-menu__item${unreadClass}" data-notification-id="${escapeHtml(notification.id)}">
+    <article class="notification-menu__item${unreadClass}${isClickableClinicRequest ? ' notification-menu__item--clickable' : ''}" data-notification-id="${escapeHtml(notification.id)}" ${isClickableClinicRequest ? 'data-clinic-link-review="true"' : ''}>
       ${iconMarkup}
       <div class="notification-menu__item-copy">
         <strong>${escapeHtml(notification.title || 'Notificação')}</strong>
@@ -2359,6 +2363,117 @@ function renderNotificationItem(notification, isClinicAccount) {
       </div>
     </article>
   `;
+}
+
+function getNotificationRequesterProfileHref(notification) {
+  const physioProfileId = notification?.relatedPhysioId || notification?.profileId || notification?.requesterProfileId;
+  return physioProfileId
+    ? `profile.html?type=physio&id=${encodeURIComponent(physioProfileId)}`
+    : 'profile.html';
+}
+
+function closeClinicLinkNotificationModal() {
+  if (!activeClinicLinkNotificationModal) return;
+  activeClinicLinkNotificationModal.remove();
+  activeClinicLinkNotificationModal = null;
+}
+
+function createNotificationModalShell() {
+  closeClinicLinkNotificationModal();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'notification-review-modal';
+  overlay.innerHTML = `
+    <div class="notification-review-modal__backdrop" data-notification-modal-close></div>
+    <div class="notification-review-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="clinicLinkReviewTitle">
+      <button type="button" class="notification-review-modal__close" aria-label="Fechar" data-notification-modal-close>&times;</button>
+      <div class="notification-review-modal__content"></div>
+    </div>
+  `;
+
+  overlay.addEventListener('click', (event) => {
+    if (event.target.closest('[data-notification-modal-close]')) {
+      closeClinicLinkNotificationModal();
+    }
+  });
+
+  document.body.appendChild(overlay);
+  activeClinicLinkNotificationModal = overlay;
+  return overlay;
+}
+
+function renderClinicLinkNotificationModal(notification) {
+  const overlay = createNotificationModalShell();
+  const content = overlay.querySelector('.notification-review-modal__content');
+  const profileHref = getNotificationRequesterProfileHref(notification);
+  const requesterName = notification.requesterName || notification.profileName || 'Fisioterapeuta';
+  const requesterCity = notification.requesterCity || 'Cidade não informada';
+  const requesterNeighborhood = notification.requesterNeighborhood || 'Bairro não informado';
+  const requesterSpecialty = notification.requesterSpecialty || 'Especialidade não informada';
+  const requesterBio = notification.requesterBio || 'Este fisioterapeuta ainda não adicionou uma bio curta.';
+  const requesterAvatarUrl = notification.requesterAvatarUrl || '';
+  const avatarMarkup = requesterAvatarUrl
+    ? `<img src="${escapeHtml(requesterAvatarUrl)}" alt="${escapeHtml(requesterName)}" class="notification-review-modal__avatar" />`
+    : `<div class="notification-review-modal__avatar notification-review-modal__avatar--fallback" aria-hidden="true">${escapeHtml(requesterName.charAt(0).toUpperCase())}</div>`;
+
+  content.innerHTML = `
+    <div class="notification-review-modal__header">
+      <span class="eyebrow">Solicitação de vínculo</span>
+      <h3 id="clinicLinkReviewTitle">Solicitação de vínculo</h3>
+      <p>${escapeHtml(requesterName)} quer fazer parte da equipe desta clínica.</p>
+    </div>
+    <div class="notification-review-modal__profile">
+      ${avatarMarkup}
+      <div class="notification-review-modal__profile-copy">
+        <strong>${escapeHtml(requesterName)}</strong>
+        <span>${escapeHtml(requesterCity)}${requesterNeighborhood ? ` • ${escapeHtml(requesterNeighborhood)}` : ''}</span>
+        <span>${escapeHtml(requesterSpecialty)}</span>
+      </div>
+    </div>
+    <p class="notification-review-modal__bio">${escapeHtml(requesterBio)}</p>
+    <div class="notification-review-modal__actions">
+      <a class="btn btn-outline" href="${escapeHtml(profileHref)}" target="_blank" rel="noreferrer">Ver perfil do fisioterapeuta</a>
+      <button type="button" class="btn btn-primary" data-notification-modal-accept="${escapeHtml(notification.id)}">Aceitar vínculo</button>
+      <button type="button" class="btn btn-secondary" data-notification-modal-reject="${escapeHtml(notification.id)}">Recusar vínculo</button>
+      <button type="button" class="btn btn-outline" data-notification-modal-close>Fechar</button>
+    </div>
+  `;
+
+  const acceptButton = content.querySelector('[data-notification-modal-accept]');
+  const rejectButton = content.querySelector('[data-notification-modal-reject]');
+  const actionButtons = [acceptButton, rejectButton].filter(Boolean);
+
+  overlay.addEventListener('click', async (event) => {
+    const accept = event.target.closest('[data-notification-modal-accept]');
+    const reject = event.target.closest('[data-notification-modal-reject]');
+    if (!accept && !reject) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const linkId = accept?.dataset.notificationModalAccept || reject?.dataset.notificationModalReject;
+    if (!linkId || !window.physioApi) return;
+
+    try {
+      actionButtons.forEach((button) => {
+        button.disabled = true;
+      });
+
+      if (accept) {
+        await window.physioApi.acceptClinicLinkRequest(linkId);
+      } else {
+        await window.physioApi.rejectClinicLinkRequest(linkId);
+      }
+
+      closeClinicLinkNotificationModal();
+      await renderAuthArea();
+    } catch (error) {
+      console.error('Clinic link notification modal action failed:', error);
+      actionButtons.forEach((button) => {
+        button.disabled = false;
+      });
+    }
+  });
 }
 
 function renderNotificationIcon(unreadCount = 0) {
@@ -2383,6 +2498,10 @@ async function buildNotificationMenu(user) {
       ? await window.physioApi.fetchNotifications()
       : { notifications: [], unreadCount: 0 };
     const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
+    notificationDetailsById.clear();
+    notifications.forEach((notification) => {
+      if (notification?.id) notificationDetailsById.set(notification.id, notification);
+    });
     const unreadCount = Number(data?.unreadCount || 0);
     const isClinicAccount = user.accountType === 'clinic';
     const panelContent = notifications.length
@@ -2449,6 +2568,12 @@ document.addEventListener('click', async (event) => {
     } else if (rejectButton) {
       rejectButton.disabled = true;
       await window.physioApi.rejectClinicLinkRequest(id);
+    } else if (item?.dataset.clinicLinkReview === 'true') {
+      const notification = notificationDetailsById.get(id);
+      if (notification) {
+        renderClinicLinkNotificationModal(notification);
+        await window.physioApi.markNotificationRead(id).catch(() => {});
+      }
     } else if (!event.target.closest('button')) {
       await window.physioApi.markNotificationRead(id);
     }
