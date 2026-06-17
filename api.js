@@ -765,6 +765,19 @@
         timeoutMs: 10000,
       });
     },
+    dismissNotification(id) {
+      const primaryPath = `/auth/notifications/${encodeURIComponent(id)}`;
+      return request(primaryPath, {
+        method: 'DELETE',
+        timeoutMs: 10000,
+      }).catch((error) => {
+        if (error.status !== 404) throw error;
+        return request(`/api/notifications/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          timeoutMs: 10000,
+        });
+      });
+    },
     fetchMyProfile() {
       return request('/profiles/me').then((data) => normalizeProfile(data.profile));
     },

@@ -2780,12 +2780,45 @@ document.addEventListener('click', async (event) => {
   }
 });
 
+window.closeAccountMenus = closeAccountMenus;
+window.closeNotificationMenus = closeNotificationMenus;
+
+function buildSharedNotificationMenu(user) {
+  if (window.PhysioNotifications?.buildNotificationMenu) {
+    return window.PhysioNotifications.buildNotificationMenu(user);
+  }
+
+  return Promise.resolve(`
+    <div class="notification-menu" data-notification-menu>
+      <button
+        class="notification-menu__button"
+        type="button"
+        aria-label="Notifications"
+        aria-expanded="false"
+        data-notification-toggle
+      >
+        ${renderNotificationIcon(0)}
+      </button>
+      <div class="notification-menu__panel" role="menu" data-notification-panel hidden>
+        <h3>Notificações</h3>
+        <p class="notification-menu__empty">Nenhuma notificação no momento.</p>
+      </div>
+    </div>
+  `);
+}
+
+function bindSharedNotificationCardInteractions(root = document) {
+  window.PhysioNotifications?.bindNotificationCardInteractions?.(root);
+}
+
 
 async function renderAuthArea() {
   const authArea = document.getElementById('authArea');
   const cadastroLink = document.getElementById('cadastroLink');
 
   if (!authArea) return;
+
+  window.PhysioNotifications?.setupGlobalEvents?.();
 
   const user = await getLoggedUser(true);
 
@@ -2818,7 +2851,7 @@ async function renderAuthArea() {
   const editHref = isClinicAccount ? 'clinic-dashboard.html' : 'editar-perfil.html';
   const profileLabel = 'Meu perfil';
   const profileMenuItem = `<a role="menuitem" href="${profileHref}">${profileLabel}</a>`;
-  const notificationMenu = await buildNotificationMenu(user);
+  const notificationMenu = await buildSharedNotificationMenu(user);
 
   authArea.innerHTML = `
     <span class="user-greeting">Olá, ${escapeHtml(greetingName)}</span>
@@ -2844,7 +2877,7 @@ async function renderAuthArea() {
     </div>
   `;
 
-  bindNotificationCardInteractions(authArea);
+  bindSharedNotificationCardInteractions(authArea);
 }
 
 window.renderAuthArea = renderAuthArea;

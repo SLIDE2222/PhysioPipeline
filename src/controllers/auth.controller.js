@@ -741,6 +741,7 @@ export async function notifications(req, res) {
             { clinic: { userId: user.id } },
           ],
           status: { in: ["PENDING", "ACCEPTED", "REJECTED", "UNLINKED"] },
+          readByClinic: false,
         },
         include: { profile: true, clinic: true },
         orderBy: { updatedAt: "desc" },
@@ -757,6 +758,7 @@ export async function notifications(req, res) {
           where: {
             profileId: profile.id,
             status: { in: ["ACCEPTED", "REJECTED", "UNLINKED"] },
+            readByPhysio: false,
           },
           include: { clinic: true, profile: true },
           orderBy: { updatedAt: "desc" },
@@ -783,7 +785,7 @@ export async function notifications(req, res) {
   }
 }
 
-export async function markNotificationRead(req, res) {
+async function updateNotificationReadState(req, res) {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId },
@@ -837,4 +839,12 @@ export async function markNotificationRead(req, res) {
       message: error.message || "Nao foi possivel atualizar a notificacao.",
     });
   }
+}
+
+export async function markNotificationRead(req, res) {
+  return updateNotificationReadState(req, res);
+}
+
+export async function dismissNotification(req, res) {
+  return updateNotificationReadState(req, res);
 }

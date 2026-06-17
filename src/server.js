@@ -16,6 +16,7 @@ import {
 import {
   notifications,
   markNotificationRead,
+  dismissNotification,
 } from "./controllers/auth.controller.js";
 import { requireAuth } from "./middleware/auth.middleware.js";
 
@@ -78,6 +79,7 @@ app.post("/api/clinic-link-requests", requireAuth, createClinicLinkRequest);
 app.get("/api/clinic-link-requests/my", requireAuth, listMyClinicLinkRequests);
 app.get("/api/notifications", requireAuth, notifications);
 app.post("/api/notifications/:id/read", requireAuth, markNotificationRead);
+app.delete("/api/notifications/:id", requireAuth, dismissNotification);
 
 app.use((req, res) => {
   res.status(404).json({

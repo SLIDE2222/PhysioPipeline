@@ -3,6 +3,7 @@ import {
   login,
   logout,
   markNotificationRead,
+  dismissNotification,
   me,
   notifications,
   register,
@@ -23,6 +24,7 @@ router.post("/logout", logout);
 router.get("/me", requireAuth, me);
 router.get("/notifications", requireAuth, notifications);
 router.post("/notifications/:id/read", requireAuth, markNotificationRead);
+router.delete("/notifications/:id", requireAuth, dismissNotification);
 router.post("/forgot-password", forgotPassword);
 router.post("/update-password", updatePassword);
 
