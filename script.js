@@ -2128,8 +2128,12 @@ async function getLoggedUser(force = false) {
     const accountType = window.PhysioAccountTypes?.normalizeAccountType
       ? window.PhysioAccountTypes.normalizeAccountType(rawUser.accountType)
       : 'physio';
+    const resolvedAccountType =
+      accountType === 'clinic' || rawUser?.clinicProfile?.id || rawUser?.clinicProfileId
+        ? 'clinic'
+        : 'physio';
 
-    console.info('PhysioPipeline profile lookup accountType:', accountType);
+    console.info('PhysioPipeline profile lookup accountType:', resolvedAccountType);
 
     let profile = null;
     let clinicProfile = rawUser.clinicProfile
@@ -2141,7 +2145,7 @@ async function getLoggedUser(force = false) {
       rawUser.profile?.id ||
       null;
 
-    if (accountType === 'clinic') {
+    if (resolvedAccountType === 'clinic') {
       if (window.physioApi.fetchMyClinicProfile) {
         try {
           console.info('PhysioPipeline profile lookup route called: /clinics/me');
@@ -2178,7 +2182,7 @@ async function getLoggedUser(force = false) {
       email: rawUser.email ?? '',
       name: rawUser.name ?? '',
       phone: rawUser.phone ?? '',
-      accountType,
+      accountType: resolvedAccountType,
       emailVerified: rawUser.emailVerified ?? false,
       profile,
       clinicProfile,
@@ -2206,8 +2210,16 @@ function getUserProfileHref(user) {
   return window.physioApi?.resolveUserHomePath?.(user) || 'profile.html';
 }
 
+function isClinicAccountUser(user) {
+  return Boolean(
+    user?.accountType === 'clinic' ||
+    user?.clinicProfile?.id ||
+    user?.clinicProfileId
+  );
+}
+
 function isOwnPublicClinicProfilePage(user) {
-  if (user?.accountType !== 'clinic') return false;
+  if (!isClinicAccountUser(user)) return false;
 
   const pageName = window.location.pathname.split('/').pop() || 'index.html';
   if (pageName !== 'profile.html') return false;
@@ -2223,7 +2235,7 @@ function isOwnPublicClinicProfilePage(user) {
 }
 
 function isClinicDashboardPage(user) {
-  if (user?.accountType !== 'clinic') return false;
+  if (!isClinicAccountUser(user)) return false;
 
   const pageName = window.location.pathname.split('/').pop() || 'index.html';
   return pageName === 'clinic-dashboard.html';
@@ -2687,7 +2699,7 @@ async function buildNotificationMenu(user) {
       if (notification?.id) notificationDetailsById.set(notification.id, notification);
     });
     const unreadCount = notifications.filter((notification) => notification?.unread).length;
-    const isClinicAccount = user.accountType === 'clinic';
+    const isClinicAccount = isClinicAccountUser(user);
     const panelContent = notifications.length
       ? notifications.map((item) => renderNotificationItem(item, isClinicAccount)).join('')
       : '<p class="notification-menu__empty">Nenhuma notificação no momento.</p>';
@@ -2791,7 +2803,7 @@ async function renderAuthArea() {
 
   updateProfileButtons(user);
 
-  const isClinicAccount = user.accountType === 'clinic';
+  const isClinicAccount = isClinicAccountUser(user);
   const displayName = (
     user.clinicProfile?.nomeClinica ||
     user.clinicProfile?.clinicName ||

@@ -617,17 +617,22 @@
   function normalizeUser(user) {
     if (!user) return null;
 
+    const inferredClinicProfile = user.clinicProfile ? normalizeClinicProfile(user.clinicProfile) : null;
     const accountType = window.PhysioAccountTypes?.normalizeAccountType
       ? window.PhysioAccountTypes.normalizeAccountType(user.accountType)
       : String(user.accountType || '').trim().toLowerCase() === ACCOUNT_TYPES.CLINIC
         ? ACCOUNT_TYPES.CLINIC
         : ACCOUNT_TYPES.PHYSIO;
+    const resolvedAccountType =
+      accountType === ACCOUNT_TYPES.CLINIC || inferredClinicProfile?.id || user.clinicProfileId
+        ? ACCOUNT_TYPES.CLINIC
+        : ACCOUNT_TYPES.PHYSIO;
 
     return {
       ...user,
-      accountType,
+      accountType: resolvedAccountType,
       profiles: Array.isArray(user.profiles) ? user.profiles : [],
-      clinicProfile: user.clinicProfile ? normalizeClinicProfile(user.clinicProfile) : null,
+      clinicProfile: inferredClinicProfile,
     };
   }
 
