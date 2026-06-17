@@ -40,6 +40,18 @@ function setClinicMessage(text, color) {
   clinicDashboardMessage.style.color = color;
 }
 
+function getClinicPublicProfileHref(profile) {
+  const clinicId =
+    profile?.id ||
+    profile?.clinicProfile?.id ||
+    window.physioApi?.getStoredAuth?.()?.user?.clinicProfile?.id ||
+    null;
+
+  return clinicId
+    ? `profile.html?type=clinic&id=${encodeURIComponent(clinicId)}`
+    : 'profile.html?type=clinic';
+}
+
 function fillClinicForm(profile) {
   document.getElementById('clinicName').value = profile?.nomeClinica || profile?.clinicName || '';
   document.getElementById('clinicResponsible').value = profile?.responsavel || profile?.responsibleName || '';
@@ -284,7 +296,7 @@ if (clinicDashboardForm) {
     try {
       const clinicEditorValue = clinicEditor?.getValue?.() || { services: [], team: [] };
 
-      await window.physioApi.updateMyClinicProfile({
+      const updatedClinicProfile = await window.physioApi.updateMyClinicProfile({
         clinicName: document.getElementById('clinicName').value.trim() || null,
         responsibleName: document.getElementById('clinicResponsible').value.trim() || null,
         address: document.getElementById('clinicAddress').value.trim() || null,
@@ -298,7 +310,23 @@ if (clinicDashboardForm) {
         description: document.getElementById('clinicDescription').value.trim() || null,
       });
 
-      setClinicMessage('Dados da clínica salvos com sucesso!', '#166534');
+      setClinicMessage('Perfil atualizado com sucesso. Redirecionando...', '#166534');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      setTimeout(async () => {
+        let redirectTarget = getClinicPublicProfileHref(updatedClinicProfile);
+
+        if (!updatedClinicProfile?.id && window.physioApi?.fetchMyClinicProfile) {
+          try {
+            const freshClinicProfile = await window.physioApi.fetchMyClinicProfile();
+            redirectTarget = getClinicPublicProfileHref(freshClinicProfile);
+          } catch (error) {
+            console.warn('Could not refresh clinic profile before redirect:', error);
+          }
+        }
+
+        window.location.href = redirectTarget;
+      }, 1000);
     } catch (error) {
       setClinicMessage(error.message || 'Não foi possível salvar os dados da clínica.', '#b91c1c');
     } finally {

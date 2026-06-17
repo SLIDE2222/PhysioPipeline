@@ -2732,11 +2732,8 @@ async function renderAuthArea() {
   const greetingName = isClinicAccount ? displayName : displayName.split(' ')[0];
   const profileHref = getUserProfileHref(user);
   const editHref = isClinicAccount ? 'clinic-dashboard.html' : 'editar-perfil.html';
-  const hideClinicDashboardItem = isOwnPublicClinicProfilePage(user) || isClinicDashboardPage(user);
-  const profileLabel = isClinicAccount ? 'Dashboard da clínica' : 'Meu perfil';
-  const profileMenuItem = isClinicAccount && hideClinicDashboardItem
-    ? ''
-    : `<a role="menuitem" href="${profileHref}">${profileLabel}</a>`;
+  const profileLabel = 'Meu perfil';
+  const profileMenuItem = `<a role="menuitem" href="${profileHref}">${profileLabel}</a>`;
   const notificationMenu = await buildNotificationMenu(user);
 
   authArea.innerHTML = `
