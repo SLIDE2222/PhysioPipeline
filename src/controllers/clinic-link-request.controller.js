@@ -12,7 +12,7 @@ const createClinicLinkRequestSchema = z.object({
 }).refine(
   (data) => Boolean(data.clinicProfileId || data.clinicId),
   {
-    message: "Informe a clínica da solicitação.",
+    message: "Informe a clinica da solicitacao.",
     path: ["clinicProfileId"],
   }
 );
@@ -27,7 +27,7 @@ function isClinicAccount(user) {
 }
 
 function getPhysioOnlyMessage() {
-  return "Esta área é exclusiva para fisioterapeutas.";
+  return "Esta area e exclusiva para fisioterapeutas.";
 }
 
 function decorateClinicSummary(clinic) {
@@ -97,7 +97,7 @@ async function resolveOwnedProfileOrThrow(userId) {
   const user = await findCurrentUser(userId);
 
   if (!user) {
-    const error = new Error("Usuário não encontrado.");
+    const error = new Error("Usuario nao encontrado.");
     error.status = 404;
     throw error;
   }
@@ -111,7 +111,7 @@ async function resolveOwnedProfileOrThrow(userId) {
   const profile = await resolveOwnedProfile(user.id, user.email);
 
   if (!profile) {
-    const error = new Error("Nenhum perfil está vinculado a esta conta.");
+    const error = new Error("Nenhum perfil esta vinculado a esta conta.");
     error.status = 404;
     throw error;
   }
@@ -119,7 +119,7 @@ async function resolveOwnedProfileOrThrow(userId) {
   return { user, profile };
 }
 
-function sendControllerError(res, error, fallbackMessage = "Erro ao processar solicitação de vínculo.") {
+function sendControllerError(res, error, fallbackMessage = "Erro ao processar solicitacao de vinculo.") {
   const status = error?.status || 500;
   if (status >= 500) console.error(fallbackMessage, error);
 
@@ -127,6 +127,22 @@ function sendControllerError(res, error, fallbackMessage = "Erro ao processar so
     error: error?.message || fallbackMessage,
     message: error?.message || fallbackMessage,
   });
+}
+
+function buildClinicOwnerNotification({ clinic, profile, link }) {
+  return {
+    recipientUserId: clinic.userId || null,
+    type: "clinic_link_request",
+    title: "Nova solicitação de vínculo",
+    message: `${profile.name} solicitou vínculo com sua clínica.`,
+    icon: "physiopipeline-p",
+    relatedClinicId: clinic.id,
+    relatedPhysioId: profile.id,
+    status: "unread",
+    linkId: link.id,
+    createdAt: link.createdAt,
+    updatedAt: link.updatedAt,
+  };
 }
 
 export async function createClinicLinkRequest(req, res) {
@@ -146,6 +162,9 @@ export async function createClinicLinkRequest(req, res) {
     const profile = requestedPhysioProfileId
       ? await prisma.profile.findUnique({ where: { id: requestedPhysioProfileId } })
       : ownedProfile;
+
+    console.log("clinicId:", requestedClinicId);
+    console.log("physioProfileId:", profile?.id || null);
 
     if (!profile || profile.ownerUserId !== user.id) {
       return res.status(403).json({
@@ -171,6 +190,8 @@ export async function createClinicLinkRequest(req, res) {
         message: "Esta clínica ainda não possui uma conta responsável para receber solicitações.",
       });
     }
+
+    console.log("clinic owner user id:", clinic.userId || null);
 
     if (clinic.userId === user.id) {
       return res.status(403).json({
@@ -198,6 +219,11 @@ export async function createClinicLinkRequest(req, res) {
         success: false,
         error: message,
         message,
+        notification: buildClinicOwnerNotification({
+          clinic: existing.clinic,
+          profile: existing.profile,
+          link: existing,
+        }),
         link: decorateClinicLinkRequest(existing),
       });
     }
@@ -227,9 +253,18 @@ export async function createClinicLinkRequest(req, res) {
           include: { clinic: true, profile: true },
         });
 
+    const notification = buildClinicOwnerNotification({
+      clinic,
+      profile,
+      link,
+    });
+
+    console.log("notification created:", notification);
+
     return res.status(201).json({
       success: true,
       message: "Vínculo solicitado com sucesso, caso aceito ou negado será notificado",
+      notification,
       link: decorateClinicLinkRequest(link),
     });
   } catch (error) {

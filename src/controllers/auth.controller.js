@@ -192,18 +192,23 @@ function formatClinicLinkNotification(link, accountType) {
         ? `${profileName} recusou o vinculo com sua clinica.`
         : link.status === "UNLINKED"
           ? `${profileName} foi desvinculado da sua clinica.`
-          : `${profileName} solicitou vinculo com esta clinica. Perfil ${link.profileId} - Clinica ${link.clinicId}.`;
+          : `${profileName} solicitou vínculo com sua clínica.`;
 
     return {
       id: link.id,
-      type: "clinic_physio_link",
+      recipientUserId: link.clinic?.userId || null,
+      type: "clinic_link_request",
       status: link.status,
+      notificationStatus: link.readByClinic ? "read" : "unread",
       unread: !link.readByClinic,
-      title: "Solicitacao de vinculo com clinica",
+      title: "Nova solicitação de vínculo",
       message: statusText,
+      icon: "physiopipeline-p",
       linkId: link.id,
+      relatedPhysioId: link.profileId,
       profileId: link.profileId,
       profileName,
+      relatedClinicId: link.clinicId,
       clinicId: link.clinicId,
       createdAt: link.createdAt,
       updatedAt: link.updatedAt,
@@ -605,10 +610,17 @@ export async function notifications(req, res) {
     const accountType = normalizeAccountType(user.accountType);
     let links = [];
 
-    if (accountType === ACCOUNT_TYPES.CLINIC && user.clinicProfile?.id) {
+    console.log("notification lookup user id:", user.id);
+    console.log("notification lookup account type:", accountType);
+    console.log("notification lookup clinic profile id:", user.clinicProfile?.id || null);
+
+    if (accountType === ACCOUNT_TYPES.CLINIC) {
       links = await prisma.clinicPhysiotherapistLink.findMany({
         where: {
-          clinicId: user.clinicProfile.id,
+          OR: [
+            ...(user.clinicProfile?.id ? [{ clinicId: user.clinicProfile.id }] : []),
+            { clinic: { userId: user.id } },
+          ],
           status: { in: ["PENDING", "ACCEPTED", "REJECTED", "UNLINKED"] },
         },
         include: { profile: true, clinic: true },
@@ -637,6 +649,8 @@ export async function notifications(req, res) {
     const notificationItems = links.map((link) =>
       formatClinicLinkNotification(link, accountType)
     );
+
+    console.log("notification lookup links found:", links.length);
 
     return res.json({
       notifications: notificationItems,

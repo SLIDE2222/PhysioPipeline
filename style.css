@@ -383,7 +383,8 @@ textarea {
 
 .notification-menu__item {
   display: grid;
-  gap: 0.35rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.6rem;
   padding: 0.8rem;
   border-radius: 14px;
   color: var(--text);
@@ -391,6 +392,28 @@ textarea {
 
 .notification-menu__item.is-unread {
   background: rgba(239, 246, 255, 0.9);
+}
+
+.notification-menu__item-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.05rem;
+}
+
+.notification-menu__item-p-icon {
+  width: 24px;
+  height: 24px;
+  display: block;
+  overflow: visible;
+}
+
+.notification-menu__item-copy {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
 }
 
 .notification-menu__item p,

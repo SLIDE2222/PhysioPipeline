@@ -13,6 +13,10 @@ import {
   createClinicLinkRequest,
   listMyClinicLinkRequests,
 } from "./controllers/clinic-link-request.controller.js";
+import {
+  notifications,
+  markNotificationRead,
+} from "./controllers/auth.controller.js";
 import { requireAuth } from "./middleware/auth.middleware.js";
 
 dotenv.config();
@@ -72,6 +76,8 @@ app.post("/clinic-link-requests", requireAuth, createClinicLinkRequest);
 app.get("/clinic-link-requests/my", requireAuth, listMyClinicLinkRequests);
 app.post("/api/clinic-link-requests", requireAuth, createClinicLinkRequest);
 app.get("/api/clinic-link-requests/my", requireAuth, listMyClinicLinkRequests);
+app.get("/api/notifications", requireAuth, notifications);
+app.post("/api/notifications/:id/read", requireAuth, markNotificationRead);
 
 app.use((req, res) => {
   res.status(404).json({

@@ -2323,6 +2323,18 @@ function setupAccountMenuEvents() {
 function renderNotificationItem(notification, isClinicAccount) {
   const unreadClass = notification.unread ? ' is-unread' : '';
   const location = notification.clinicLocation ? `<span>${escapeHtml(notification.clinicLocation)}</span>` : '';
+  const usesPhysioPipelineIcon = notification.type === 'clinic_link_request';
+  const iconMarkup = usesPhysioPipelineIcon
+    ? `
+      <span class="notification-menu__item-icon" aria-hidden="true">
+        <svg class="notification-menu__item-p-icon" viewBox="0 0 76 82" focusable="false">
+          <path class="notification-menu__p-curve" d="M12 31 C25 14 60 13 61 36 C62 57 35 62 23 50" />
+          <path class="notification-menu__p-slash" d="M36 27 L18 69" />
+          <circle class="notification-menu__p-dot" cx="44" cy="74" r="4.2" />
+        </svg>
+      </span>
+    `
+    : '';
   const actions = !isClinicAccount && notification.status === 'PENDING'
     ? `
       <div class="notification-menu__actions">
@@ -2334,10 +2346,13 @@ function renderNotificationItem(notification, isClinicAccount) {
 
   return `
     <article class="notification-menu__item${unreadClass}" data-notification-id="${escapeHtml(notification.id)}">
-      <strong>${escapeHtml(notification.title || 'Notificação')}</strong>
-      <p>${escapeHtml(notification.message || '')}</p>
-      ${location}
-      ${actions}
+      ${iconMarkup}
+      <div class="notification-menu__item-copy">
+        <strong>${escapeHtml(notification.title || 'Notificação')}</strong>
+        <p>${escapeHtml(notification.message || '')}</p>
+        ${location}
+        ${actions}
+      </div>
     </article>
   `;
 }
