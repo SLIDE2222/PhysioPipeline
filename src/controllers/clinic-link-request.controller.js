@@ -3,9 +3,18 @@ import { prisma } from "../lib/prisma.js";
 import { ACCOUNT_TYPES, normalizeAccountType } from "../constants/account-types.js";
 
 const createClinicLinkRequestSchema = z.object({
-  clinicProfileId: z.string().min(1),
+  clinicProfileId: z.string().min(1).optional().nullable(),
+  clinicId: z.string().min(1).optional().nullable(),
+  physioProfileId: z.string().min(1).optional().nullable(),
+  requesterUserId: z.string().min(1).optional().nullable(),
   message: z.string().max(600).optional().nullable(),
-});
+}).refine(
+  (data) => Boolean(data.clinicProfileId || data.clinicId),
+  {
+    message: "Informe a clínica da solicitação.",
+    path: ["clinicProfileId"],
+  }
+);
 
 function clean(value) {
   if (value === "") return null;
@@ -51,6 +60,12 @@ function decorateClinicLinkRequest(link) {
     readByClinic: link.readByClinic,
     readByPhysio: link.readByPhysio,
     clinic: decorateClinicSummary(link.clinic),
+    profile: link.profile
+      ? {
+          id: link.profile.id,
+          name: link.profile.name,
+        }
+      : null,
   };
 }
 
@@ -124,9 +139,22 @@ export async function createClinicLinkRequest(req, res) {
       });
     }
 
-    const { user, profile } = await resolveOwnedProfileOrThrow(req.user.userId);
+    const { user, profile: ownedProfile } = await resolveOwnedProfileOrThrow(req.user.userId);
+    const requestedClinicId = parsed.data.clinicProfileId || parsed.data.clinicId;
+    const requestedPhysioProfileId = clean(parsed.data.physioProfileId);
+    const profile = requestedPhysioProfileId
+      ? await prisma.profile.findUnique({ where: { id: requestedPhysioProfileId } })
+      : ownedProfile;
+
+    if (!profile || profile.ownerUserId !== user.id) {
+      return res.status(403).json({
+        error: "Você precisa usar um perfil de fisioterapeuta vinculado à sua conta.",
+        message: "Você precisa usar um perfil de fisioterapeuta vinculado à sua conta.",
+      });
+    }
+
     const clinic = await prisma.clinicProfile.findUnique({
-      where: { id: parsed.data.clinicProfileId },
+      where: { id: requestedClinicId },
     });
 
     if (!clinic) {
@@ -162,10 +190,14 @@ export async function createClinicLinkRequest(req, res) {
 
     if (existing && ["PENDING", "ACCEPTED"].includes(existing.status)) {
       const message = existing.status === "PENDING"
-        ? "Já existe uma solicitação pendente para esta clínica."
+        ? "Você já solicitou vínculo com esta clínica."
         : "Vínculo ativo com esta clínica.";
 
-      return res.status(409).json({ error: message, message, link: decorateClinicLinkRequest(existing) });
+      return res.status(409).json({
+        error: message,
+        message,
+        link: decorateClinicLinkRequest(existing),
+      });
     }
 
     const link = existing
@@ -193,7 +225,10 @@ export async function createClinicLinkRequest(req, res) {
           include: { clinic: true, profile: true },
         });
 
-    return res.status(201).json({ link: decorateClinicLinkRequest(link) });
+    return res.status(201).json({
+      message: "Vínculo solicitado com sucesso, caso aceito ou negado será notificado",
+      link: decorateClinicLinkRequest(link),
+    });
   } catch (error) {
     return sendControllerError(res, error, "Erro ao enviar solicitação de vínculo com a clínica.");
   }

@@ -108,6 +108,22 @@ function renderLeadSummaryCard() {
   ].join('\n');
 }
 
+function showProfileToast(message, tone = 'success') {
+  const toast = document.createElement('div');
+  toast.className = `profile-inline-toast profile-inline-toast--${tone}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('is-visible');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('is-visible');
+    setTimeout(() => toast.remove(), 220);
+  }, 3200);
+}
+
 async function loadLeadSummary() {
   const target = document.getElementById('leadSummaryContent');
   if (!target || !window.physioApi?.fetchMyLeadSummary) return;
@@ -569,24 +585,31 @@ function setupClinicProfileLinkRequest() {
   if (!button || !window.physioApi?.createClinicLinkRequest) return;
 
   button.addEventListener('click', async () => {
+    const originalLabel = button.textContent;
     button.disabled = true;
+    button.textContent = 'Enviando...';
     if (message) {
       message.textContent = '';
       message.style.color = '';
     }
 
     try {
+      const loggedUser = await (window.getLoggedUser ? window.getLoggedUser(true) : Promise.resolve(null));
       await window.physioApi.createClinicLinkRequest({
         clinicProfileId: button.dataset.requestClinicLink,
+        clinicId: button.dataset.requestClinicLink,
+        physioProfileId: loggedUser?.profile?.id || null,
+        requesterUserId: loggedUser?.id || null,
       });
 
       button.textContent = 'Solicitação enviada';
       button.classList.remove('btn-primary');
       button.classList.add('btn-outline');
       if (message) {
-        message.textContent = 'Solicitação enviada para a clínica.';
+        message.textContent = '';
         message.style.color = '#166534';
       }
+      showProfileToast('Vínculo solicitado com sucesso, caso aceito ou negado será notificado');
 
       if (window.renderAuthArea) await window.renderAuthArea();
     } catch (error) {
@@ -596,9 +619,10 @@ function setupClinicProfileLinkRequest() {
         button.classList.remove('btn-primary');
         button.classList.add('btn-outline');
         if (message) {
-          message.textContent = 'Já existe uma solicitação pendente para esta clínica.';
+          message.textContent = 'Você já solicitou vínculo com esta clínica.';
           message.style.color = '#166534';
         }
+        showProfileToast('Você já solicitou vínculo com esta clínica.', 'info');
         return;
       }
 
@@ -610,12 +634,14 @@ function setupClinicProfileLinkRequest() {
           message.textContent = 'Esta clínica já aceitou o vínculo.';
           message.style.color = '#166534';
         }
+        showProfileToast('Vínculo ativo', 'info');
         return;
       }
 
       button.disabled = false;
+      button.textContent = originalLabel;
       if (message) {
-        message.textContent = 'Não foi possível enviar a solicitação agora. Tente novamente mais tarde.';
+        message.textContent = error?.message || 'Não foi possível enviar a solicitação agora. Tente novamente mais tarde.';
         message.style.color = '#b91c1c';
       }
       console.error('Clinic profile link request failed:', error);

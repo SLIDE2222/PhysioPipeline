@@ -2271,6 +2271,33 @@ body:has(#claimForm) .form-card {
   margin-bottom: 1rem;
 }
 
+.profile-inline-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 1500;
+  max-width: min(92vw, 520px);
+  padding: 0.95rem 1.15rem;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.94);
+  color: #ffffff;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.24);
+  transform: translate(-50%, 14px);
+  opacity: 0;
+  transition: opacity 180ms ease, transform 180ms ease;
+  text-align: center;
+  font-weight: 600;
+}
+
+.profile-inline-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.profile-inline-toast--info {
+  background: rgba(30, 41, 59, 0.94);
+}
+
 .profile-meta-note {
   color: var(--muted);
   font-size: 0.95rem;
