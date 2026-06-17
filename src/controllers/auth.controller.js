@@ -35,8 +35,7 @@ function buildClientUrl(req) {
   const refererHeader = String(req.headers.referer || "").trim();
   if (refererHeader) {
     try {
-      const refererUrl = new URL(refererHeader);
-      return normalizeBaseUrl(refererUrl.origin);
+      return normalizeBaseUrl(new URL(refererHeader).origin);
     } catch (_) {
       // ignore invalid referer
     }
@@ -49,6 +48,7 @@ function createToken(user) {
   return jwt.sign(
     {
       userId: user.id,
+      email: user.email,
     },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
@@ -71,6 +71,32 @@ function cleanOptionalString(value, maxLength = 2000) {
   const normalized = String(value ?? "").replace(/\s+/g, " ").trim();
   if (!normalized) return null;
   return normalized.slice(0, maxLength);
+}
+
+function sanitizeUser(user) {
+  if (!user) return null;
+
+  return {
+    id: user.id,
+    email: user.email,
+    emailVerified: Boolean(user.emailVerified),
+    name: user.name || null,
+    phone: user.phone || null,
+    accountType: normalizeAccountType(user.accountType),
+    profiles: Array.isArray(user.profiles) ? user.profiles : [],
+    clinicProfile: user.clinicProfile || null,
+  };
+}
+
+function getGoogleSub(user) {
+  const identities = Array.isArray(user?.identities) ? user.identities : [];
+  const googleIdentity = identities.find((identity) => identity?.provider === "google");
+  return (
+    user?.app_metadata?.provider_id ||
+    user?.user_metadata?.sub ||
+    googleIdentity?.id ||
+    null
+  );
 }
 
 async function getSupabaseUserFromAccessToken(accessToken) {
@@ -96,6 +122,62 @@ async function getSupabaseUserFromAccessToken(accessToken) {
   }
 
   return data.user;
+}
+
+async function upsertSupabaseUserSession({ accessToken, requestedAccountType }) {
+  const supabaseUser = await getSupabaseUserFromAccessToken(accessToken);
+  const email = normalizeEmail(supabaseUser.email);
+
+  if (!email) {
+    const error = new Error("Supabase user is missing an email.");
+    error.status = 400;
+    throw error;
+  }
+
+  const displayName = cleanOptionalString(
+    supabaseUser.user_metadata?.full_name ||
+      supabaseUser.user_metadata?.name ||
+      supabaseUser.user_metadata?.clinicName ||
+      supabaseUser.user_metadata?.clinic_name ||
+      supabaseUser.user_metadata?.preferred_username
+  );
+  const phone = cleanOptionalString(
+    supabaseUser.phone || supabaseUser.user_metadata?.phone || supabaseUser.user_metadata?.whatsapp,
+    80
+  );
+  const googleSub = cleanOptionalString(getGoogleSub(supabaseUser), 255);
+  const accountType = isValidAccountType(requestedAccountType)
+    ? requestedAccountType
+    : ACCOUNT_TYPES.PHYSIO;
+  const randomPasswordHash = await bcrypt.hash(crypto.randomUUID(), 10);
+
+  const user = await prisma.user.upsert({
+    where: { email },
+    update: {
+      emailVerified: Boolean(supabaseUser.email_confirmed_at),
+      name: displayName || undefined,
+      phone: phone || undefined,
+      googleSub: googleSub || undefined,
+      accountType,
+    },
+    create: {
+      email,
+      passwordHash: randomPasswordHash,
+      emailVerified: Boolean(supabaseUser.email_confirmed_at),
+      name: displayName,
+      phone,
+      googleSub,
+      accountType,
+    },
+    include: {
+      clinicProfile: true,
+      profiles: {
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  });
+
+  return user;
 }
 
 function formatClinicLinkNotification(link, accountType) {
@@ -144,6 +226,365 @@ function formatClinicLinkNotification(link, accountType) {
   };
 }
 
+export async function register(req, res) {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const password = String(req.body?.password || "");
+    const accountType = normalizeAccountType(req.body?.accountType);
+    const name = cleanOptionalString(req.body?.name, 120);
+    const phone = cleanOptionalString(req.body?.phone || req.body?.whatsapp, 80);
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "E-mail e senha sao obrigatorios." });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "A senha precisa ter pelo menos 6 caracteres." });
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return res.status(409).json({ message: "Este e-mail ja esta cadastrado." });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        accountType,
+        name,
+        phone,
+      },
+      include: {
+        clinicProfile: true,
+        profiles: true,
+      },
+    });
+
+    const token = createToken(user);
+    res.cookie(COOKIE_NAME, token, getCookieOptions());
+
+    return res.status(201).json({
+      token,
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error("Register error:", error);
+    return res.status(500).json({ message: error.message || "Nao foi possivel criar a conta." });
+  }
+}
+
+export async function login(req, res) {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const password = String(req.body?.password || "");
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "E-mail e senha sao obrigatorios." });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        clinicProfile: true,
+        profiles: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: "E-mail ou senha invalidos." });
+    }
+
+    const passwordIsValid = await bcrypt.compare(password, user.passwordHash);
+
+    if (!passwordIsValid) {
+      return res.status(401).json({ message: "E-mail ou senha invalidos." });
+    }
+
+    const token = createToken(user);
+    res.cookie(COOKIE_NAME, token, getCookieOptions());
+
+    return res.json({
+      token,
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({ message: error.message || "Nao foi possivel entrar." });
+  }
+}
+
+export async function googleLogin(req, res) {
+  try {
+    const credential = String(req.body?.credential || "").trim();
+
+    if (!credential) {
+      return res.status(400).json({ message: "Credencial do Google obrigatoria." });
+    }
+
+    // This route is kept for backwards compatibility with older frontend code.
+    // The primary production flow now uses Supabase OAuth and /auth/supabase.
+    let payload = null;
+    try {
+      const [, tokenPayload] = credential.split(".");
+      payload = tokenPayload
+        ? JSON.parse(Buffer.from(tokenPayload, "base64url").toString("utf8"))
+        : null;
+    } catch (_) {
+      payload = null;
+    }
+
+    const email = normalizeEmail(payload?.email);
+    if (!email) {
+      return res.status(400).json({ message: "Nao foi possivel identificar o e-mail do Google." });
+    }
+
+    const accountType = normalizeAccountType(req.body?.accountType);
+    const displayName = cleanOptionalString(payload?.name || payload?.given_name, 120);
+    const googleSub = cleanOptionalString(payload?.sub, 255);
+    const randomPasswordHash = await bcrypt.hash(crypto.randomUUID(), 10);
+
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {
+        emailVerified: true,
+        name: displayName || undefined,
+        googleSub: googleSub || undefined,
+        accountType,
+      },
+      create: {
+        email,
+        passwordHash: randomPasswordHash,
+        emailVerified: true,
+        name: displayName,
+        googleSub,
+        accountType,
+      },
+      include: {
+        clinicProfile: true,
+        profiles: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    const token = createToken(user);
+    res.cookie(COOKIE_NAME, token, getCookieOptions());
+
+    return res.json({
+      token,
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error("Google login error:", error);
+    return res.status(500).json({ message: error.message || "Nao foi possivel entrar com Google." });
+  }
+}
+
+export async function supabaseLogin(req, res) {
+  try {
+    const accessToken = String(req.body?.accessToken || "").trim();
+    const accountType = normalizeAccountType(req.body?.accountType);
+
+    if (!accessToken) {
+      return res.status(400).json({ message: "Access token do Supabase obrigatorio." });
+    }
+
+    const user = await upsertSupabaseUserSession({
+      accessToken,
+      requestedAccountType: accountType,
+    });
+    const token = createToken(user);
+    res.cookie(COOKIE_NAME, token, getCookieOptions());
+
+    return res.json({
+      token,
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error("Supabase login error:", error);
+    return res.status(error.status || 500).json({
+      message: error.message || "Nao foi possivel autenticar com Supabase.",
+    });
+  }
+}
+
+export async function logout(_req, res) {
+  res.clearCookie(COOKIE_NAME, {
+    path: "/",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  return res.json({ message: "Sessao encerrada." });
+}
+
+export async function me(req, res) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      include: {
+        clinicProfile: true,
+        profiles: {
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario nao encontrado." });
+    }
+
+    return res.json({
+      user: sanitizeUser(user),
+    });
+  } catch (error) {
+    console.error("Me error:", error);
+    return res.status(500).json({ message: error.message || "Nao foi possivel carregar o usuario." });
+  }
+}
+
+export async function forgotPassword(req, res) {
+  try {
+    const email = normalizeEmail(req.body?.email);
+
+    if (!email) {
+      return res.status(400).json({ message: "E-mail e obrigatorio." });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true, email: true },
+    });
+
+    if (!user) {
+      return res.json({
+        message: "Se o e-mail existir, o link de recuperacao foi enviado.",
+      });
+    }
+
+    await prisma.passwordResetToken.deleteMany({
+      where: { email },
+    });
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 30);
+    const clientUrl = buildClientUrl(req);
+    const resetLink = `${clientUrl}/update-password.html?token=${encodeURIComponent(token)}`;
+
+    await prisma.passwordResetToken.create({
+      data: {
+        email,
+        token,
+        expiresAt,
+      },
+    });
+
+    await sendMailOrThrow({
+      from: mailConfig.from || mailConfig.user,
+      sender: mailConfig.user,
+      to: email,
+      replyTo: mailConfig.user,
+      subject: "Recuperacao de senha - PhysioPipeline",
+      text: [
+        "Recuperacao de senha",
+        "",
+        "Recebemos uma solicitacao para redefinir sua senha no PhysioPipeline.",
+        `Abra este link para criar uma nova senha: ${resetLink}`,
+        "",
+        "Este link expira em 30 minutos.",
+        "Se voce nao solicitou isso, ignore este e-mail.",
+      ].join("\n"),
+      html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a">
+          <h2>Recuperacao de senha</h2>
+          <p>Recebemos uma solicitacao para redefinir sua senha no <strong>PhysioPipeline</strong>.</p>
+          <p>
+            <a href="${resetLink}" style="display:inline-block;padding:12px 18px;background:#2563eb;color:#fff;text-decoration:none;border-radius:10px;">
+              Criar nova senha
+            </a>
+          </p>
+          <p>Este link expira em <strong>30 minutos</strong>.</p>
+          <p>Se voce nao solicitou isso, ignore este e-mail.</p>
+        </div>
+      `,
+    });
+
+    return res.json({
+      message: "Se o e-mail existir, o link de recuperacao foi enviado.",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return res.status(500).json({
+      message: error.message || "Nao foi possivel enviar o link de recuperacao.",
+    });
+  }
+}
+
+export async function updatePassword(req, res) {
+  try {
+    const token = String(req.body?.token || req.body?.accessToken || "").trim();
+    const password = String(req.body?.password || "");
+
+    if (!token || !password) {
+      return res.status(400).json({ message: "Token e nova senha sao obrigatorios." });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: "A senha precisa ter pelo menos 6 caracteres." });
+    }
+
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { token },
+    });
+
+    if (!resetToken) {
+      return res.status(400).json({ message: "Token invalido ou expirado." });
+    }
+
+    if (resetToken.expiresAt < new Date()) {
+      await prisma.passwordResetToken.delete({ where: { id: resetToken.id } }).catch(() => {});
+      return res.status(400).json({ message: "Token expirado. Solicite um novo link." });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: resetToken.email },
+      select: { id: true },
+    });
+
+    if (!user) {
+      await prisma.passwordResetToken.deleteMany({ where: { email: resetToken.email } });
+      return res.status(400).json({ message: "Token invalido ou expirado." });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: user.id },
+        data: { passwordHash },
+      }),
+      prisma.passwordResetToken.deleteMany({
+        where: { email: resetToken.email },
+      }),
+    ]);
+
+    return res.json({ message: "Senha atualizada com sucesso." });
+  } catch (error) {
+    console.error("Update password error:", error);
+    return res.status(500).json({
+      message: error.message || "Nao foi possivel atualizar a senha.",
+    });
+  }
+}
+
 export async function notifications(req, res) {
   try {
     const user = await prisma.user.findUnique({
@@ -158,7 +599,7 @@ export async function notifications(req, res) {
     });
 
     if (!user) {
-      return res.status(404).json({ message: "Usuário não encontrado." });
+      return res.status(404).json({ message: "Usuario nao encontrado." });
     }
 
     const accountType = normalizeAccountType(user.accountType);
@@ -193,15 +634,19 @@ export async function notifications(req, res) {
       }
     }
 
-    const notifications = links.map((link) => formatClinicLinkNotification(link, accountType));
+    const notificationItems = links.map((link) =>
+      formatClinicLinkNotification(link, accountType)
+    );
 
     return res.json({
-      notifications,
-      unreadCount: notifications.filter((item) => item.unread).length,
+      notifications: notificationItems,
+      unreadCount: notificationItems.filter((item) => item.unread).length,
     });
   } catch (error) {
     console.error("Notifications route error:", error);
-    return res.status(500).json({ message: error.message || "Não foi possível carregar notificações." });
+    return res.status(500).json({
+      message: error.message || "Nao foi possivel carregar notificacoes.",
+    });
   }
 }
 
@@ -219,7 +664,7 @@ export async function markNotificationRead(req, res) {
     });
 
     if (!user) {
-      return res.status(404).json({ message: "Usuário não encontrado." });
+      return res.status(404).json({ message: "Usuario nao encontrado." });
     }
 
     const link = await prisma.clinicPhysiotherapistLink.findUnique({
@@ -228,7 +673,7 @@ export async function markNotificationRead(req, res) {
     });
 
     if (!link) {
-      return res.status(404).json({ message: "Notificação não encontrada." });
+      return res.status(404).json({ message: "Notificacao nao encontrada." });
     }
 
     const accountType = normalizeAccountType(user.accountType);
@@ -240,7 +685,7 @@ export async function markNotificationRead(req, res) {
     const canReadAsPhysio = ownedProfile?.id === link.profileId;
 
     if (!canReadAsClinic && !canReadAsPhysio) {
-      return res.status(403).json({ message: "Você não pode alterar esta notificação." });
+      return res.status(403).json({ message: "Voce nao pode alterar esta notificacao." });
     }
 
     const updated = await prisma.clinicPhysiotherapistLink.update({
@@ -255,14 +700,8 @@ export async function markNotificationRead(req, res) {
     return res.json({ notification: formatClinicLinkNotification(updated, accountType) });
   } catch (error) {
     console.error("Mark notification read error:", error);
-    return res.status(500).json({ message: error.message || "Não foi possível atualizar a notificação." });
+    return res.status(500).json({
+      message: error.message || "Nao foi possivel atualizar a notificacao.",
+    });
   }
 }
-
-
-
-
-
-
-
-
