@@ -17,9 +17,10 @@
 
   function getSelectedAccountType() {
     const selected = document.querySelector('input[name="accountType"]:checked');
+    const selectedValue = selected?.value || localStorage.getItem('accountType') || 'physio';
     return window.PhysioAccountTypes?.normalizeAccountType
-      ? window.PhysioAccountTypes.normalizeAccountType(selected?.value)
-      : 'physio';
+      ? window.PhysioAccountTypes.normalizeAccountType(selectedValue)
+      : (selectedValue === 'clinic' ? 'clinic' : 'physio');
   }
 
   function getSupabaseOAuthClient() {
@@ -45,7 +46,10 @@
     if (!client) return;
 
     try {
-      sessionStorage.setItem('pendingGoogleAccountType', getSelectedAccountType());
+      const selectedAccountType = getSelectedAccountType();
+      localStorage.setItem('accountType', selectedAccountType);
+      sessionStorage.setItem('pendingGoogleAccountType', selectedAccountType);
+      console.log('Selected account type', selectedAccountType);
     } catch (_) {
       // Account type persistence is best-effort; OAuth can still continue.
     }

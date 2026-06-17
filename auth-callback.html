@@ -141,7 +141,11 @@
           return;
         }
 
-        const accountType = sessionStorage.getItem('pendingGoogleAccountType') || 'physio';
+        const accountType =
+          localStorage.getItem('accountType') ||
+          sessionStorage.getItem('pendingGoogleAccountType') ||
+          'physio';
+        console.log('Selected account type', accountType);
         const authData = await window.physioApi.loginWithSupabase(
           session.access_token,
           accountType

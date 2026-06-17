@@ -48,6 +48,18 @@
         </div>
 
         <form class="form-card" id="loginForm">
+          <label>Entrar como:</label>
+          <div class="account-type-picker account-type-picker--inline" id="loginAccountTypePicker">
+            <label class="account-type-option account-type-option--pill">
+              <input type="radio" name="accountType" value="physio" checked />
+              <span>Fisioterapeuta</span>
+            </label>
+            <label class="account-type-option account-type-option--pill">
+              <input type="radio" name="accountType" value="clinic" />
+              <span>Clínica</span>
+            </label>
+          </div>
+
           <div class="google-auth-card">
             <p class="form-hint">Ou continue com Google</p>
 
