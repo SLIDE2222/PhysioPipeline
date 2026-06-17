@@ -124,8 +124,20 @@ async function getSupabaseUserFromAccessToken(accessToken) {
   return data.user;
 }
 
-async function upsertSupabaseUserSession({ accessToken, requestedAccountType }) {
-  const supabaseUser = await getSupabaseUserFromAccessToken(accessToken);
+function buildRedirectUrlForUser(user) {
+  if (normalizeAccountType(user?.accountType) === ACCOUNT_TYPES.CLINIC && user?.clinicProfile?.id) {
+    return `profile.html?type=clinic&id=${encodeURIComponent(user.clinicProfile.id)}`;
+  }
+
+  const physioProfileId = user?.profiles?.[0]?.id || null;
+  if (physioProfileId) {
+    return `profile.html?id=${encodeURIComponent(physioProfileId)}`;
+  }
+
+  return "profile.html";
+}
+
+async function resolveUserAccountAfterGoogleLogin({ supabaseUser, requestedAccountType }) {
   const email = normalizeEmail(supabaseUser.email);
 
   if (!email) {
@@ -146,28 +158,17 @@ async function upsertSupabaseUserSession({ accessToken, requestedAccountType }) 
     80
   );
   const googleSub = cleanOptionalString(getGoogleSub(supabaseUser), 255);
-  const accountType = isValidAccountType(requestedAccountType)
+  const randomPasswordHash = await bcrypt.hash(crypto.randomUUID(), 10);
+  const normalizedRequestedAccountType = isValidAccountType(requestedAccountType)
     ? requestedAccountType
     : ACCOUNT_TYPES.PHYSIO;
-  const randomPasswordHash = await bcrypt.hash(crypto.randomUUID(), 10);
 
-  const user = await prisma.user.upsert({
-    where: { email },
-    update: {
-      emailVerified: Boolean(supabaseUser.email_confirmed_at),
-      name: displayName || undefined,
-      phone: phone || undefined,
-      googleSub: googleSub || undefined,
-      accountType,
-    },
-    create: {
-      email,
-      passwordHash: randomPasswordHash,
-      emailVerified: Boolean(supabaseUser.email_confirmed_at),
-      name: displayName,
-      phone,
-      googleSub,
-      accountType,
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      OR: [
+        ...(googleSub ? [{ googleSub }] : []),
+        { email },
+      ],
     },
     include: {
       clinicProfile: true,
@@ -177,7 +178,87 @@ async function upsertSupabaseUserSession({ accessToken, requestedAccountType }) 
     },
   });
 
-  return user;
+  const existingClinic = existingUser?.clinicProfile || null;
+  const existingPhysio =
+    existingUser?.profiles?.[0] ||
+    await prisma.profile.findFirst({
+      where: {
+        OR: [
+          ...(existingUser?.id ? [{ ownerUserId: existingUser.id }] : []),
+          { publicEmail: { equals: email, mode: "insensitive" } },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  const resolvedAccountType = existingClinic
+    ? ACCOUNT_TYPES.CLINIC
+    : existingPhysio
+      ? ACCOUNT_TYPES.PHYSIO
+      : normalizedRequestedAccountType;
+
+  console.log("Google login user:", email, supabaseUser.id || googleSub || null);
+  console.log("existing clinic:", existingClinic);
+  console.log("existing physio:", existingPhysio);
+  console.log("resolved accountType:", resolvedAccountType);
+
+  const user = existingUser
+    ? await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          emailVerified: Boolean(supabaseUser.email_confirmed_at),
+          name: displayName || existingUser.name || undefined,
+          phone: phone || existingUser.phone || undefined,
+          googleSub: googleSub || existingUser.googleSub || undefined,
+          accountType: existingClinic
+            ? ACCOUNT_TYPES.CLINIC
+            : existingPhysio
+              ? ACCOUNT_TYPES.PHYSIO
+              : resolvedAccountType,
+        },
+        include: {
+          clinicProfile: true,
+          profiles: {
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      })
+    : await prisma.user.create({
+        data: {
+          email,
+          passwordHash: randomPasswordHash,
+          emailVerified: Boolean(supabaseUser.email_confirmed_at),
+          name: displayName,
+          phone,
+          googleSub,
+          accountType: resolvedAccountType,
+        },
+        include: {
+          clinicProfile: true,
+          profiles: {
+            orderBy: { createdAt: "desc" },
+          },
+        },
+      });
+
+  const redirectUrl = buildRedirectUrlForUser(user);
+
+  console.log("redirectUrl:", redirectUrl);
+
+  return {
+    user,
+    redirectUrl,
+    clinicProfileId: user.clinicProfile?.id || null,
+    physioProfileId: user.profiles?.[0]?.id || null,
+    accountType: normalizeAccountType(user.accountType),
+  };
+}
+
+async function upsertSupabaseUserSession({ accessToken, requestedAccountType }) {
+  const supabaseUser = await getSupabaseUserFromAccessToken(accessToken);
+  return resolveUserAccountAfterGoogleLogin({
+    supabaseUser,
+    requestedAccountType,
+  });
 }
 
 function formatClinicLinkNotification(link, accountType) {
@@ -368,40 +449,45 @@ export async function googleLogin(req, res) {
       return res.status(400).json({ message: "Nao foi possivel identificar o e-mail do Google." });
     }
 
-    const accountType = normalizeAccountType(req.body?.accountType);
-    const displayName = cleanOptionalString(payload?.name || payload?.given_name, 120);
-    const googleSub = cleanOptionalString(payload?.sub, 255);
-    const randomPasswordHash = await bcrypt.hash(crypto.randomUUID(), 10);
-
-    const user = await prisma.user.upsert({
-      where: { email },
-      update: {
-        emailVerified: true,
-        name: displayName || undefined,
-        googleSub: googleSub || undefined,
-        accountType,
-      },
-      create: {
-        email,
-        passwordHash: randomPasswordHash,
-        emailVerified: true,
-        name: displayName,
-        googleSub,
-        accountType,
-      },
-      include: {
-        clinicProfile: true,
-        profiles: {
-          orderBy: { createdAt: "desc" },
+    const { user, redirectUrl, accountType, clinicProfileId, physioProfileId } =
+      await resolveUserAccountAfterGoogleLogin({
+        supabaseUser: {
+          email,
+          email_confirmed_at: new Date().toISOString(),
+          user_metadata: {
+            name: payload?.name || payload?.given_name || null,
+            full_name: payload?.name || null,
+          },
+          identities: payload?.sub
+            ? [{ provider: "google", id: payload.sub }]
+            : [],
+          app_metadata: {
+            provider_id: payload?.sub || null,
+          },
         },
-      },
-    });
+        requestedAccountType: normalizeAccountType(req.body?.accountType),
+      });
+
+    console.log("Google login user:", user.email, user.id);
+    console.log("existing clinic:", user.clinicProfile || null);
+    console.log("existing physio:", user.profiles?.[0] || null);
+    console.log("resolved accountType:", accountType);
+    console.log("redirectUrl:", redirectUrl);
+
+    if (clinicProfileId) {
+      console.log("Google login clinicProfileId:", clinicProfileId);
+    }
+
+    if (physioProfileId) {
+      console.log("Google login physioProfileId:", physioProfileId);
+    }
 
     const token = createToken(user);
     res.cookie(COOKIE_NAME, token, getCookieOptions());
 
     return res.json({
       token,
+      redirectUrl,
       user: sanitizeUser(user),
     });
   } catch (error) {
@@ -413,21 +499,37 @@ export async function googleLogin(req, res) {
 export async function supabaseLogin(req, res) {
   try {
     const accessToken = String(req.body?.accessToken || "").trim();
-    const accountType = normalizeAccountType(req.body?.accountType);
+    const requestedAccountType = normalizeAccountType(req.body?.accountType);
 
     if (!accessToken) {
       return res.status(400).json({ message: "Access token do Supabase obrigatorio." });
     }
 
-    const user = await upsertSupabaseUserSession({
+    const { user, redirectUrl, accountType, clinicProfileId, physioProfileId } = await upsertSupabaseUserSession({
       accessToken,
-      requestedAccountType: accountType,
+      requestedAccountType,
     });
+
+    console.log("Google login user:", user.email, user.id);
+    console.log("existing clinic:", user.clinicProfile || null);
+    console.log("existing physio:", user.profiles?.[0] || null);
+    console.log("resolved accountType:", accountType);
+    console.log("redirectUrl:", redirectUrl);
+
+    if (clinicProfileId) {
+      console.log("Google login clinicProfileId:", clinicProfileId);
+    }
+
+    if (physioProfileId) {
+      console.log("Google login physioProfileId:", physioProfileId);
+    }
+
     const token = createToken(user);
     res.cookie(COOKIE_NAME, token, getCookieOptions());
 
     return res.json({
       token,
+      redirectUrl,
       user: sanitizeUser(user),
     });
   } catch (error) {

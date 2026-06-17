@@ -149,9 +149,17 @@
 
         sessionStorage.removeItem('pendingGoogleAccountType');
         console.log('PhysioPipeline Supabase OAuth exchange:', authData);
+        console.log('Google login user:', authData?.user?.email, authData?.user?.id);
+        console.log('existing clinic:', authData?.user?.clinicProfile || null);
+        console.log('existing physio:', authData?.user?.profiles?.[0] || null);
+        console.log('resolved accountType:', authData?.user?.accountType || 'none');
 
         message.textContent = 'Login com Google confirmado. Redirecionando...';
-        const targetPath = window.physioApi?.resolveUserHomePath?.(authData?.user) || 'profile.html';
+        const targetPath =
+          authData?.redirectUrl ||
+          window.physioApi?.resolveUserHomePath?.(authData?.user) ||
+          'profile.html';
+        console.log('redirectUrl:', targetPath);
         window.location.replace(targetPath);
       } catch (error) {
         console.error('OAuth callback error:', error);
