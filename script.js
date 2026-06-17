@@ -2323,11 +2323,56 @@ function setupAccountMenuEvents() {
   });
 }
 
+function isClinicLinkRequestNotification(notification) {
+  const title = String(notification?.title || '').toLowerCase();
+  const message = String(notification?.message || '').toLowerCase();
+
+  return notification?.type === 'clinic_link_request' ||
+    title.includes('solicitação de vínculo') ||
+    title.includes('solicitacao de vinculo') ||
+    message.includes('solicitou vínculo') ||
+    message.includes('solicitou vinculo');
+}
+
+function getClinicLinkNotificationLinkId(notification) {
+  return notification?.relatedRequestId ||
+    notification?.clinicLinkRequestId ||
+    notification?.linkId ||
+    notification?.id ||
+    null;
+}
+
+function getClinicLinkNotificationPhysioId(notification) {
+  return notification?.relatedPhysioId ||
+    notification?.physioProfileId ||
+    notification?.requesterProfileId ||
+    notification?.profileId ||
+    null;
+}
+
+function normalizeClinicLinkNotificationDetails(notification, detailData = null, profileData = null) {
+  const physio = detailData?.physio || null;
+  const fallbackProfile = profileData || null;
+
+  return {
+    ...notification,
+    relatedRequestId: getClinicLinkNotificationLinkId(notification),
+    relatedPhysioId: getClinicLinkNotificationPhysioId(notification),
+    requesterName: notification?.requesterName || physio?.name || fallbackProfile?.nome || 'Fisioterapeuta',
+    requesterCity: notification?.requesterCity || physio?.city || fallbackProfile?.cidade || '',
+    requesterNeighborhood: notification?.requesterNeighborhood || physio?.neighborhood || fallbackProfile?.bairro || '',
+    requesterSpecialty: notification?.requesterSpecialty || physio?.specialty || fallbackProfile?.especialidade || '',
+    requesterBio: notification?.requesterBio || physio?.bio || fallbackProfile?.descricao || '',
+    requesterAvatarUrl: notification?.requesterAvatarUrl || physio?.avatarUrl || fallbackProfile?.foto || '',
+  };
+}
+
 function renderNotificationItem(notification, isClinicAccount) {
   const unreadClass = notification.unread ? ' is-unread' : '';
   const location = notification.clinicLocation ? `<span>${escapeHtml(notification.clinicLocation)}</span>` : '';
-  const usesPhysioPipelineIcon = notification.type === 'clinic_link_request';
-  const isClickableClinicRequest = isClinicAccount && notification.type === 'clinic_link_request';
+  const isClinicLinkRequest = isClinicLinkRequestNotification(notification);
+  const usesPhysioPipelineIcon = isClinicLinkRequest;
+  const isClickableClinicRequest = isClinicAccount && isClinicLinkRequest;
   const iconMarkup = usesPhysioPipelineIcon
     ? `
       <span class="notification-menu__item-icon" aria-hidden="true">
@@ -2341,7 +2386,7 @@ function renderNotificationItem(notification, isClinicAccount) {
     : '';
   const canReviewClinicLinkRequest =
     isClinicAccount &&
-    notification.type === 'clinic_link_request' &&
+    isClinicLinkRequest &&
     notification.status === 'PENDING';
   const actions = canReviewClinicLinkRequest
     ? `
@@ -2366,7 +2411,7 @@ function renderNotificationItem(notification, isClinicAccount) {
 }
 
 function getNotificationRequesterProfileHref(notification) {
-  const physioProfileId = notification?.relatedPhysioId || notification?.profileId || notification?.requesterProfileId;
+  const physioProfileId = getClinicLinkNotificationPhysioId(notification);
   return physioProfileId
     ? `profile.html?type=physio&id=${encodeURIComponent(physioProfileId)}`
     : 'profile.html';
@@ -2400,6 +2445,32 @@ function createNotificationModalShell() {
   document.body.appendChild(overlay);
   activeClinicLinkNotificationModal = overlay;
   return overlay;
+}
+
+async function loadClinicLinkNotificationDetails(notification) {
+  let detailData = null;
+  const requestId = getClinicLinkNotificationLinkId(notification);
+  const physioId = getClinicLinkNotificationPhysioId(notification);
+
+  if (requestId && window.physioApi?.fetchClinicLinkRequest) {
+    try {
+      detailData = await window.physioApi.fetchClinicLinkRequest(requestId);
+    } catch (error) {
+      console.warn('Could not load clinic link request details:', error);
+    }
+  }
+
+  let profileData = null;
+  const fallbackPhysioId = detailData?.physioProfileId || physioId;
+  if (fallbackPhysioId && window.physioApi?.fetchProfile) {
+    try {
+      profileData = await window.physioApi.fetchProfile(fallbackPhysioId);
+    } catch (error) {
+      console.warn('Could not load physiotherapist profile fallback for notification:', error);
+    }
+  }
+
+  return normalizeClinicLinkNotificationDetails(notification, detailData, profileData);
 }
 
 function renderClinicLinkNotificationModal(notification) {
@@ -2571,7 +2642,12 @@ document.addEventListener('click', async (event) => {
     } else if (item?.dataset.clinicLinkReview === 'true') {
       const notification = notificationDetailsById.get(id);
       if (notification) {
-        renderClinicLinkNotificationModal(notification);
+        console.log('clicked notification:', notification);
+        console.log('notification type:', notification.type);
+        console.log('relatedRequestId:', notification.relatedRequestId || notification.clinicLinkRequestId || null);
+        console.log('relatedPhysioId:', notification.relatedPhysioId || notification.physioProfileId || notification.requesterProfileId || null);
+        const hydratedNotification = await loadClinicLinkNotificationDetails(notification);
+        renderClinicLinkNotificationModal(hydratedNotification);
         await window.physioApi.markNotificationRead(id).catch(() => {});
       }
     } else if (!event.target.closest('button')) {

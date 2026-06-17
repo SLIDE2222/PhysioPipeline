@@ -65,6 +65,11 @@ function decorateClinicLinkRequest(link) {
       ? {
           id: link.profile.id,
           name: link.profile.name,
+          city: link.profile.city || null,
+          neighborhood: link.profile.neighborhood || null,
+          specialty: link.profile.specialty || null,
+          bio: link.profile.bio || null,
+          avatarUrl: link.profile.photoUrl || null,
         }
       : null,
   };
@@ -287,6 +292,72 @@ export async function listMyClinicLinkRequests(req, res) {
     return res.json({ links: links.map(decorateClinicLinkRequest) });
   } catch (error) {
     return sendControllerError(res, error, "Erro ao carregar solicitações de vínculo com clínicas.");
+  }
+}
+
+export async function getClinicLinkRequest(req, res) {
+  try {
+    const currentUser = await prisma.user.findUnique({
+      where: { id: req.user.userId },
+      include: {
+        clinicProfile: true,
+      },
+    });
+
+    if (!currentUser) {
+      return res.status(404).json({
+        error: "Usuario nao encontrado.",
+        message: "Usuario nao encontrado.",
+      });
+    }
+
+    const link = await prisma.clinicPhysiotherapistLink.findUnique({
+      where: { id: req.params.id },
+      include: {
+        clinic: true,
+        profile: true,
+      },
+    });
+
+    if (!link) {
+      return res.status(404).json({
+        error: "Solicitação de vínculo não encontrada.",
+        message: "Solicitação de vínculo não encontrada.",
+      });
+    }
+
+    const isRecipientClinicOwner = Boolean(
+      currentUser.clinicProfile?.id && link.clinicId === currentUser.clinicProfile.id
+    );
+    const isRequesterPhysioOwner = link.profile?.ownerUserId === currentUser.id;
+
+    if (!isRecipientClinicOwner && !isRequesterPhysioOwner) {
+      return res.status(403).json({
+        error: "Você não pode visualizar esta solicitação.",
+        message: "Você não pode visualizar esta solicitação.",
+      });
+    }
+
+    return res.json({
+      id: link.id,
+      status: link.status,
+      clinicId: link.clinicId,
+      physioProfileId: link.profileId,
+      requesterUserId: link.profile?.ownerUserId || null,
+      physio: link.profile
+        ? {
+            id: link.profile.id,
+            name: link.profile.name,
+            city: link.profile.city || null,
+            neighborhood: link.profile.neighborhood || null,
+            specialty: link.profile.specialty || null,
+            bio: link.profile.bio || null,
+            avatarUrl: link.profile.photoUrl || null,
+          }
+        : null,
+    });
+  } catch (error) {
+    return sendControllerError(res, error, "Erro ao carregar detalhes da solicitação de vínculo.");
   }
 }
 

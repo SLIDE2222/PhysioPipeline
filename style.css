@@ -392,6 +392,7 @@ textarea {
 
 .notification-menu__item--clickable {
   cursor: pointer;
+  pointer-events: auto;
   transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -399,6 +400,15 @@ textarea {
   transform: translateY(-1px);
   background: rgba(239, 246, 255, 0.96);
   box-shadow: 0 12px 26px rgba(37, 99, 235, 0.10);
+}
+
+.notification-menu__item-copy {
+  pointer-events: none;
+}
+
+.notification-menu__item-copy .notification-menu__actions,
+.notification-menu__item-copy .notification-menu__actions * {
+  pointer-events: auto;
 }
 
 .notification-menu__item.is-unread {
