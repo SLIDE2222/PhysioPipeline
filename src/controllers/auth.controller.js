@@ -217,12 +217,22 @@ function formatClinicLinkNotification(link, accountType) {
 
   return {
     id: link.id,
-    type: "clinic_physio_link_request",
+    recipientUserId: link.profile?.ownerUserId || null,
+    type: "clinic_link_request_response",
     status: link.status,
+    notificationStatus: link.readByPhysio ? "read" : "unread",
     unread: !link.readByPhysio,
-    title: "Solicitacao de vinculo",
-    message: `A clinica ${clinicName} quer vincular seu perfil a equipe dela.`,
+    title: "Solicitação de vínculo",
+    message: link.status === "ACCEPTED"
+      ? `Sua solicitação de vínculo com ${clinicName} foi aceita.`
+      : link.status === "REJECTED"
+        ? `Sua solicitação de vínculo com ${clinicName} foi recusada.`
+        : `Seu vínculo com ${clinicName} foi atualizado.`,
+    icon: "physiopipeline-p",
     linkId: link.id,
+    relatedRequestId: link.id,
+    relatedPhysioId: link.profileId,
+    relatedClinicId: link.clinicId,
     clinicId: link.clinicId,
     clinicName,
     clinicLocation,
@@ -637,7 +647,7 @@ export async function notifications(req, res) {
         links = await prisma.clinicPhysiotherapistLink.findMany({
           where: {
             profileId: profile.id,
-            status: { in: ["PENDING", "ACCEPTED"] },
+            status: { in: ["ACCEPTED", "REJECTED", "UNLINKED"] },
           },
           include: { clinic: true, profile: true },
           orderBy: { updatedAt: "desc" },

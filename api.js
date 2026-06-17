@@ -988,15 +988,27 @@
       }).then((data) => data.link || data);
     },
     acceptClinicLinkRequest(linkId) {
-      return request(`/profiles/me/clinic-links/${encodeURIComponent(linkId)}/accept`, {
+      const primaryPath = `/clinic-link-requests/${encodeURIComponent(linkId)}/accept`;
+      const options = {
         method: 'POST',
         timeoutMs: 15000,
+      };
+
+      return request(primaryPath, options).catch((error) => {
+        if (error.status !== 404) throw error;
+        return request(`/api${primaryPath}`, options);
       }).then((data) => data.link || data);
     },
     rejectClinicLinkRequest(linkId) {
-      return request(`/profiles/me/clinic-links/${encodeURIComponent(linkId)}/reject`, {
+      const primaryPath = `/clinic-link-requests/${encodeURIComponent(linkId)}/reject`;
+      const options = {
         method: 'POST',
         timeoutMs: 15000,
+      };
+
+      return request(primaryPath, options).catch((error) => {
+        if (error.status !== 404) throw error;
+        return request(`/api${primaryPath}`, options);
       }).then((data) => data.link || data);
     },
     unlinkClinicFromProfile(linkId) {

@@ -2335,7 +2335,11 @@ function renderNotificationItem(notification, isClinicAccount) {
       </span>
     `
     : '';
-  const actions = !isClinicAccount && notification.status === 'PENDING'
+  const canReviewClinicLinkRequest =
+    isClinicAccount &&
+    notification.type === 'clinic_link_request' &&
+    notification.status === 'PENDING';
+  const actions = canReviewClinicLinkRequest
     ? `
       <div class="notification-menu__actions">
         <button type="button" data-notification-accept="${escapeHtml(notification.id)}">Aceitar</button>

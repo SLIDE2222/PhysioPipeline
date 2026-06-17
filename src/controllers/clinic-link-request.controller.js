@@ -134,10 +134,11 @@ function buildClinicOwnerNotification({ clinic, profile, link }) {
     recipientUserId: clinic.userId || null,
     type: "clinic_link_request",
     title: "Nova solicitação de vínculo",
-    message: `${profile.name} solicitou vínculo com sua clínica.`,
+    message: `${profile.name} quer vincular seu perfil à equipe desta clínica.`,
     icon: "physiopipeline-p",
     relatedClinicId: clinic.id,
     relatedPhysioId: profile.id,
+    relatedRequestId: link.id,
     status: "unread",
     linkId: link.id,
     createdAt: link.createdAt,
@@ -165,6 +166,7 @@ export async function createClinicLinkRequest(req, res) {
 
     console.log("clinicId:", requestedClinicId);
     console.log("physioProfileId:", profile?.id || null);
+    console.log("requesterUserId:", req.user.userId);
 
     if (!profile || profile.ownerUserId !== user.id) {
       return res.status(403).json({
@@ -259,6 +261,7 @@ export async function createClinicLinkRequest(req, res) {
       link,
     });
 
+    console.log("notification recipientUserId:", notification.recipientUserId);
     console.log("notification created:", notification);
 
     return res.status(201).json({
@@ -285,4 +288,86 @@ export async function listMyClinicLinkRequests(req, res) {
   } catch (error) {
     return sendControllerError(res, error, "Erro ao carregar solicitações de vínculo com clínicas.");
   }
+}
+
+async function resolveOwnedClinicOrThrow(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      clinicProfile: true,
+    },
+  });
+
+  if (!user) {
+    const error = new Error("Usuario nao encontrado.");
+    error.status = 404;
+    throw error;
+  }
+
+  if (!isClinicAccount(user)) {
+    const error = new Error("Esta area e exclusiva para clinicas.");
+    error.status = 403;
+    throw error;
+  }
+
+  if (!user.clinicProfile?.id) {
+    const error = new Error("Nenhuma clinica esta vinculada a esta conta.");
+    error.status = 404;
+    throw error;
+  }
+
+  return { user, clinicProfile: user.clinicProfile };
+}
+
+async function updateClinicOwnedLink(req, res, nextStatus) {
+  try {
+    const { user, clinicProfile } = await resolveOwnedClinicOrThrow(req.user.userId);
+    const link = await prisma.clinicPhysiotherapistLink.findUnique({
+      where: { id: req.params.linkId },
+      include: {
+        clinic: true,
+        profile: true,
+      },
+    });
+
+    if (!link || link.clinicId !== clinicProfile.id) {
+      return res.status(404).json({
+        error: "Solicitação de vínculo não encontrada.",
+        message: "Solicitação de vínculo não encontrada.",
+      });
+    }
+
+    const updated = await prisma.clinicPhysiotherapistLink.update({
+      where: { id: link.id },
+      data: {
+        status: nextStatus,
+        readByClinic: true,
+        readByPhysio: false,
+        acceptedAt: nextStatus === "ACCEPTED" ? new Date() : null,
+        rejectedAt: nextStatus === "REJECTED" ? new Date() : null,
+        unlinkedAt: nextStatus === "UNLINKED" ? new Date() : null,
+      },
+      include: {
+        clinic: true,
+        profile: true,
+      },
+    });
+
+    return res.json({
+      success: true,
+      requesterUserId: updated.profile?.ownerUserId || null,
+      recipientUserId: user.id,
+      link: decorateClinicLinkRequest(updated),
+    });
+  } catch (error) {
+    return sendControllerError(res, error, "Erro ao atualizar solicitacao de vinculo da clinica.");
+  }
+}
+
+export function acceptClinicLinkRequest(req, res) {
+  return updateClinicOwnedLink(req, res, "ACCEPTED");
+}
+
+export function rejectClinicLinkRequest(req, res) {
+  return updateClinicOwnedLink(req, res, "REJECTED");
 }
