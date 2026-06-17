@@ -2273,7 +2273,31 @@ function closeNotificationMenus(exceptMenu = null) {
 }
 
 const notificationDetailsById = new Map();
+const DISMISSED_NOTIFICATIONS_STORAGE_KEY = 'physioDismissedNotifications:v1';
+const dismissedNotificationIds = new Set();
 let activeClinicLinkNotificationModal = null;
+
+try {
+  const storedDismissedNotifications = JSON.parse(sessionStorage.getItem(DISMISSED_NOTIFICATIONS_STORAGE_KEY) || '[]');
+  if (Array.isArray(storedDismissedNotifications)) {
+    storedDismissedNotifications.forEach((notificationId) => {
+      if (notificationId) dismissedNotificationIds.add(String(notificationId));
+    });
+  }
+} catch (_) {
+  // ignore storage hydration issues
+}
+
+function persistDismissedNotificationIds() {
+  try {
+    sessionStorage.setItem(
+      DISMISSED_NOTIFICATIONS_STORAGE_KEY,
+      JSON.stringify(Array.from(dismissedNotificationIds))
+    );
+  } catch (_) {
+    // ignore storage write issues
+  }
+}
 
 function setupAccountMenuEvents() {
   if (window.__physioAccountMenuReady) return;
@@ -2427,6 +2451,24 @@ function getNotificationRequesterProfileHref(notification) {
     : 'profile.html';
 }
 
+function dismissNotificationLocally(notificationId) {
+  if (!notificationId) return;
+
+  dismissedNotificationIds.add(String(notificationId));
+  persistDismissedNotificationIds();
+  notificationDetailsById.delete(notificationId);
+
+  document.querySelectorAll(`[data-notification-id="${CSS.escape(String(notificationId))}"]`).forEach((element) => {
+    element.remove();
+  });
+
+  document.querySelectorAll('[data-notification-panel]').forEach((panel) => {
+    if (!panel.querySelector('[data-notification-id]') && !panel.querySelector('.notification-menu__empty')) {
+      panel.insertAdjacentHTML('beforeend', '<p class="notification-menu__empty">Nenhuma notificação no momento.</p>');
+    }
+  });
+}
+
 function closeClinicLinkNotificationModal() {
   if (!activeClinicLinkNotificationModal) return;
   activeClinicLinkNotificationModal.remove();
@@ -2489,6 +2531,49 @@ async function loadClinicLinkNotificationDetails(notification) {
   }
 
   return normalizeClinicLinkNotificationDetails(notification, detailData, profileData);
+}
+
+async function handleClinicLinkNotificationOpen(notificationId, item = null) {
+  if (!notificationId || !window.physioApi) return;
+
+  const notification = notificationDetailsById.get(notificationId) || {
+    id: notificationId,
+    title: item?.querySelector('strong')?.textContent || 'Nova solicitação de vínculo',
+    message: item?.querySelector('p')?.textContent || '',
+  };
+
+  console.log('clicked notification:', notification);
+  console.log('notification type:', notification.type);
+  console.log('relatedRequestId:', notification.relatedRequestId || notification.clinicLinkRequestId || null);
+  console.log('relatedPhysioId:', notification.relatedPhysioId || notification.physioProfileId || notification.requesterProfileId || null);
+
+  let hydratedNotification = notification;
+  try {
+    hydratedNotification = await loadClinicLinkNotificationDetails(notification);
+  } catch (error) {
+    console.warn('Could not hydrate clinic link notification before opening modal:', error);
+  }
+
+  openClinicLinkRequestModal(hydratedNotification);
+  await window.physioApi.markNotificationRead(notificationId).catch(() => {});
+}
+
+function bindNotificationCardInteractions(root = document) {
+  root.querySelectorAll('[data-clinic-link-review="true"]').forEach((card) => {
+    if (card.dataset.notificationCardBound === 'true') return;
+
+    card.dataset.notificationCardBound = 'true';
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const notificationId = card.dataset.notificationId;
+      if (!notificationId) return;
+
+      await handleClinicLinkNotificationOpen(notificationId, card);
+    });
+  });
 }
 
 function renderClinicLinkNotificationModal(notification) {
@@ -2554,6 +2639,8 @@ function renderClinicLinkNotificationModal(notification) {
         await window.physioApi.rejectClinicLinkRequest(linkId);
       }
 
+      dismissNotificationLocally(notification.id);
+      closeNotificationMenus();
       closeClinicLinkNotificationModal();
       await renderAuthArea();
     } catch (error) {
@@ -2593,12 +2680,13 @@ async function buildNotificationMenu(user) {
     const data = window.physioApi?.fetchNotifications
       ? await window.physioApi.fetchNotifications()
       : { notifications: [], unreadCount: 0 };
-    const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
+    const notifications = (Array.isArray(data?.notifications) ? data.notifications : [])
+      .filter((notification) => notification?.id && !dismissedNotificationIds.has(notification.id));
     notificationDetailsById.clear();
     notifications.forEach((notification) => {
       if (notification?.id) notificationDetailsById.set(notification.id, notification);
     });
-    const unreadCount = Number(data?.unreadCount || 0);
+    const unreadCount = notifications.filter((notification) => notification?.unread).length;
     const isClinicAccount = user.accountType === 'clinic';
     const panelContent = notifications.length
       ? notifications.map((item) => renderNotificationItem(item, isClinicAccount)).join('')
@@ -2663,29 +2751,13 @@ document.addEventListener('click', async (event) => {
     if (acceptButton) {
       acceptButton.disabled = true;
       await window.physioApi.acceptClinicLinkRequest(id);
+      dismissNotificationLocally(id);
     } else if (rejectButton) {
       rejectButton.disabled = true;
       await window.physioApi.rejectClinicLinkRequest(id);
+      dismissNotificationLocally(id);
     } else if (openButton || item?.dataset.clinicLinkReview === 'true') {
-      const notification = notificationDetailsById.get(id) || {
-        id,
-        title: item?.querySelector('strong')?.textContent || 'Nova solicitação de vínculo',
-        message: item?.querySelector('p')?.textContent || '',
-      };
-      if (notification) {
-        console.log('clicked notification:', notification);
-        console.log('notification type:', notification.type);
-        console.log('relatedRequestId:', notification.relatedRequestId || notification.clinicLinkRequestId || null);
-        console.log('relatedPhysioId:', notification.relatedPhysioId || notification.physioProfileId || notification.requesterProfileId || null);
-        let hydratedNotification = notification;
-        try {
-          hydratedNotification = await loadClinicLinkNotificationDetails(notification);
-        } catch (error) {
-          console.warn('Could not hydrate clinic link notification before opening modal:', error);
-        }
-        openClinicLinkRequestModal(hydratedNotification);
-        await window.physioApi.markNotificationRead(id).catch(() => {});
-      }
+      await handleClinicLinkNotificationOpen(id, item);
     } else if (!event.target.closest('button')) {
       await window.physioApi.markNotificationRead(id);
     }
@@ -2759,6 +2831,8 @@ async function renderAuthArea() {
       </div>
     </div>
   `;
+
+  bindNotificationCardInteractions(authArea);
 }
 
 window.renderAuthArea = renderAuthArea;
