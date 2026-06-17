@@ -2388,24 +2388,15 @@ function renderNotificationItem(notification, isClinicAccount) {
     isClinicAccount &&
     isClinicLinkRequest &&
     notification.status === 'PENDING';
-  const actions = canReviewClinicLinkRequest
-    ? `
-      <div class="notification-menu__actions">
-        <button type="button" data-notification-accept="${escapeHtml(notification.id)}">Aceitar</button>
-        <button type="button" data-notification-reject="${escapeHtml(notification.id)}">Recusar</button>
-      </div>
-    `
-    : '';
 
   if (isClickableClinicRequest) {
     return `
-      <button type="button" class="notification-card notification-card-clickable notification-menu__item${unreadClass}" data-notification-id="${escapeHtml(notification.id)}" data-clinic-link-review="true">
+      <button type="button" class="notification-item notification-card notification-card-clickable notification-menu__item${unreadClass}" data-notification-id="${escapeHtml(notification.id)}" data-clinic-link-review="true" data-notification-open="true">
         ${iconMarkup}
         <div class="notification-menu__item-copy">
           <strong>${escapeHtml(notification.title || 'Nova solicitação de vínculo')}</strong>
           <p>${escapeHtml(notification.message || '')}</p>
           <small>Clique para revisar</small>
-          ${actions}
         </div>
       </button>
     `;
@@ -2418,7 +2409,12 @@ function renderNotificationItem(notification, isClinicAccount) {
         <strong>${escapeHtml(notification.title || 'Notificação')}</strong>
         <p>${escapeHtml(notification.message || '')}</p>
         ${location}
-        ${actions}
+        ${canReviewClinicLinkRequest ? `
+          <div class="notification-menu__actions">
+            <button type="button" data-notification-accept="${escapeHtml(notification.id)}">Aceitar</button>
+            <button type="button" data-notification-reject="${escapeHtml(notification.id)}">Recusar</button>
+          </div>
+        ` : ''}
       </div>
     </article>
   `;
@@ -2570,8 +2566,11 @@ function renderClinicLinkNotificationModal(notification) {
 }
 
 function openClinicLinkRequestModal(notification) {
+  console.log('opening modal', notification);
   return renderClinicLinkNotificationModal(notification);
 }
+
+window.openClinicLinkRequestModal = openClinicLinkRequestModal;
 
 function renderNotificationIcon(unreadCount = 0) {
   const safeCount = Math.max(0, Number(unreadCount || 0));
@@ -2647,13 +2646,15 @@ async function buildNotificationMenu(user) {
 document.addEventListener('click', async (event) => {
   const acceptButton = event.target.closest('[data-notification-accept]');
   const rejectButton = event.target.closest('[data-notification-reject]');
+  const openButton = event.target.closest('[data-notification-open]');
   const item = event.target.closest('[data-notification-id]');
 
-  if (!acceptButton && !rejectButton && !item) return;
+  if (!acceptButton && !rejectButton && !openButton && !item) return;
   if (!window.physioApi) return;
 
   const id = acceptButton?.dataset.notificationAccept ||
     rejectButton?.dataset.notificationReject ||
+    openButton?.dataset.notificationId ||
     item?.dataset.notificationId;
 
   if (!id) return;
@@ -2665,14 +2666,23 @@ document.addEventListener('click', async (event) => {
     } else if (rejectButton) {
       rejectButton.disabled = true;
       await window.physioApi.rejectClinicLinkRequest(id);
-    } else if (item?.dataset.clinicLinkReview === 'true') {
-      const notification = notificationDetailsById.get(id);
+    } else if (openButton || item?.dataset.clinicLinkReview === 'true') {
+      const notification = notificationDetailsById.get(id) || {
+        id,
+        title: item?.querySelector('strong')?.textContent || 'Nova solicitação de vínculo',
+        message: item?.querySelector('p')?.textContent || '',
+      };
       if (notification) {
         console.log('clicked notification:', notification);
         console.log('notification type:', notification.type);
         console.log('relatedRequestId:', notification.relatedRequestId || notification.clinicLinkRequestId || null);
         console.log('relatedPhysioId:', notification.relatedPhysioId || notification.physioProfileId || notification.requesterProfileId || null);
-        const hydratedNotification = await loadClinicLinkNotificationDetails(notification);
+        let hydratedNotification = notification;
+        try {
+          hydratedNotification = await loadClinicLinkNotificationDetails(notification);
+        } catch (error) {
+          console.warn('Could not hydrate clinic link notification before opening modal:', error);
+        }
         openClinicLinkRequestModal(hydratedNotification);
         await window.physioApi.markNotificationRead(id).catch(() => {});
       }
