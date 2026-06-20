@@ -1023,29 +1023,55 @@
         return request(`/api${primaryPath}`, { timeoutMs: 10000 });
       });
     },
-    acceptClinicLinkRequest(linkId) {
-      const primaryPath = `/clinic-link-requests/${encodeURIComponent(linkId)}/accept`;
-      const options = {
+    acceptClinicLinkRequest(linkId, config = {}) {
+      const clinicOwnedPath = `/clinic-link-requests/${encodeURIComponent(linkId)}/accept`;
+      const physioOwnedPath = `/profiles/me/clinic-links/${encodeURIComponent(linkId)}/accept`;
+      const requestOptions = {
         method: 'POST',
         timeoutMs: 15000,
       };
 
-      return request(primaryPath, options).catch((error) => {
-        if (error.status !== 404) throw error;
-        return request(`/api${primaryPath}`, options);
-      }).then((data) => data.link || data);
+      const preferredPaths = config?.accountType === ACCOUNT_TYPES.PHYSIO
+        ? [physioOwnedPath, clinicOwnedPath, `/api${clinicOwnedPath}`]
+        : [clinicOwnedPath, `/api${clinicOwnedPath}`, physioOwnedPath];
+
+      let attempt = Promise.reject();
+      preferredPaths.forEach((path) => {
+        attempt = attempt.catch((error) => {
+          if (error && error.status && ![403, 404].includes(error.status)) {
+            throw error;
+          }
+
+          return request(path, requestOptions);
+        });
+      });
+
+      return attempt.then((data) => data.link || data);
     },
-    rejectClinicLinkRequest(linkId) {
-      const primaryPath = `/clinic-link-requests/${encodeURIComponent(linkId)}/reject`;
-      const options = {
+    rejectClinicLinkRequest(linkId, config = {}) {
+      const clinicOwnedPath = `/clinic-link-requests/${encodeURIComponent(linkId)}/reject`;
+      const physioOwnedPath = `/profiles/me/clinic-links/${encodeURIComponent(linkId)}/reject`;
+      const requestOptions = {
         method: 'POST',
         timeoutMs: 15000,
       };
 
-      return request(primaryPath, options).catch((error) => {
-        if (error.status !== 404) throw error;
-        return request(`/api${primaryPath}`, options);
-      }).then((data) => data.link || data);
+      const preferredPaths = config?.accountType === ACCOUNT_TYPES.PHYSIO
+        ? [physioOwnedPath, clinicOwnedPath, `/api${clinicOwnedPath}`]
+        : [clinicOwnedPath, `/api${clinicOwnedPath}`, physioOwnedPath];
+
+      let attempt = Promise.reject();
+      preferredPaths.forEach((path) => {
+        attempt = attempt.catch((error) => {
+          if (error && error.status && ![403, 404].includes(error.status)) {
+            throw error;
+          }
+
+          return request(path, requestOptions);
+        });
+      });
+
+      return attempt.then((data) => data.link || data);
     },
     unlinkClinicFromProfile(linkId) {
       return request(`/profiles/me/clinic-links/${encodeURIComponent(linkId)}`, {

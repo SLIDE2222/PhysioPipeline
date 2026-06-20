@@ -303,6 +303,36 @@ function formatClinicLinkNotification(link, accountType) {
     };
   }
 
+  if (link.status === "PENDING") {
+    return {
+      id: link.id,
+      recipientUserId: link.profile?.ownerUserId || null,
+      type: "clinic_link_request",
+      status: link.status,
+      notificationStatus: link.readByPhysio ? "read" : "unread",
+      unread: !link.readByPhysio,
+      title: "Nova solicitacao de vinculo",
+      message: `${clinicName} solicitou vinculo com seu perfil.`,
+      icon: "physiopipeline-p",
+      linkId: link.id,
+      relatedRequestId: link.id,
+      relatedPhysioId: link.profileId,
+      relatedClinicId: link.clinicId,
+      clinicId: link.clinicId,
+      clinicName,
+      clinicLocation,
+      clinicCity: link.clinic?.city || null,
+      clinicNeighborhood: link.clinic?.neighborhood || null,
+      clinicPhone: link.clinic?.phone || null,
+      clinicWhatsapp: link.clinic?.whatsapp || null,
+      clinicAddress: link.clinic?.address || null,
+      clinicResponsibleName: link.clinic?.responsibleName || null,
+      clinicLogoUrl: link.clinic?.logoUrl || null,
+      createdAt: link.createdAt,
+      updatedAt: link.updatedAt,
+    };
+  }
+
   return {
     id: link.id,
     recipientUserId: link.profile?.ownerUserId || null,
@@ -757,7 +787,7 @@ export async function notifications(req, res) {
         links = await prisma.clinicPhysiotherapistLink.findMany({
           where: {
             profileId: profile.id,
-            status: { in: ["ACCEPTED", "REJECTED", "UNLINKED"] },
+            status: { in: ["PENDING", "ACCEPTED", "REJECTED", "UNLINKED"] },
             readByPhysio: false,
           },
           include: { clinic: true, profile: true },

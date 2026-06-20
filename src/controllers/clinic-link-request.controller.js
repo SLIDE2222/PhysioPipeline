@@ -39,6 +39,10 @@ function decorateClinicSummary(clinic) {
     city: clinic.city,
     neighborhood: clinic.neighborhood,
     logoUrl: clinic.logoUrl,
+    address: clinic.address || null,
+    phone: clinic.phone || null,
+    whatsapp: clinic.whatsapp || null,
+    responsibleName: clinic.responsibleName || null,
     userId: clinic.userId ?? null,
   };
 }
@@ -345,9 +349,11 @@ export async function getClinicLinkRequest(req, res) {
     return res.json({
       id: link.id,
       status: link.status,
+      message: link.message || null,
       clinicId: link.clinicId,
       physioProfileId: link.profileId,
       requesterUserId: link.profile?.ownerUserId || null,
+      clinic: decorateClinicSummary(link.clinic),
       physio: link.profile
         ? {
             id: link.profile.id,
@@ -392,9 +398,11 @@ export async function getPendingClinicLinkRequestForClinic(req, res) {
     return res.json({
       id: link.id,
       status: link.status,
+      message: link.message || null,
       clinicId: link.clinicId,
       physioProfileId: link.profileId,
       requesterUserId: link.profile?.ownerUserId || null,
+      clinic: decorateClinicSummary(link.clinic),
       physio: link.profile
         ? {
             id: link.profile.id,
