@@ -391,10 +391,6 @@ function renderClinicLinkRequestCta(profissional, clinicLinkState) {
     return '<button type="button" class="btn btn-outline" disabled>Já vinculado à sua clínica</button>';
   }
 
-  if (status === 'REJECTED') {
-    return '<button type="button" class="btn btn-outline" disabled>Solicitação recusada</button>';
-  }
-
   return `
     <button type="button" class="btn btn-primary" data-request-profile-clinic-link="${profileId}">
       Solicitar vínculo com a clínica
@@ -504,9 +500,10 @@ async function getClinicLinkStateForProfile(loggedUser, profileId) {
   try {
     const links = await window.physioApi.fetchMyClinicPhysioLinks();
     const link = links.find((item) => item?.profile?.id === profileId);
+    const status = link?.status === 'REJECTED' ? 'NONE' : (link?.status || 'NONE');
     return {
       isClinicViewer: true,
-      status: link?.status || 'NONE',
+      status,
       link,
     };
   } catch (error) {
@@ -531,9 +528,10 @@ async function getPhysioLinkStateForClinic(loggedUser, clinicId) {
   try {
     const links = await window.physioApi.fetchMyPhysioClinicLinkRequests();
     const link = links.find((item) => item?.clinic?.id === clinicId || item?.clinicProfileId === clinicId);
+    const status = link?.status === 'REJECTED' ? 'NONE' : (link?.status || 'NONE');
     return {
       isPhysioViewer: true,
-      status: link?.status || 'NONE',
+      status,
       link,
     };
   } catch (error) {

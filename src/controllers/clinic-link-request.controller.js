@@ -151,6 +151,10 @@ function buildClinicOwnerNotification({ clinic, profile, link }) {
   };
 }
 
+function isActiveLinkRequestStatus(status) {
+  return status === "PENDING" || status === "ACCEPTED";
+}
+
 export async function createClinicLinkRequest(req, res) {
   try {
     const parsed = createClinicLinkRequestSchema.safeParse(req.body);
@@ -217,7 +221,7 @@ export async function createClinicLinkRequest(req, res) {
       include: { clinic: true, profile: true },
     });
 
-    if (existing && ["PENDING", "ACCEPTED"].includes(existing.status)) {
+    if (existing && isActiveLinkRequestStatus(existing.status)) {
       const message = existing.status === "PENDING"
         ? "Você já solicitou vínculo com esta clínica."
         : "Vínculo ativo com esta clínica.";
