@@ -6,6 +6,7 @@ import {
   getMyClinicProfile,
   listMyClinicPhysioLinks,
   requestClinicPhysioLink,
+  requestClinicPhysioLinkFixed,
   searchPhysiotherapistsForClinic,
   unlinkClinicPhysioFromClinic,
   upsertMyClinicProfile,
@@ -19,7 +20,7 @@ router.get("/options", listClinicOptions);
 router.get("/physiotherapists/search", requireAuth, searchPhysiotherapistsForClinic);
 router.get("/me", requireAuth, getMyClinicProfile);
 router.get("/me/physio-links", requireAuth, listMyClinicPhysioLinks);
-router.post("/me/physio-links", requireAuth, requestClinicPhysioLink);
+router.post("/me/physio-links", requireAuth, requestClinicPhysioLinkFixed);
 router.delete("/me/physio-links/:linkId", requireAuth, unlinkClinicPhysioFromClinic);
 router.post("/register", requireAuth, upsertMyClinicProfile);
 router.patch("/me", requireAuth, upsertMyClinicProfile);

@@ -446,6 +446,96 @@
     `;
   }
 
+  function renderClinicLinkNotificationModalV3(notification) {
+    const overlay = createNotificationModalShell('clinicLinkReviewTitle');
+    const content = overlay.querySelector('.notification-review-modal__content');
+    const profileHref = getNotificationRequesterProfileHref(notification);
+    const isClinicUser = isClinicAccountUser(currentUserContext);
+    const requesterName = notification.requesterName || notification.profileName || 'Fisioterapeuta';
+    const requesterCity = notification.requesterCity || 'Cidade não informada';
+    const requesterNeighborhood = notification.requesterNeighborhood || 'Bairro não informado';
+    const requesterSpecialty = notification.requesterSpecialty || 'Especialidade não informada';
+    const requesterBio = notification.requesterBio || 'Este fisioterapeuta ainda não adicionou uma bio curta.';
+    const requesterAvatarUrl = notification.requesterAvatarUrl || '';
+    const clinicName = notification.clinicName || 'Clínica';
+    const clinicCity = notification.clinicCity || 'Cidade não informada';
+    const clinicNeighborhood = notification.clinicNeighborhood || 'Bairro não informado';
+    const clinicPhone = notification.clinicPhone || '';
+    const clinicWhatsapp = notification.clinicWhatsapp || '';
+    const clinicAddress = notification.clinicAddress || '';
+    const clinicResponsibleName = notification.clinicResponsibleName || '';
+    const clinicLogoUrl = notification.clinicLogoUrl || '';
+    const requestMessage = notification.requestMessage || notification.message || '';
+    const formattedDate = formatNotificationDate(notification.createdAt || notification.updatedAt);
+    const avatarMarkup = requesterAvatarUrl
+      ? `<img src="${escapeHtml(requesterAvatarUrl)}" alt="${escapeHtml(requesterName)}" class="notification-review-modal__avatar" />`
+      : `<div class="notification-review-modal__avatar notification-review-modal__avatar--fallback" aria-hidden="true">${escapeHtml(requesterName.charAt(0).toUpperCase())}</div>`;
+    const clinicAvatarMarkup = clinicLogoUrl
+      ? `<img src="${escapeHtml(clinicLogoUrl)}" alt="${escapeHtml(clinicName)}" class="notification-review-modal__avatar" />`
+      : `<div class="notification-review-modal__avatar notification-review-modal__avatar--fallback" aria-hidden="true">${escapeHtml(clinicName.charAt(0).toUpperCase())}</div>`;
+    const canReviewRequest =
+      isClinicLinkRequestNotification(notification) &&
+      notification.status === 'PENDING';
+    const canClinicReviewRequest = canReviewRequest && isClinicUser;
+    const canPhysioReviewRequest = canReviewRequest && !isClinicUser;
+
+    if (canPhysioReviewRequest) {
+      content.innerHTML = `
+        <div class="notification-review-modal__header">
+          <span class="eyebrow">Solicitação de vínculo</span>
+          <h3 id="clinicLinkReviewTitle">${escapeHtml(notification.title || 'Solicitação de vínculo')}</h3>
+          <p>${escapeHtml(requestMessage || `${clinicName} solicitou vínculo com seu perfil.`)}</p>
+        </div>
+        ${formattedDate ? `<p class="notification-review-modal__meta">Recebida em ${escapeHtml(formattedDate)}</p>` : ''}
+        <div class="notification-review-modal__profile">
+          ${clinicAvatarMarkup}
+          <div class="notification-review-modal__profile-copy">
+            <strong>${escapeHtml(clinicName)}</strong>
+            <span>${escapeHtml(clinicCity)}${clinicNeighborhood ? ` • ${escapeHtml(clinicNeighborhood)}` : ''}</span>
+            <span>${escapeHtml(clinicResponsibleName || 'Contato da clínica')}</span>
+          </div>
+        </div>
+        <div class="notification-review-modal__bio">
+          ${clinicPhone ? `<p><strong>Telefone:</strong> ${escapeHtml(clinicPhone)}</p>` : ''}
+          ${clinicWhatsapp ? `<p><strong>WhatsApp:</strong> ${escapeHtml(clinicWhatsapp)}</p>` : ''}
+          ${clinicAddress ? `<p><strong>Endereço:</strong> ${escapeHtml(clinicAddress)}</p>` : ''}
+        </div>
+        <div class="notification-review-modal__actions">
+          <button type="button" class="btn btn-primary" data-notification-modal-accept="${escapeHtml(notification.id)}">Aceitar vínculo</button>
+          <button type="button" class="btn btn-secondary" data-notification-modal-reject="${escapeHtml(notification.id)}">Recusar vínculo</button>
+          <button type="button" class="btn btn-outline" data-notification-modal-close>Fechar</button>
+          <button type="button" class="btn btn-secondary" data-notification-modal-delete="${escapeHtml(notification.id)}">Excluir notificação</button>
+        </div>
+      `;
+      return;
+    }
+
+    content.innerHTML = `
+      <div class="notification-review-modal__header">
+        <span class="eyebrow">Solicitação de vínculo</span>
+        <h3 id="clinicLinkReviewTitle">${escapeHtml(notification.title || 'Solicitação de vínculo')}</h3>
+        <p>${escapeHtml(notification.message || `${requesterName} quer fazer parte da equipe desta clínica.`)}</p>
+      </div>
+      ${formattedDate ? `<p class="notification-review-modal__meta">Recebida em ${escapeHtml(formattedDate)}</p>` : ''}
+      <div class="notification-review-modal__profile">
+        ${avatarMarkup}
+        <div class="notification-review-modal__profile-copy">
+          <strong>${escapeHtml(requesterName)}</strong>
+          <span>${escapeHtml(requesterCity)}${requesterNeighborhood ? ` • ${escapeHtml(requesterNeighborhood)}` : ''}</span>
+          <span>${escapeHtml(requesterSpecialty)}</span>
+        </div>
+      </div>
+      <p class="notification-review-modal__bio">${escapeHtml(requesterBio)}</p>
+      <div class="notification-review-modal__actions">
+        <a class="btn btn-outline" href="${escapeHtml(profileHref)}" target="_blank" rel="noreferrer">Ver perfil do fisioterapeuta</a>
+        ${canClinicReviewRequest ? `<button type="button" class="btn btn-primary" data-notification-modal-accept="${escapeHtml(notification.id)}">Aceitar vínculo</button>` : ''}
+        ${canClinicReviewRequest ? `<button type="button" class="btn btn-secondary" data-notification-modal-reject="${escapeHtml(notification.id)}">Recusar vínculo</button>` : ''}
+        <button type="button" class="btn btn-outline" data-notification-modal-close>Fechar</button>
+        <button type="button" class="btn btn-secondary" data-notification-modal-delete="${escapeHtml(notification.id)}">Excluir notificação</button>
+      </div>
+    `;
+  }
+
   async function openNotificationModal(notificationId, item = null) {
     if (!notificationId) return;
 
@@ -464,7 +554,7 @@
       } catch (error) {
         console.warn('Could not hydrate clinic link request notification:', error);
       }
-      renderClinicLinkNotificationModalV2(hydratedNotification);
+      renderClinicLinkNotificationModalV3(hydratedNotification);
       return;
     }
 

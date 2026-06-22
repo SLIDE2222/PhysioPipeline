@@ -262,7 +262,7 @@ async function upsertSupabaseUserSession({ accessToken, requestedAccountType }) 
 }
 
 function formatClinicLinkNotification(link, accountType) {
-  const clinicName = link.clinic?.clinicName || "A clinica";
+  const clinicName = link.clinic?.clinicName || "A clínica";
   const profileName = link.profile?.name || "fisioterapeuta";
   const clinicLocation = [link.clinic?.city, link.clinic?.neighborhood].filter(Boolean).join(" - ");
 
@@ -311,8 +311,8 @@ function formatClinicLinkNotification(link, accountType) {
       status: link.status,
       notificationStatus: link.readByPhysio ? "read" : "unread",
       unread: !link.readByPhysio,
-      title: "Nova solicitacao de vinculo",
-      message: `${clinicName} solicitou vinculo com seu perfil.`,
+      title: "Nova solicitação de vínculo",
+      message: `${clinicName} solicitou vínculo com seu perfil.`,
       icon: "physiopipeline-p",
       linkId: link.id,
       relatedRequestId: link.id,

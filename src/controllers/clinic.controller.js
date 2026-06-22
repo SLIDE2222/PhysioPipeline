@@ -554,6 +554,119 @@ export async function requestClinicPhysioLink(req, res) {
   }
 }
 
+export async function requestClinicPhysioLinkFixed(req, res) {
+  try {
+    const parsed = linkRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Dados da solicitação inválidos.",
+        message: "Dados da solicitação inválidos.",
+        errors: parsed.error.flatten(),
+      });
+    }
+
+    const { user, clinicProfile } = await getOwnedClinicProfile(req.user.userId);
+    const profile = await prisma.profile.findUnique({
+      where: { id: parsed.data.profileId },
+    });
+
+    if (!profile) {
+      return res.status(404).json({
+        error: "Fisioterapeuta não encontrado.",
+        message: "Fisioterapeuta não encontrado.",
+      });
+    }
+
+    if (!profile.ownerUserId) {
+      return res.status(403).json({
+        error: "Este perfil ainda não pertence a um fisioterapeuta cadastrado.",
+        message: "Este perfil ainda não pertence a um fisioterapeuta cadastrado.",
+      });
+    }
+
+    if (profile.ownerUserId === user.id) {
+      return res.status(403).json({
+        error: "Uma clínica não pode solicitar vínculo com um perfil do mesmo usuário.",
+        message: "Uma clínica não pode solicitar vínculo com um perfil do mesmo usuário.",
+      });
+    }
+
+    const manualCount = normalizeClinicTeam(clinicProfile.physioTeam).length;
+    const acceptedCount = await prisma.clinicPhysiotherapistLink.count({
+      where: {
+        clinicId: clinicProfile.id,
+        status: "ACCEPTED",
+      },
+    });
+
+    if (manualCount + acceptedCount >= MAX_CLINIC_TEAM) {
+      return res.status(400).json({
+        error: "Limite de 5 fisioterapeutas atingido.",
+        message: "Limite de 5 fisioterapeutas atingido.",
+      });
+    }
+
+    const existing = await prisma.clinicPhysiotherapistLink.findUnique({
+      where: {
+        clinicId_profileId: {
+          clinicId: clinicProfile.id,
+          profileId: profile.id,
+        },
+      },
+      include: { profile: true },
+    });
+
+    if (existing?.status === "PENDING") {
+      return res.status(409).json({
+        error: "Você já enviou uma solicitação.",
+        message: "Você já enviou uma solicitação.",
+        link: decorateClinicLink(existing),
+      });
+    }
+
+    if (existing?.status === "ACCEPTED") {
+      return res.status(409).json({
+        error: "Este fisioterapeuta já está vinculado à clínica.",
+        message: "Este fisioterapeuta já está vinculado à clínica.",
+        link: decorateClinicLink(existing),
+      });
+    }
+
+    const link = existing
+      ? await prisma.clinicPhysiotherapistLink.update({
+          where: { id: existing.id },
+          data: {
+            status: "PENDING",
+            message: clean(parsed.data.message),
+            readByClinic: true,
+            readByPhysio: false,
+            acceptedAt: null,
+            rejectedAt: null,
+            unlinkedAt: null,
+          },
+          include: { profile: true },
+        })
+      : await prisma.clinicPhysiotherapistLink.create({
+          data: {
+            clinicId: clinicProfile.id,
+            profileId: profile.id,
+            message: clean(parsed.data.message),
+            readByClinic: true,
+            readByPhysio: false,
+          },
+          include: { profile: true },
+        });
+
+    return res.status(201).json({
+      success: true,
+      message: "Solicitação enviada com sucesso.",
+      link: decorateClinicLink(link),
+    });
+  } catch (error) {
+    return sendControllerError(res, error, "Erro ao enviar solicitação de vínculo.");
+  }
+}
+
 export async function unlinkClinicPhysioFromClinic(req, res) {
   try {
     const { clinicProfile } = await getOwnedClinicProfile(req.user.userId);
