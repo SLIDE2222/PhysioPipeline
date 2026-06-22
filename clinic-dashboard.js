@@ -24,6 +24,7 @@ const CLINIC_LINK_STATUS_LABELS = {
   REJECTED: 'Recusado',
   UNLINKED: 'Desvinculado',
 };
+const VISIBLE_CLINIC_LINK_STATUSES = new Set(['PENDING', 'ACCEPTED']);
 
 function escapeClinicDashboardHtml(value) {
   return String(value ?? '')
@@ -80,6 +81,25 @@ function setClinicLinkMessage(text, color = '#475569') {
   clinicPhysioLinkMessage.style.color = color;
 }
 
+function showClinicDashboardToast(message, tone = 'success') {
+  const toast = document.createElement('div');
+  toast.className = `profile-inline-toast profile-inline-toast--${tone}`;
+  toast.innerHTML = `
+    <span class="profile-inline-toast__icon" aria-hidden="true">${tone === 'success' ? '✓' : tone === 'info' ? 'i' : '!'}</span>
+    <span class="profile-inline-toast__text">${escapeClinicDashboardHtml(message)}</span>
+  `;
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.classList.add('is-visible');
+  });
+
+  setTimeout(() => {
+    toast.classList.remove('is-visible');
+    setTimeout(() => toast.remove(), 260);
+  }, 4000);
+}
+
 function getPhysioSpecialtyText(profile) {
   const specialties = Array.isArray(profile?.specialties)
     ? profile.specialties
@@ -92,24 +112,28 @@ async function loadClinicPhysioLinks() {
   if (!clinicPhysioLinksList || !window.physioApi?.fetchMyClinicPhysioLinks) return;
 
   try {
-    const links = await window.physioApi.fetchMyClinicPhysioLinks();
+    const links = (await window.physioApi.fetchMyClinicPhysioLinks())
+      .filter((link) => VISIBLE_CLINIC_LINK_STATUSES.has(String(link?.status || '').toUpperCase()));
 
     if (!links.length) {
-      clinicPhysioLinksList.innerHTML = '<p class="form-hint">Nenhuma solicitação enviada ainda.</p>';
+      clinicPhysioLinksList.innerHTML = '<p class="form-hint clinic-link-empty-state">Nenhum vínculo ativo ou solicitação pendente no momento.</p>';
       return;
     }
 
     clinicPhysioLinksList.innerHTML = links.map((link) => {
       const profile = link.profile || {};
       const status = CLINIC_LINK_STATUS_LABELS[link.status] || link.status || 'Pendente';
-      const canUnlink = link.status !== 'UNLINKED';
-      const actionLabel = link.status === 'REJECTED' ? 'Remover' : 'Desvincular';
+      const canUnlink = link.status === 'PENDING' || link.status === 'ACCEPTED';
+      const actionLabel = link.status === 'PENDING' ? 'Cancelar solicitação' : 'Desvincular';
+      const statusClass = link.status === 'ACCEPTED'
+        ? 'clinic-link-status--active'
+        : 'clinic-link-status--pending';
 
       return `
         <article class="clinic-link-card">
           <strong>${escapeClinicDashboardHtml(profile.name || 'Fisioterapeuta')}</strong>
           <p class="clinic-link-card__meta">${escapeClinicDashboardHtml(getPhysioSpecialtyText(profile))}</p>
-          <span class="profile-badge clinic-link-status">${escapeClinicDashboardHtml(status)}</span>
+          <span class="profile-badge clinic-link-status ${statusClass}">${escapeClinicDashboardHtml(status)}</span>
           ${canUnlink ? `
             <div class="clinic-link-actions">
               <button type="button" class="btn btn-outline" data-unlink-clinic-physio="${escapeClinicDashboardHtml(link.id)}">${actionLabel}</button>
@@ -198,7 +222,8 @@ if (clinicPhysioSearchResults) {
       await window.physioApi.requestClinicPhysioLink({
         profileId: button.dataset.requestClinicPhysio,
       });
-      setClinicLinkMessage('Solicitação enviada', '#166534');
+      setClinicLinkMessage('');
+      showClinicDashboardToast('Solicitação enviada ao fisioterapeuta.');
       await loadClinicPhysioLinks();
     } catch (error) {
       console.error('Clinic physio request failed:', error);
@@ -219,7 +244,8 @@ if (clinicPhysioLinksList) {
 
     try {
       await window.physioApi.unlinkClinicPhysioLink(button.dataset.unlinkClinicPhysio);
-      setClinicLinkMessage('Vínculo atualizado.', '#166534');
+      setClinicLinkMessage('');
+      showClinicDashboardToast('Vínculo atualizado com sucesso.');
       await loadClinicPhysioLinks();
     } catch (error) {
       console.error('Clinic physio unlink failed:', error);

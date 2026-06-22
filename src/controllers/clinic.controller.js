@@ -444,7 +444,10 @@ export async function listMyClinicPhysioLinks(req, res) {
   try {
     const { clinicProfile } = await getOwnedClinicProfile(req.user.userId);
     const links = await prisma.clinicPhysiotherapistLink.findMany({
-      where: { clinicId: clinicProfile.id },
+      where: {
+        clinicId: clinicProfile.id,
+        status: { in: ["PENDING", "ACCEPTED"] },
+      },
       include: { profile: true },
       orderBy: { updatedAt: "desc" },
     });

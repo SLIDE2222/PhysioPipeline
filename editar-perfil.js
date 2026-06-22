@@ -4,6 +4,7 @@ const fotoInput = document.getElementById('foto');
 const fotoPreview = document.getElementById('fotoPreview');
 const profileClinicLinkRequests = document.getElementById('profileClinicLinkRequests');
 const profileLinkedClinics = document.getElementById('profileLinkedClinics');
+const VISIBLE_PROFILE_CLINIC_LINK_STATUSES = new Set(['PENDING', 'ACCEPTED']);
 
 let fotoBase64 = '';
 
@@ -199,9 +200,11 @@ async function loadClinicLinkRequests() {
   if (!profileClinicLinkRequests || !profileLinkedClinics || !window.physioApi?.fetchMyClinicLinkRequests) return;
 
   try {
-    const links = await window.physioApi.fetchMyClinicLinkRequests();
+    const links = (await window.physioApi.fetchMyClinicLinkRequests())
+      .filter((link) => VISIBLE_PROFILE_CLINIC_LINK_STATUSES.has(String(link?.status || '').toUpperCase()));
     const pending = links.filter((link) => link.status === 'PENDING');
     const accepted = links.filter((link) => link.status === 'ACCEPTED');
+    const emptyStateHtml = '<p class="form-hint clinic-link-empty-state">Nenhum vínculo ativo ou solicitação pendente no momento.</p>';
 
     profileClinicLinkRequests.innerHTML = pending.length
       ? pending.map((link) => renderClinicLinkCard(
@@ -219,10 +222,14 @@ async function loadClinicLinkRequests() {
           `<button type="button" class="btn btn-outline" data-unlink-clinic-link="${escapeEditarHtml(link.id)}">Desvincular clínica</button>`
         )).join('')
       : '<p class="form-hint">Nenhuma clínica vinculada.</p>';
+    if (!pending.length && !accepted.length) {
+      profileClinicLinkRequests.innerHTML = emptyStateHtml;
+      profileLinkedClinics.innerHTML = emptyStateHtml;
+    }
   } catch (error) {
     console.error('Profile clinic links load failed:', error);
     profileClinicLinkRequests.innerHTML = '<p class="form-hint">Não foi possível carregar solicitações agora.</p>';
-    profileLinkedClinics.innerHTML = '';
+    profileLinkedClinics.innerHTML = '<p class="form-hint clinic-link-empty-state">Nenhum vínculo ativo ou solicitação pendente no momento.</p>';
   }
 }
 

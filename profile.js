@@ -124,7 +124,10 @@ function renderLeadSummaryCard() {
 function showProfileToast(message, tone = 'success') {
   const toast = document.createElement('div');
   toast.className = `profile-inline-toast profile-inline-toast--${tone}`;
-  toast.textContent = message;
+  toast.innerHTML = `
+    <span class="profile-inline-toast__icon" aria-hidden="true">${tone === 'success' ? '✓' : tone === 'info' ? 'i' : '!'}</span>
+    <span class="profile-inline-toast__text">${escapeHtml(message)}</span>
+  `;
   document.body.appendChild(toast);
 
   requestAnimationFrame(() => {
@@ -133,8 +136,12 @@ function showProfileToast(message, tone = 'success') {
 
   setTimeout(() => {
     toast.classList.remove('is-visible');
-    setTimeout(() => toast.remove(), 220);
-  }, 3200);
+    setTimeout(() => toast.remove(), 260);
+  }, 4000);
+}
+
+function renderProfileRequestState(label, tone = 'pending') {
+  return `<span class="profile-request-state profile-request-state--${escapeHtml(tone)}" role="status">${escapeHtml(label)}</span>`;
 }
 
 async function loadLeadSummary() {
@@ -313,18 +320,20 @@ function renderPhysioClinicRequestCta(clinic, clinicLinkState) {
   const status = clinicLinkState.status || 'NONE';
 
   if (status === 'PENDING') {
-    return '<button type="button" class="btn btn-outline" disabled>Solicitação enviada</button>';
+    return `<div class="profile-request-action" data-clinic-link-state>${renderProfileRequestState('Solicitação pendente', 'pending')}</div>`;
   }
 
   if (status === 'ACCEPTED') {
-    return '<button type="button" class="btn btn-outline" disabled>Vínculo ativo</button>';
+    return `<div class="profile-request-action" data-clinic-link-state>${renderProfileRequestState('Vínculo ativo', 'active')}</div>`;
   }
 
   return `
-    <button type="button" class="btn btn-primary" data-request-clinic-link="${clinicId}">
-      Solicitar vínculo
-    </button>
-    <span class="form-hint" data-clinic-link-request-message aria-live="polite"></span>
+    <div class="profile-request-action" data-clinic-link-state>
+      <button type="button" class="btn btn-primary" data-request-clinic-link="${clinicId}">
+        Solicitar vínculo
+      </button>
+      <span class="form-hint" data-clinic-link-request-message aria-live="polite"></span>
+    </div>
   `;
 }
 
@@ -398,18 +407,20 @@ function renderClinicLinkRequestCta(profissional, clinicLinkState) {
   const profileId = encodeURIComponent(profissional.id);
 
   if (status === 'PENDING') {
-    return '<button type="button" class="btn btn-outline" disabled>Solicitação pendente</button>';
+    return `<div class="profile-request-action" data-profile-clinic-link-state>${renderProfileRequestState('Solicitação pendente', 'pending')}</div>`;
   }
 
   if (status === 'ACCEPTED') {
-    return '<button type="button" class="btn btn-outline" disabled>Já vinculado à sua clínica</button>';
+    return `<div class="profile-request-action" data-profile-clinic-link-state>${renderProfileRequestState('Vínculo ativo', 'active')}</div>`;
   }
 
   return `
-    <button type="button" class="btn btn-primary" data-request-profile-clinic-link="${profileId}">
-      Solicitar vínculo com a clínica
-    </button>
-    <span class="form-hint" data-profile-clinic-link-message aria-live="polite"></span>
+    <div class="profile-request-action" data-profile-clinic-link-state>
+      <button type="button" class="btn btn-primary" data-request-profile-clinic-link="${profileId}">
+        Solicitar vínculo com a clínica
+      </button>
+      <span class="form-hint" data-profile-clinic-link-message aria-live="polite"></span>
+    </div>
   `;
 }
 
@@ -556,6 +567,7 @@ async function getPhysioLinkStateForClinic(loggedUser, clinicId) {
 
 function setupProfileClinicLinkRequest() {
   const button = document.querySelector('[data-request-profile-clinic-link]');
+  const stateContainer = document.querySelector('[data-profile-clinic-link-state]');
   const message = document.querySelector('[data-profile-clinic-link-message]');
   if (!button || !window.physioApi?.requestClinicPhysioLink) return;
 
@@ -574,14 +586,14 @@ function setupProfileClinicLinkRequest() {
       });
 
       const status = response?.status || response?.link?.status || 'PENDING';
-      button.textContent = status === 'ACCEPTED' ? 'Já vinculado à sua clínica' : 'Solicitação pendente';
-      button.classList.remove('btn-primary');
-      button.classList.add('btn-outline');
       if (message) {
-        message.textContent = status === 'ACCEPTED'
-          ? 'Este fisioterapeuta já está vinculado à sua clínica.'
-          : 'Solicitação enviada ao fisioterapeuta.';
-        message.style.color = '#166534';
+        message.textContent = '';
+        message.style.color = '';
+      }
+      if (stateContainer) {
+        stateContainer.innerHTML = status === 'ACCEPTED'
+          ? renderProfileRequestState('Vínculo ativo', 'active')
+          : renderProfileRequestState('Solicitação pendente', 'pending');
       }
       showProfileToast(
         status === 'ACCEPTED'
@@ -594,24 +606,24 @@ function setupProfileClinicLinkRequest() {
       if (error?.status === 409) {
         const backendMessage = String(error?.message || '');
         if (/pendente/i.test(backendMessage)) {
-          button.textContent = 'Solicitação pendente';
-          button.classList.remove('btn-primary');
-          button.classList.add('btn-outline');
           if (message) {
-            message.textContent = 'Já existe uma solicitação pendente para este fisioterapeuta.';
-            message.style.color = '#166534';
+            message.textContent = '';
+            message.style.color = '';
+          }
+          if (stateContainer) {
+            stateContainer.innerHTML = renderProfileRequestState('Solicitação pendente', 'pending');
           }
           showProfileToast('Já existe uma solicitação pendente para este fisioterapeuta.', 'info');
           return;
         }
 
         if (/vinculado/i.test(backendMessage)) {
-          button.textContent = 'Já vinculado à sua clínica';
-          button.classList.remove('btn-primary');
-          button.classList.add('btn-outline');
           if (message) {
-            message.textContent = 'Este fisioterapeuta já está vinculado à sua clínica.';
-            message.style.color = '#166534';
+            message.textContent = '';
+            message.style.color = '';
+          }
+          if (stateContainer) {
+            stateContainer.innerHTML = renderProfileRequestState('Vínculo ativo', 'active');
           }
           showProfileToast('Este fisioterapeuta já está vinculado à sua clínica.', 'info');
           return;
@@ -631,6 +643,7 @@ function setupProfileClinicLinkRequest() {
 
 function setupClinicProfileLinkRequest() {
   const button = document.querySelector('[data-request-clinic-link]');
+  const stateContainer = document.querySelector('[data-clinic-link-state]');
   const message = document.querySelector('[data-clinic-link-request-message]');
   if (!button || !window.physioApi?.createClinicLinkRequest) return;
 
@@ -652,12 +665,12 @@ function setupClinicProfileLinkRequest() {
         requesterUserId: loggedUser?.id || null,
       });
 
-      button.textContent = 'Solicitação enviada';
-      button.classList.remove('btn-primary');
-      button.classList.add('btn-outline');
       if (message) {
         message.textContent = '';
-        message.style.color = '#166534';
+        message.style.color = '';
+      }
+      if (stateContainer) {
+        stateContainer.innerHTML = renderProfileRequestState('Solicitação pendente', 'pending');
       }
       showProfileToast('Vínculo solicitado com sucesso, caso aceito ou negado será notificado');
 
@@ -665,24 +678,24 @@ function setupClinicProfileLinkRequest() {
     } catch (error) {
       const duplicateStatus = error?.data?.link?.status || null;
       if (error?.status === 409 && duplicateStatus === 'PENDING') {
-        button.textContent = 'Solicitação enviada';
-        button.classList.remove('btn-primary');
-        button.classList.add('btn-outline');
         if (message) {
-          message.textContent = 'Você já solicitou vínculo com esta clínica.';
-          message.style.color = '#166534';
+          message.textContent = '';
+          message.style.color = '';
+        }
+        if (stateContainer) {
+          stateContainer.innerHTML = renderProfileRequestState('Solicitação pendente', 'pending');
         }
         showProfileToast('Você já solicitou vínculo com esta clínica.', 'info');
         return;
       }
 
       if (error?.status === 409 && duplicateStatus === 'ACCEPTED') {
-        button.textContent = 'Vínculo ativo';
-        button.classList.remove('btn-primary');
-        button.classList.add('btn-outline');
         if (message) {
-          message.textContent = 'Esta clínica já aceitou o vínculo.';
-          message.style.color = '#166534';
+          message.textContent = '';
+          message.style.color = '';
+        }
+        if (stateContainer) {
+          stateContainer.innerHTML = renderProfileRequestState('Vínculo ativo', 'active');
         }
         showProfileToast('Vínculo ativo', 'info');
         return;
