@@ -2970,7 +2970,7 @@ function getProfileSpecialtiesList(profile) {
 }
 
 function getDisplaySpecialties(profile) {
-  return getProfileSpecialtiesList(profile).join(' â€¢ ');
+  return getProfileSpecialtiesList(profile).join(' • ');
 }
 
 function getClinicServicesList(clinic) {
@@ -3024,7 +3024,7 @@ function getClinicServicesText(clinic) {
     .map((item) => item.trim())
     .filter(Boolean)
     .slice(0, 4)
-    .join(' â€¢ ');
+    .join(' • ');
 }
 
 function getClinicTeamList(clinic) {
@@ -3350,12 +3350,20 @@ function rankSpecialtyModeResults(physioProfiles, clinicProfiles, options = {}) 
 }
 
 function buildClinicWhatsAppLink(clinic) {
-  const digits = String(clinic?.whatsapp || clinic?.telefone || clinic?.phone || '').replace(/\D/g, '');
-  if (!digits) return '#';
+  const rawDigits = String(clinic?.whatsapp || clinic?.telefone || clinic?.phone || '').replace(/\D/g, '');
+  if (!rawDigits) return '';
+
+  const digits = rawDigits.replace(/^0+/, '');
+  const normalizedDigits = digits.startsWith('55')
+    ? digits
+    : digits.length === 10 || digits.length === 11
+      ? `55${digits}`
+      : digits;
+  if (!normalizedDigits) return '';
 
   const name = clinic?.nomeClinica || clinic?.nome || 'a clínica';
-  const message = `Ola, encontrei ${name} no PhysioPipeline e gostaria de saber mais sobre os atendimentos.`;
-  return `https://wa.me/55${digits}?text=${encodeURIComponent(message)}`;
+  const message = `Encontrei ${name} através do site PhysioPipeline e gostaria de agendar uma consulta.`;
+  return `https://wa.me/${normalizedDigits}?text=${encodeURIComponent(message)}`;
 }
 
 function filterClinicsBySearch(clinics, { query = '', city = '', neighborhood = '' } = {}) {
@@ -3952,9 +3960,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const displayName = profile.nome || profile.name || 'Fisioterapeuta';
         const physioSpecialties = getProfileSpecialtiesList(profile);
-        const displaySpecialty = physioSpecialties.join(' â€¢ ') || 'N?o informado';
-        const displayCity = profile.cidade || profile.city || 'N?o informado';
-        const displayNeighborhood = profile.bairro || profile.neighborhood || 'N?o informado';
+        const displaySpecialty = physioSpecialties.join(' • ') || 'Não informado';
+        const displayCity = profile.cidade || profile.city || 'Não informado';
+        const displayNeighborhood = profile.bairro || profile.neighborhood || 'Não informado';
         const photoUrl = getProfileImageUrl(profile);
         const initials = getProfileInitials(displayName);
 

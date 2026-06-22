@@ -9,22 +9,35 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-function buildWhatsAppLink(phone, professionalName) {
+function normalizeWhatsAppNumber(phone) {
   const digits = String(phone || '').replace(/\D/g, '');
-  if (!digits) return '#';
+  if (!digits) return '';
 
+  const withoutLeadingZeros = digits.replace(/^0+/, '');
+  if (!withoutLeadingZeros) return '';
+  if (withoutLeadingZeros.startsWith('55')) return withoutLeadingZeros;
+  if (withoutLeadingZeros.length === 10 || withoutLeadingZeros.length === 11) {
+    return `55${withoutLeadingZeros}`;
+  }
+
+  return withoutLeadingZeros;
+}
+
+function buildWhatsAppLink(phone, professionalName) {
+  const digits = normalizeWhatsAppNumber(phone);
+  if (!digits) return '';
   const firstName = String(professionalName || '').trim().split(' ')[0];
-  const message = `Ola Dr(a). ${firstName}, encontrei voce atraves do site PhysioPipeline e gostaria de agendar uma consulta.`;
-  return `https://wa.me/55${digits}?text=${encodeURIComponent(message)}`;
+  const message = `Encontrei você através do site PhysioPipeline e gostaria de agendar uma consulta.`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
 function buildClinicWhatsAppLink(clinic) {
-  const digits = String(clinic?.whatsapp || clinic?.telefone || '').replace(/\D/g, '');
-  if (!digits) return '#';
+  const digits = normalizeWhatsAppNumber(clinic?.whatsapp || clinic?.telefone);
+  if (!digits) return '';
 
   const clinicName = clinic?.nomeClinica || clinic?.nome || 'a clínica';
-  const message = `Ola, encontrei ${clinicName} no PhysioPipeline e gostaria de saber mais sobre os atendimentos.`;
-  return `https://wa.me/55${digits}?text=${encodeURIComponent(message)}`;
+  const message = `Encontrei ${clinicName} através do site PhysioPipeline e gostaria de agendar uma consulta.`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
 function getClinicLocationParts(clinic) {
@@ -64,11 +77,11 @@ function renderClinicMapSection(clinic) {
 }
 
 function getNeighborhoodBadge(profissional) {
-  return [profissional.cidade, profissional.bairro].filter(Boolean).join(' â€¢ ') || 'Localizacao nao informada';
+  return [profissional.cidade, profissional.bairro].filter(Boolean).join(' • ') || 'Localização não informada';
 }
 
 function getClinicLocationBadge(clinic) {
-  return [clinic?.cidade, clinic?.bairro].filter(Boolean).join(' â€¢ ') || 'Localizacao nao informada';
+  return [clinic?.cidade, clinic?.bairro].filter(Boolean).join(' • ') || 'Localização não informada';
 }
 
 function getAccountBadge(accountType) {
@@ -319,6 +332,7 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton, clinicLinkS
   const clinicName = clinic?.nomeClinica || clinic?.nome || 'Clínica';
   const services = clinic?.servicesList || clinic?.servicosLista || [];
   const team = clinic?.physioTeamList || clinic?.fisioterapeutas || [];
+  const clinicWhatsAppLink = buildClinicWhatsAppLink(clinic);
   const logoHTML = clinic?.logo
     ? `<img src="${escapeHtml(clinic.logo)}" alt="${escapeHtml(clinicName)}" class="clickable-avatar" loading="lazy" decoding="async">`
     : `<span>${escapeHtml((clinicName || '?').charAt(0).toUpperCase())}</span>`;
@@ -354,14 +368,14 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton, clinicLinkS
       <section class="profile-section">
         <h3>Contato</h3>
         <div class="profile-contact-list">
-          <p><strong>Responsavel:</strong> ${escapeHtml(clinic.responsavel || '-')}</p>
+          <p><strong>Responsável:</strong> ${escapeHtml(clinic.responsavel || '-')}</p>
           <p><strong>Telefone:</strong> ${escapeHtml(clinic.telefone || '-')}</p>
           <p><strong>WhatsApp:</strong> ${escapeHtml(clinic.whatsapp || '-')}</p>
-          <p><strong>Endereco:</strong> ${escapeHtml(clinic.endereco || '-')}</p>
+          <p><strong>Endereço:</strong> ${escapeHtml(clinic.endereco || '-')}</p>
         </div>
 
         <div class="profile-actions">
-          ${clinic.whatsapp || clinic.telefone ? `<a href="${buildClinicWhatsAppLink(clinic)}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Falar no WhatsApp</a>` : ''}
+          ${clinicWhatsAppLink ? `<a href="${clinicWhatsAppLink}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Falar no WhatsApp</a>` : ''}
           ${clinic.instagram ? `<a href="${escapeHtml(clinic.instagram)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">Instagram</a>` : ''}
           ${renderPhysioClinicRequestCta(clinic, clinicLinkState)}
           ${showClaimButton ? `<a href="claim-clinic.html?id=${encodeURIComponent(clinic.id)}" class="btn btn-outline">Reivindicar clínica</a>` : ''}
@@ -401,7 +415,7 @@ function renderClinicLinkRequestCta(profissional, clinicLinkState) {
 
 function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton, clinicLinkState = null) {
   const specialties = getProfileSpecialties(profissional);
-  const specialtiesText = specialties.length ? specialties.join(' â€¢ ') : '-';
+  const specialtiesText = specialties.length ? specialties.join(' • ') : '-';
   const fotoHTML = profissional.foto
     ? `<img src="${escapeHtml(profissional.foto)}" alt="${escapeHtml(profissional.nome)}" class="clickable-avatar" loading="lazy" decoding="async">`
     : `<span>${escapeHtml((profissional.nome || '?').charAt(0).toUpperCase())}</span>`;
@@ -425,7 +439,7 @@ function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton, clini
         ${profissional.cidade ? `<span class="profile-badge">${escapeHtml(profissional.cidade)}</span>` : ''}
         ${profissional.bairro ? `<span class="profile-badge">${escapeHtml(profissional.bairro)}</span>` : ''}
         ${specialties.map((specialty) => `<span class="profile-badge">${escapeHtml(specialty)}</span>`).join('')}
-        ${profissional.isClaimed ? '<span class="profile-badge">Perfil reivindicado</span>' : '<span class="profile-badge">Perfil nao reivindicado</span>'}
+        ${profissional.isClaimed ? '<span class="profile-badge">Perfil reivindicado</span>' : '<span class="profile-badge">Perfil não reivindicado</span>'}
       </div>
 
       <section class="profile-section">
@@ -546,30 +560,68 @@ function setupProfileClinicLinkRequest() {
   if (!button || !window.physioApi?.requestClinicPhysioLink) return;
 
   button.addEventListener('click', async () => {
+    const originalLabel = button.textContent;
     button.disabled = true;
+    button.textContent = 'Enviando...';
     if (message) {
       message.textContent = '';
       message.style.color = '';
     }
 
     try {
-      await window.physioApi.requestClinicPhysioLink({
+      const response = await window.physioApi.requestClinicPhysioLink({
         profileId: button.dataset.requestProfileClinicLink,
       });
 
-      button.textContent = 'Solicitação pendente';
+      const status = response?.status || response?.link?.status || 'PENDING';
+      button.textContent = status === 'ACCEPTED' ? 'Já vinculado à sua clínica' : 'Solicitação pendente';
       button.classList.remove('btn-primary');
       button.classList.add('btn-outline');
       if (message) {
-        message.textContent = 'Solicitação enviada ao fisioterapeuta.';
+        message.textContent = status === 'ACCEPTED'
+          ? 'Este fisioterapeuta já está vinculado à sua clínica.'
+          : 'Solicitação enviada ao fisioterapeuta.';
         message.style.color = '#166534';
       }
+      showProfileToast(
+        status === 'ACCEPTED'
+          ? 'Este fisioterapeuta já está vinculado à sua clínica.'
+          : 'Solicitação enviada ao fisioterapeuta.'
+      );
 
       if (window.renderAuthArea) await window.renderAuthArea();
     } catch (error) {
+      if (error?.status === 409) {
+        const backendMessage = String(error?.message || '');
+        if (/pendente/i.test(backendMessage)) {
+          button.textContent = 'Solicitação pendente';
+          button.classList.remove('btn-primary');
+          button.classList.add('btn-outline');
+          if (message) {
+            message.textContent = 'Já existe uma solicitação pendente para este fisioterapeuta.';
+            message.style.color = '#166534';
+          }
+          showProfileToast('Já existe uma solicitação pendente para este fisioterapeuta.', 'info');
+          return;
+        }
+
+        if (/vinculado/i.test(backendMessage)) {
+          button.textContent = 'Já vinculado à sua clínica';
+          button.classList.remove('btn-primary');
+          button.classList.add('btn-outline');
+          if (message) {
+            message.textContent = 'Este fisioterapeuta já está vinculado à sua clínica.';
+            message.style.color = '#166534';
+          }
+          showProfileToast('Este fisioterapeuta já está vinculado à sua clínica.', 'info');
+          return;
+        }
+      }
+
       button.disabled = false;
+      button.textContent = originalLabel;
       if (message) {
-        message.textContent = 'Não foi possível enviar a solicitação agora. Tente novamente mais tarde.';
+        message.textContent = error?.message || 'Não foi possível enviar a solicitação agora. Tente novamente mais tarde.';
         message.style.color = '#b91c1c';
       }
       console.error('Profile clinic link request failed:', error);
@@ -762,7 +814,7 @@ async function renderProfilePage() {
   } catch (error) {
     profileContainer.innerHTML = `
       <article class="profile-card-full">
-        <h2>Perfil nao encontrado</h2>
+        <h2>Perfil não encontrado</h2>
         <p>${escapeHtml(error.message || 'Esse perfil não existe ou não pode ser carregado.')}</p>
         <div class="profile-actions">
           <a href="buscar.html" class="btn btn-secondary">Voltar para busca</a>
