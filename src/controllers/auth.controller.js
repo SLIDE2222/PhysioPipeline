@@ -815,8 +815,13 @@ export async function notifications(req, res) {
   }
 }
 
-async function updateNotificationReadState(req, res) {
+async function updateNotificationReadState(req, res, options = {}) {
   try {
+    const protectedStatuses = new Set(
+      Array.isArray(options?.preventDismissForStatuses)
+        ? options.preventDismissForStatuses.map((status) => String(status || "").trim().toUpperCase())
+        : []
+    );
     const user = await prisma.user.findUnique({
       where: { id: req.user.userId },
       include: {
@@ -853,6 +858,13 @@ async function updateNotificationReadState(req, res) {
       return res.status(403).json({ message: "Voce nao pode alterar esta notificacao." });
     }
 
+    const normalizedStatus = String(link.status || "").trim().toUpperCase();
+    if (protectedStatuses.has(normalizedStatus)) {
+      return res.status(409).json({
+        message: "Esta notificação não pode ser excluída enquanto a solicitação estiver pendente ou recusada.",
+      });
+    }
+
     const updated = await prisma.clinicPhysiotherapistLink.update({
       where: { id: link.id },
       data: {
@@ -876,5 +888,7 @@ export async function markNotificationRead(req, res) {
 }
 
 export async function dismissNotification(req, res) {
-  return updateNotificationReadState(req, res);
+  return updateNotificationReadState(req, res, {
+    preventDismissForStatuses: ["PENDING", "REJECTED"],
+  });
 }

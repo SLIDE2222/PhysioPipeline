@@ -62,6 +62,23 @@
       message.includes('solicitou vinculo');
   }
 
+  function normalizeNotificationStatus(notification) {
+    return String(
+      notification?.status ||
+      notification?.requestStatus ||
+      notification?.notificationStatus ||
+      ''
+    ).trim().toUpperCase();
+  }
+
+  function canDeleteNotification(notification) {
+    if (!notification) return false;
+    if (!isClinicLinkRequestNotification(notification)) return true;
+
+    const status = normalizeNotificationStatus(notification);
+    return status !== 'PENDING' && status !== 'REJECTED' && status !== 'DECLINED' && status !== 'REFUSED';
+  }
+
   function getClinicLinkNotificationLinkId(notification) {
     return notification?.relatedRequestId ||
       notification?.clinicLinkRequestId ||
@@ -188,6 +205,7 @@
     const unreadClass = notification.unread ? ' is-unread' : '';
     const itemTitle = escapeHtml(notification.title || 'Notificação');
     const itemMessage = escapeHtml(notification.message || '');
+    const allowDelete = canDeleteNotification(notification);
 
     return `
       <article
@@ -208,6 +226,7 @@
         <div class="notification-menu__item-copy">
           <div class="notification-menu__item-topline">
             <strong>${itemTitle}</strong>
+            ${allowDelete ? `
             <button
               type="button"
               class="notification-menu__delete"
@@ -216,6 +235,7 @@
             >
               ×
             </button>
+            ` : ''}
           </div>
           <p>${itemMessage}</p>
           <small>Clique para ver detalhes</small>
@@ -277,6 +297,7 @@
 
   async function dismissNotification(notificationId, { rerender = true } = {}) {
     if (!notificationId || !window.physioApi) return;
+    let wasDismissed = false;
 
     try {
       if (window.physioApi.dismissNotification) {
@@ -284,9 +305,18 @@
       } else if (window.physioApi.markNotificationRead) {
         await window.physioApi.markNotificationRead(notificationId);
       }
+      wasDismissed = true;
+      return true;
+    } catch (error) {
+      if (error?.status === 409) {
+        return false;
+      }
+      throw error;
     } finally {
-      dismissNotificationLocally(notificationId);
-      if (rerender) {
+      if (wasDismissed) {
+        dismissNotificationLocally(notificationId);
+      }
+      if (wasDismissed && rerender) {
         await rerenderAuthArea();
       }
     }
@@ -296,6 +326,7 @@
     const overlay = createNotificationModalShell();
     const content = overlay.querySelector('.notification-review-modal__content');
     const formattedDate = formatNotificationDate(notification.createdAt || notification.updatedAt);
+    const allowDelete = canDeleteNotification(notification);
 
     content.innerHTML = `
       <div class="notification-review-modal__header">
@@ -306,7 +337,7 @@
       ${formattedDate ? `<p class="notification-review-modal__meta">Recebida em ${escapeHtml(formattedDate)}</p>` : ''}
       <div class="notification-review-modal__actions">
         <button type="button" class="btn btn-outline" data-notification-modal-close>Fechar</button>
-        <button type="button" class="btn btn-secondary" data-notification-modal-delete="${escapeHtml(notification.id)}">Excluir notificação</button>
+        ${allowDelete ? `<button type="button" class="btn btn-secondary" data-notification-modal-delete="${escapeHtml(notification.id)}">Excluir notificação</button>` : ''}
       </div>
     `;
   }
@@ -451,6 +482,7 @@
     const content = overlay.querySelector('.notification-review-modal__content');
     const profileHref = getNotificationRequesterProfileHref(notification);
     const isClinicUser = isClinicAccountUser(currentUserContext);
+    const allowDelete = canDeleteNotification(notification);
     const requesterName = notification.requesterName || notification.profileName || 'Fisioterapeuta';
     const requesterCity = notification.requesterCity || 'Cidade não informada';
     const requesterNeighborhood = notification.requesterNeighborhood || 'Bairro não informado';
@@ -504,7 +536,7 @@
           <button type="button" class="btn btn-primary" data-notification-modal-accept="${escapeHtml(notification.id)}">Aceitar vínculo</button>
           <button type="button" class="btn btn-secondary" data-notification-modal-reject="${escapeHtml(notification.id)}">Recusar vínculo</button>
           <button type="button" class="btn btn-outline" data-notification-modal-close>Fechar</button>
-          <button type="button" class="btn btn-secondary" data-notification-modal-delete="${escapeHtml(notification.id)}">Excluir notificação</button>
+          ${allowDelete ? `<button type="button" class="btn btn-secondary" data-notification-modal-delete="${escapeHtml(notification.id)}">Excluir notificação</button>` : ''}
         </div>
       `;
       return;
@@ -531,7 +563,7 @@
         ${canClinicReviewRequest ? `<button type="button" class="btn btn-primary" data-notification-modal-accept="${escapeHtml(notification.id)}">Aceitar vínculo</button>` : ''}
         ${canClinicReviewRequest ? `<button type="button" class="btn btn-secondary" data-notification-modal-reject="${escapeHtml(notification.id)}">Recusar vínculo</button>` : ''}
         <button type="button" class="btn btn-outline" data-notification-modal-close>Fechar</button>
-        <button type="button" class="btn btn-secondary" data-notification-modal-delete="${escapeHtml(notification.id)}">Excluir notificação</button>
+        ${allowDelete ? `<button type="button" class="btn btn-secondary" data-notification-modal-delete="${escapeHtml(notification.id)}">Excluir notificação</button>` : ''}
       </div>
     `;
   }
@@ -621,12 +653,14 @@
       if (modalDeleteButton) {
         event.preventDefault();
         event.stopPropagation();
-        await dismissNotification(modalDeleteButton.dataset.notificationModalDelete, { rerender: false });
-        closeNotificationModal();
-        if (typeof window.closeNotificationMenus === 'function') {
-          window.closeNotificationMenus();
+        const dismissed = await dismissNotification(modalDeleteButton.dataset.notificationModalDelete, { rerender: false });
+        if (dismissed) {
+          closeNotificationModal();
+          if (typeof window.closeNotificationMenus === 'function') {
+            window.closeNotificationMenus();
+          }
+          await rerenderAuthArea();
         }
-        await rerenderAuthArea();
         return;
       }
 
