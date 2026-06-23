@@ -1028,8 +1028,11 @@ function setupReviewReportButtons(profileId, isOwner) {
           button.textContent = 'Reportando...';
 
           try {
-            await window.physioApi.reportProfileReview(button.dataset.reportReview, reason);
-            showProfileToast('Reporte enviado com sucesso. Obrigado por ajudar na modera\u00e7\u00e3o.');
+            const response = await window.physioApi.reportProfileReview(button.dataset.reportReview, reason);
+            showProfileToast(
+              response?.message || 'Reporte enviado com sucesso. Obrigado por ajudar na modera\u00e7\u00e3o.',
+              response?.emailSent === false ? 'info' : 'success'
+            );
             await refreshProfileReviews(profileId, true);
           } finally {
             button.disabled = false;

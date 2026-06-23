@@ -10,11 +10,9 @@ const OWNER_PENDING_REVIEW_STATUSES = ["pending_owner"];
 const ADMIN_REVIEW_STATUSES = ["pending_admin", "reported", "approved", "rejected"];
 const REVIEW_REPORT_EMAIL =
   process.env.REPORTS_EMAIL_TO ||
-  process.env.PHYSIOPIPELINE_EMAIL ||
-  process.env.CLAIMS_EMAIL_TO ||
   process.env.ADMIN_EMAIL ||
-  process.env.CONTACT_EMAIL ||
-  mailConfig.user ||
+  process.env.CLAIMS_EMAIL_TO ||
+  process.env.PHYSIOPIPELINE_EMAIL ||
   "physiopipelinefisio@gmail.com";
 
 const createReviewSchema = z.object({
@@ -538,11 +536,18 @@ export async function reportReview(req, res) {
       },
     });
 
-    const profileUrl = process.env.CLIENT_URL
-      ? `${String(process.env.CLIENT_URL).replace(/\/+$/, "")}/profile.html?id=${encodeURIComponent(review.profileId)}`
+    const reportedAt = updated.reportedAt || new Date();
+    const clientBaseUrl =
+      process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || mailConfig.clientUrl || "";
+    const normalizedClientBaseUrl = String(clientBaseUrl || "").replace(/\/+$/, "");
+    const profileUrl = normalizedClientBaseUrl
+      ? `${normalizedClientBaseUrl}/profile.html?id=${encodeURIComponent(review.profileId)}`
+      : null;
+    const adminReportedReviewsUrl = normalizedClientBaseUrl
+      ? `${normalizedClientBaseUrl}/admin-reviews.html`
       : null;
 
-    await sendMailOrThrow({
+    const reviewEmailPayload = {
       from: mailConfig.from || mailConfig.user,
       sender: mailConfig.user,
       to: REVIEW_REPORT_EMAIL,
@@ -551,45 +556,78 @@ export async function reportReview(req, res) {
       text: [
         "Novo reporte de avaliaÃ§Ã£o recebido.",
         "",
-        `Review ID: ${review.id}`,
-        `Profile ID: ${review.profileId}`,
-        `Reviewer name: ${review.authorName || "-"}`,
-        `Reviewer email: ${review.authorEmail || "-"}`,
-        `Review title: ${review.title || "-"}`,
-        `Rating: ${Number(review.rating || 0) || 0}`,
-        `Review comment: ${review.body || "-"}`,
+        `Review ID: ${updated.id}`,
+        `Profile ID: ${updated.profileId}`,
+        `Profile owner/user ID: ${updated.profile?.ownerUserId || profile.ownerUserId || user.id || "-"}`,
+        `Reviewer name: ${updated.authorName || "-"}`,
+        `Reviewer email: ${updated.authorEmail || "-"}`,
+        `Rating: ${Number(updated.rating || 0) || 0}`,
+        `Review title: ${updated.title || "-"}`,
+        `Review comment: ${updated.body || "-"}`,
         `Report reason: ${reportReason || "-"}`,
-        `Report date: ${new Date().toISOString()}`,
+        `Reported at: ${reportedAt.toISOString()}`,
+        `Admin reported reviews page: ${adminReportedReviewsUrl || "-"}`,
         `Profile link: ${profileUrl || "-"}`,
       ].join("\n"),
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.6">
           <h2>Novo reporte de avaliaÃ§Ã£o recebido</h2>
-          <p><strong>Review ID:</strong> ${review.id}</p>
-          <p><strong>Profile ID:</strong> ${review.profileId}</p>
-          <p><strong>Reviewer name:</strong> ${review.authorName || "-"}</p>
-          <p><strong>Reviewer email:</strong> ${review.authorEmail || "-"}</p>
-          <p><strong>Review title:</strong> ${review.title || "-"}</p>
-          <p><strong>Rating:</strong> ${Number(review.rating || 0) || 0}</p>
-          <p><strong>Review comment:</strong><br>${String(review.body || "-").replace(/\n/g, "<br>")}</p>
+          <p><strong>Review ID:</strong> ${updated.id}</p>
+          <p><strong>Profile ID:</strong> ${updated.profileId}</p>
+          <p><strong>Profile owner/user ID:</strong> ${updated.profile?.ownerUserId || profile.ownerUserId || user.id || "-"}</p>
+          <p><strong>Reviewer name:</strong> ${updated.authorName || "-"}</p>
+          <p><strong>Reviewer email:</strong> ${updated.authorEmail || "-"}</p>
+          <p><strong>Rating:</strong> ${Number(updated.rating || 0) || 0}</p>
+          <p><strong>Review title:</strong> ${updated.title || "-"}</p>
+          <p><strong>Review comment:</strong><br>${String(updated.body || "-").replace(/\n/g, "<br>")}</p>
           <p><strong>Report reason:</strong><br>${String(reportReason || "-").replace(/\n/g, "<br>")}</p>
-          <p><strong>Report date:</strong> ${new Date().toISOString()}</p>
+          <p><strong>Reported at:</strong> ${reportedAt.toISOString()}</p>
+          ${adminReportedReviewsUrl ? `<p><strong>Admin reported reviews page:</strong> <a href="${adminReportedReviewsUrl}">${adminReportedReviewsUrl}</a></p>` : ""}
           ${profileUrl ? `<p><strong>Profile link:</strong> <a href="${profileUrl}">${profileUrl}</a></p>` : ""}
         </div>
       `,
-    });
+    };
+
+    let emailSent = false;
+    let emailErrorMessage = null;
+
+    try {
+      console.log("Review report email queued/sending", {
+        reviewId: updated.id,
+        profileId: updated.profileId,
+        recipient: REVIEW_REPORT_EMAIL,
+        reportedAt: reportedAt.toISOString(),
+      });
+      await sendMailOrThrow(reviewEmailPayload);
+      emailSent = true;
+      console.log("Review report email sent", {
+        reviewId: updated.id,
+        recipient: REVIEW_REPORT_EMAIL,
+      });
+    } catch (mailError) {
+      emailErrorMessage = mailError?.message || "Unknown email error";
+      console.error("Review report email failed", {
+        reviewId: updated.id,
+        recipient: REVIEW_REPORT_EMAIL,
+        error: emailErrorMessage,
+      });
+    }
 
     return res.json({
       review: serializeReview(updated, {
         includePrivateFields: true,
         includeModerationFields: true,
       }),
-      message: "Reporte enviado com sucesso. Obrigado por ajudar na modera\u00e7\u00e3o.",
+      emailSent,
+      emailError: emailErrorMessage,
+      message: emailSent
+        ? "Reporte enviado com sucesso. Obrigado por ajudar na moderaÃ§Ã£o."
+        : "Reporte salvo com sucesso, mas a notificaÃ§Ã£o por e-mail falhou.",
     });
   } catch (error) {
-    console.error("Review report email failed:", error);
+    console.error("Review report route failed before saving:", error);
     return res.status(500).json({
-      message: "N\u00e3o foi poss\u00edvel enviar o reporte agora. Tente novamente em alguns instantes.",
+      message: "NÃ£o foi possÃ­vel enviar o reporte agora. Tente novamente em alguns instantes.",
     });
   }
 }

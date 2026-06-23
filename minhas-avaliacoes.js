@@ -179,8 +179,11 @@ document.addEventListener("click", async (event) => {
       onSubmit: async (reason) => {
         reportButton.disabled = true;
         try {
-          await window.physioApi.reportProfileReview(reportButton.dataset.ownerReportReview, reason);
-          setMyReviewsMessage("Reporte enviado com sucesso. Obrigado por ajudar na modera\u00e7\u00e3o.");
+          const response = await window.physioApi.reportProfileReview(reportButton.dataset.ownerReportReview, reason);
+          setMyReviewsMessage(
+            response?.message || "Reporte enviado com sucesso. Obrigado por ajudar na modera\u00e7\u00e3o.",
+            response?.emailSent === false ? "error" : "success"
+          );
           await loadMyReviews();
         } catch (error) {
           console.error("My review report failed:", error);
