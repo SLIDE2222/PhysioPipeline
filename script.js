@@ -2852,7 +2852,7 @@ async function renderAuthArea() {
   const profileLabel = 'Meu perfil';
   const profileMenuItem = `<a role="menuitem" href="${profileHref}">${profileLabel}</a>`;
   const ownerReviewsMenuItem = !isClinicAccount
-    ? '<a role="menuitem" href="editar-perfil.html#myReviewsSection">Minhas avaliações</a>'
+    ? '<a role="menuitem" href="minhas-avaliacoes.html">Minhas avaliações</a>'
     : '';
   const adminReviewsMenuItem = user.isAdmin
     ? '<a role="menuitem" href="admin-reviews.html">Moderar reviews</a>'
