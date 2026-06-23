@@ -1,4 +1,4 @@
-﻿const profileContainer = document.getElementById('profileContainer');
+const profileContainer = document.getElementById('profileContainer');
 
 function escapeHtml(value) {
   return String(value || '')
@@ -227,8 +227,13 @@ function getReviewStatusMeta(status) {
   const normalizedStatus = String(status || '').trim().toLowerCase();
 
   switch (normalizedStatus) {
+    case 'approved':
     case 'published':
       return { label: 'Publicada', tone: 'published' };
+    case 'pending_owner':
+      return { label: 'Pendente de aprovaÃ§Ã£o', tone: 'pending' };
+    case 'pending_admin':
+      return { label: 'Pendente de anÃ¡lise', tone: 'pending' };
     case 'reported':
       return { label: 'Reportada', tone: 'reported' };
     case 'rejected':
@@ -811,7 +816,7 @@ function setupProfileClinicLinkRequest() {
       button.disabled = false;
       button.textContent = originalLabel;
       if (message) {
-        message.textContent = error?.message || 'Não foi possível enviar a solicitação agora. Tente novamente mais tarde.';
+        message.textContent = "NÃ£o foi possÃ­vel enviar sua avaliaÃ§Ã£o agora. Tente novamente em alguns instantes.";
         message.style.color = '#b91c1c';
       }
       console.error('Profile clinic link request failed:', error);
@@ -882,7 +887,7 @@ function setupClinicProfileLinkRequest() {
       button.disabled = false;
       button.textContent = originalLabel;
       if (message) {
-        message.textContent = error?.message || 'Não foi possível enviar a solicitação agora. Tente novamente mais tarde.';
+        message.textContent = "NÃ£o foi possÃ­vel enviar sua avaliaÃ§Ã£o agora. Tente novamente em alguns instantes.";
         message.style.color = '#b91c1c';
       }
       console.error('Clinic profile link request failed:', error);
@@ -1079,9 +1084,11 @@ function setupReviewForm(profileId, isOwner) {
 
       form.reset();
       const moderationStatus = String(response?.moderation?.status || response?.review?.status || '').toLowerCase();
-      const successMessage = moderationStatus === 'published'
-        ? 'Avaliação publicada com sucesso.'
-        : 'Avaliação enviada para aprovação da equipe.';
+      const successMessage = moderationStatus === 'pending_owner'
+        ? 'Sua avaliaÃ§Ã£o foi enviada ao profissional e ficarÃ¡ visÃ­vel apÃ³s aprovaÃ§Ã£o.'
+        : moderationStatus === 'pending_admin'
+          ? 'Sua avaliaÃ§Ã£o foi enviada para anÃ¡lise e ficarÃ¡ visÃ­vel apÃ³s aprovaÃ§Ã£o.'
+          : 'Sua avaliaÃ§Ã£o foi enviada com sucesso.';
 
       if (message) {
         message.textContent = successMessage;
@@ -1093,7 +1100,7 @@ function setupReviewForm(profileId, isOwner) {
     } catch (error) {
       console.error('Could not submit review:', error);
       if (message) {
-        message.textContent = error?.message || 'Não foi possível enviar sua avaliação agora.';
+        message.textContent = "NÃ£o foi possÃ­vel enviar sua avaliaÃ§Ã£o agora. Tente novamente em alguns instantes.";
         message.style.color = '#b91c1c';
       }
     } finally {

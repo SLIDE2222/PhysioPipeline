@@ -3,6 +3,9 @@ import {
   listProfileReviews,
   submitReview,
   listMyReviews,
+  listMyPendingOwnerReviews,
+  approveOwnReview,
+  rejectOwnReview,
   reportReview,
   listAdminReviews,
   approveReview,
@@ -17,7 +20,11 @@ const adminRouter = Router();
 router.get("/profile/:profileId", listProfileReviews);
 router.post("/", submitReview);
 router.get("/me", requireAuth, listMyReviews);
+router.get("/owner/pending", requireAuth, listMyPendingOwnerReviews);
+router.post("/:reviewId/approve", requireAuth, approveOwnReview);
+router.post("/:reviewId/reject", requireAuth, rejectOwnReview);
 router.post("/:reviewId/report", requireAuth, reportReview);
+router.get("/:profileId", listProfileReviews);
 
 adminRouter.get("/", requireAuth, listAdminReviews);
 adminRouter.post("/:reviewId/approve", requireAuth, approveReview);

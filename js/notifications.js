@@ -71,8 +71,17 @@
     ).trim().toUpperCase();
   }
 
+  function isPendingReviewNotification(notification) {
+    const type = String(notification?.type || '').toLowerCase();
+    const title = String(notification?.title || '').toLowerCase();
+    return type === 'review_pending_owner' ||
+      title.includes('nova avaliaÃ§Ã£o pendente') ||
+      title.includes('nova avaliacao pendente');
+  }
+
   function canDeleteNotification(notification) {
     if (!notification) return false;
+    if (isPendingReviewNotification(notification)) return false;
     if (!isClinicLinkRequestNotification(notification)) return true;
 
     const status = normalizeNotificationStatus(notification);
@@ -330,14 +339,15 @@
 
     content.innerHTML = `
       <div class="notification-review-modal__header">
-        <span class="eyebrow">Notificação</span>
-        <h3 id="notificationModalTitle">${escapeHtml(notification.title || 'Notificação')}</h3>
+        <span class="eyebrow">NotificaÃ§Ã£o</span>
+        <h3 id="notificationModalTitle">${escapeHtml(notification.title || 'NotificaÃ§Ã£o')}</h3>
         <p>${escapeHtml(notification.message || 'Sem detalhes adicionais.')}</p>
       </div>
       ${formattedDate ? `<p class="notification-review-modal__meta">Recebida em ${escapeHtml(formattedDate)}</p>` : ''}
       <div class="notification-review-modal__actions">
+        ${isPendingReviewNotification(notification) ? '<a class="btn btn-primary" href="minhas-avaliacoes.html">Abrir minhas avaliaÃ§Ãµes</a>' : ''}
         <button type="button" class="btn btn-outline" data-notification-modal-close>Fechar</button>
-        ${allowDelete ? `<button type="button" class="btn btn-secondary" data-notification-modal-delete="${escapeHtml(notification.id)}">Excluir notificação</button>` : ''}
+        ${allowDelete ? `<button type="button" class="btn btn-secondary" data-notification-modal-delete="${escapeHtml(notification.id)}">Excluir notificaÃ§Ã£o</button>` : ''}
       </div>
     `;
   }

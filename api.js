@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   const isLocalHost =
     window.location.hostname === 'localhost' ||
     window.location.hostname === '127.0.0.1';
@@ -649,7 +649,7 @@
       rating: Number(review.rating || 0) || null,
       title: String(review.title || '').trim(),
       body: String(review.body || '').trim(),
-      status: String(review.status || 'pending').trim().toLowerCase(),
+      status: String(review.status || "pending_admin").trim().toLowerCase(),
       reportReason: String(review.reportReason || '').trim(),
       reportedAt: review.reportedAt || null,
       moderatedAt: review.moderatedAt || null,
@@ -808,7 +808,7 @@
       return request('/clinics/me').then((data) => normalizeClinicProfile(data.clinicProfile || data));
     },
     fetchProfileReviews(profileId) {
-      return request(`/reviews/profile/${encodeURIComponent(profileId)}`, {
+      return request(`/reviews/${encodeURIComponent(profileId)}`, {
         timeoutMs: 10000,
       }).then((data) => (data.reviews || []).map(normalizeProfileReview));
     },
@@ -830,10 +830,36 @@
         reviews: (data.reviews || []).map(normalizeProfileReview),
       }));
     },
+    fetchMyPendingOwnerReviews() {
+      return request('/reviews/owner/pending', {
+        timeoutMs: 10000,
+      }).then((data) => ({
+        ...data,
+        reviews: (data.reviews || []).map(normalizeProfileReview),
+      }));
+    },
     reportProfileReview(reviewId, reason) {
       return request(`/reviews/${encodeURIComponent(reviewId)}/report`, {
         method: 'POST',
         body: { reason },
+        timeoutMs: 15000,
+      }).then((data) => ({
+        ...data,
+        review: normalizeProfileReview(data.review),
+      }));
+    },
+    approveOwnReview(reviewId) {
+      return request(`/reviews/${encodeURIComponent(reviewId)}/approve`, {
+        method: 'POST',
+        timeoutMs: 15000,
+      }).then((data) => ({
+        ...data,
+        review: normalizeProfileReview(data.review),
+      }));
+    },
+    rejectOwnReview(reviewId) {
+      return request(`/reviews/${encodeURIComponent(reviewId)}/reject`, {
+        method: 'POST',
         timeoutMs: 15000,
       }).then((data) => ({
         ...data,

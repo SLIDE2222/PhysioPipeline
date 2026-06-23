@@ -264,7 +264,7 @@ async function upsertSupabaseUserSession({ accessToken, requestedAccountType }) 
 }
 
 function formatClinicLinkNotification(link, accountType) {
-  const clinicName = link.clinic?.clinicName || "A clínica";
+  const clinicName = link.clinic?.clinicName || "A clÃ­nica";
   const profileName = link.profile?.name || "fisioterapeuta";
   const clinicLocation = [link.clinic?.city, link.clinic?.neighborhood].filter(Boolean).join(" - ");
 
@@ -275,7 +275,7 @@ function formatClinicLinkNotification(link, accountType) {
         ? `${profileName} recusou o vinculo com sua clinica.`
         : link.status === "UNLINKED"
           ? `${profileName} foi desvinculado da sua clinica.`
-          : `${profileName} solicitou vínculo com sua clínica.`;
+          : `${profileName} solicitou vÃ­nculo com sua clÃ­nica.`;
 
     return {
       id: link.id,
@@ -284,7 +284,7 @@ function formatClinicLinkNotification(link, accountType) {
       status: link.status,
       notificationStatus: link.readByClinic ? "read" : "unread",
       unread: !link.readByClinic,
-      title: "Nova solicitação de vínculo",
+      title: "Nova solicitaÃ§Ã£o de vÃ­nculo",
       message: statusText,
       icon: "physiopipeline-p",
       linkId: link.id,
@@ -313,8 +313,8 @@ function formatClinicLinkNotification(link, accountType) {
       status: link.status,
       notificationStatus: link.readByPhysio ? "read" : "unread",
       unread: !link.readByPhysio,
-      title: "Nova solicitação de vínculo",
-      message: `${clinicName} solicitou vínculo com seu perfil.`,
+      title: "Nova solicitaÃ§Ã£o de vÃ­nculo",
+      message: `${clinicName} solicitou vÃ­nculo com seu perfil.`,
       icon: "physiopipeline-p",
       linkId: link.id,
       relatedRequestId: link.id,
@@ -342,12 +342,12 @@ function formatClinicLinkNotification(link, accountType) {
     status: link.status,
     notificationStatus: link.readByPhysio ? "read" : "unread",
     unread: !link.readByPhysio,
-    title: "Solicitação de vínculo",
+    title: "SolicitaÃ§Ã£o de vÃ­nculo",
     message: link.status === "ACCEPTED"
-      ? `Sua solicitação de vínculo com ${clinicName} foi aceita.`
+      ? `Sua solicitaÃ§Ã£o de vÃ­nculo com ${clinicName} foi aceita.`
       : link.status === "REJECTED"
-        ? `Sua solicitação de vínculo com ${clinicName} foi recusada.`
-        : `Seu vínculo com ${clinicName} foi atualizado.`,
+        ? `Sua solicitaÃ§Ã£o de vÃ­nculo com ${clinicName} foi recusada.`
+        : `Seu vÃ­nculo com ${clinicName} foi atualizado.`,
     icon: "physiopipeline-p",
     linkId: link.id,
     relatedRequestId: link.id,
@@ -358,6 +358,27 @@ function formatClinicLinkNotification(link, accountType) {
     clinicLocation,
     createdAt: link.createdAt,
     updatedAt: link.updatedAt,
+  };
+}
+
+function formatPendingOwnerReviewNotification(review) {
+  return {
+    id: `review:${review.id}`,
+    recipientUserId: review.profile?.ownerUserId || null,
+    type: "review_pending_owner",
+    status: review.status,
+    notificationStatus: "unread",
+    unread: true,
+    title: "Nova avaliaÃ§Ã£o pendente",
+    message: "VocÃª recebeu uma nova avaliaÃ§Ã£o pendente de aprovaÃ§Ã£o.",
+    icon: "physiopipeline-p",
+    reviewId: review.id,
+    relatedReviewId: review.id,
+    relatedProfileId: review.profileId,
+    profileId: review.profileId,
+    requesterName: review.authorName || "Paciente",
+    createdAt: review.createdAt,
+    updatedAt: review.updatedAt,
   };
 }
 
@@ -760,6 +781,7 @@ export async function notifications(req, res) {
 
     const accountType = normalizeAccountType(user.accountType);
     let links = [];
+    let pendingOwnerReviews = [];
 
     console.log("notification lookup user id:", user.id);
     console.log("notification lookup account type:", accountType);
@@ -780,10 +802,12 @@ export async function notifications(req, res) {
         take: 20,
       });
     } else {
-      const profile = user.profiles?.[0] || await prisma.profile.findFirst({
-        where: { ownerUserId: user.id },
-        orderBy: { createdAt: "desc" },
-      });
+      const profile =
+        user.profiles?.[0] ||
+        (await prisma.profile.findFirst({
+          where: { ownerUserId: user.id },
+          orderBy: { createdAt: "desc" },
+        }));
 
       if (profile?.id) {
         links = await prisma.clinicPhysiotherapistLink.findMany({
@@ -796,14 +820,43 @@ export async function notifications(req, res) {
           orderBy: { updatedAt: "desc" },
           take: 20,
         });
+
+        pendingOwnerReviews = await prisma.profileReview.findMany({
+          where: {
+            profileId: profile.id,
+            status: "pending_owner",
+          },
+          include: {
+            profile: {
+              select: {
+                id: true,
+                name: true,
+                city: true,
+                neighborhood: true,
+                specialty: true,
+                photoUrl: true,
+                isClaimed: true,
+                ownerUserId: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        });
       }
     }
 
-    const notificationItems = links.map((link) =>
-      formatClinicLinkNotification(link, accountType)
-    );
+    const notificationItems = [
+      ...links.map((link) => formatClinicLinkNotification(link, accountType)),
+      ...pendingOwnerReviews.map((review) => formatPendingOwnerReviewNotification(review)),
+    ].sort((a, b) => {
+      const aDate = new Date(a.updatedAt || a.createdAt || 0).getTime();
+      const bDate = new Date(b.updatedAt || b.createdAt || 0).getTime();
+      return bDate - aDate;
+    });
 
     console.log("notification lookup links found:", links.length);
+    console.log("notification lookup pending reviews found:", pendingOwnerReviews.length);
 
     return res.json({
       notifications: notificationItems,

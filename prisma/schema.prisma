@@ -28,8 +28,9 @@ enum ClinicPhysioLinkStatus {
 }
 
 enum ReviewStatus {
-  pending
-  published
+  pending_owner
+  pending_admin
+  approved
   reported
   rejected
 }
@@ -86,7 +87,7 @@ model ProfileReview {
   rating           Int?
   title            String?
   body             String
-  status           ReviewStatus @default(pending)
+  status           ReviewStatus @default(pending_admin)
   reportReason     String?
   reportedAt       DateTime?
   reportedByUserId String?

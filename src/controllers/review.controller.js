@@ -3,17 +3,22 @@ import { prisma } from "../lib/prisma.js";
 import { requireAdminUser } from "../lib/admin.js";
 import { ACCOUNT_TYPES, normalizeAccountType } from "../constants/account-types.js";
 
-const PUBLIC_REVIEW_STATUSES = ["published", "reported"];
-const OWNER_REVIEW_STATUSES = ["pending", "published", "reported", "rejected"];
-const ADMIN_REVIEW_STATUSES = ["pending", "reported", "published", "rejected"];
+const PUBLIC_REVIEW_STATUSES = ["approved"];
+const OWNER_REVIEW_STATUSES = ["pending_owner", "approved", "reported", "rejected"];
+const OWNER_PENDING_REVIEW_STATUSES = ["pending_owner"];
+const ADMIN_REVIEW_STATUSES = ["pending_admin", "reported", "approved", "rejected"];
 
 const createReviewSchema = z.object({
-  profileId: z.string().min(1, "Perfil inválido."),
+  profileId: z.string().min(1, "Perfil invÃ¡lido."),
   authorName: z.string().min(2, "Informe seu nome.").max(120, "Nome muito longo."),
-  authorEmail: z.string().email("E-mail inválido.").optional().or(z.literal("")).nullable(),
-  title: z.string().max(160, "Título muito longo.").optional().or(z.literal("")).nullable(),
-  rating: z.coerce.number().int().min(1, "Selecione uma nota de 1 a 5 estrelas.").max(5, "Selecione uma nota de 1 a 5 estrelas."),
-  body: z.string().min(10, "Escreva uma avaliação mais completa.").max(4000, "Avaliação muito longa."),
+  authorEmail: z.string().email("E-mail invÃ¡lido.").optional().or(z.literal("")).nullable(),
+  title: z.string().max(160, "TÃ­tulo muito longo.").optional().or(z.literal("")).nullable(),
+  rating: z.coerce
+    .number()
+    .int()
+    .min(1, "Selecione uma nota de 1 a 5 estrelas.")
+    .max(5, "Selecione uma nota de 1 a 5 estrelas."),
+  body: z.string().min(3, "Escreva uma avaliaÃ§Ã£o mais completa.").max(4000, "AvaliaÃ§Ã£o muito longa."),
 });
 
 const reportReviewSchema = z.object({
@@ -26,16 +31,24 @@ function cleanOptionalString(value, maxLength = 4000) {
   return normalized.slice(0, maxLength);
 }
 
+function normalizeIncomingReviewPayload(payload) {
+  return {
+    profileId: String(payload?.profileId || payload?.professionalProfileId || "").trim(),
+    authorName: payload?.authorName ?? payload?.reviewerName ?? "",
+    authorEmail: payload?.authorEmail ?? payload?.reviewerEmail ?? "",
+    title: payload?.title ?? "",
+    rating: payload?.rating,
+    body: payload?.body ?? payload?.comment ?? "",
+  };
+}
+
 function normalizeReviewStatus(value) {
   const normalized = String(value || "").trim().toLowerCase();
   return ADMIN_REVIEW_STATUSES.includes(normalized) ? normalized : null;
 }
 
-function isOwnedPhysioProfile(profile) {
-  // Review moderation depends on ownership at the exact submission moment.
-  // Once a real physiotherapist account owns the profile, new reviews skip
-  // the admin queue and publish immediately.
-  return Boolean(profile?.ownerUserId);
+function isOwnedClaimedPhysioProfile(profile) {
+  return Boolean(profile?.isClaimed && profile?.ownerUserId);
 }
 
 function serializeReview(review, options = {}) {
@@ -76,13 +89,16 @@ function serializeReview(review, options = {}) {
 
 function buildReviewQueueSummary(review) {
   const profileName = review?.profile?.name || "Perfil";
-  if (review.status === "pending") {
-    return `Avaliação aguardando aprovação para ${profileName}.`;
+
+  if (review.status === "pending_admin") {
+    return `AvaliaÃ§Ã£o aguardando revisÃ£o administrativa para ${profileName}.`;
   }
+
   if (review.status === "reported") {
-    return `Avaliação reportada em ${profileName}.`;
+    return `AvaliaÃ§Ã£o reportada em ${profileName}.`;
   }
-  return `Avaliação moderada em ${profileName}.`;
+
+  return `AvaliaÃ§Ã£o moderada em ${profileName}.`;
 }
 
 async function findCurrentUser(userId) {
@@ -94,6 +110,7 @@ async function findCurrentUser(userId) {
       id: true,
       email: true,
       accountType: true,
+      name: true,
     },
   });
 }
@@ -102,13 +119,13 @@ async function resolveOwnedPhysioProfile(userId) {
   const user = await findCurrentUser(userId);
 
   if (!user) {
-    const error = new Error("Usuário não encontrado.");
+    const error = new Error("UsuÃ¡rio nÃ£o encontrado.");
     error.status = 404;
     throw error;
   }
 
   if (normalizeAccountType(user.accountType) === ACCOUNT_TYPES.CLINIC) {
-    const error = new Error("Apenas fisioterapeutas podem moderar reviews do próprio perfil.");
+    const error = new Error("Apenas fisioterapeutas podem moderar reviews do prÃ³prio perfil.");
     error.status = 403;
     throw error;
   }
@@ -149,11 +166,31 @@ function sendReviewControllerError(res, error, fallbackMessage = "Erro ao proces
   });
 }
 
+async function fetchReviewWithProfile(reviewId) {
+  return prisma.profileReview.findUnique({
+    where: { id: reviewId },
+    include: {
+      profile: {
+        select: {
+          id: true,
+          name: true,
+          city: true,
+          neighborhood: true,
+          specialty: true,
+          photoUrl: true,
+          isClaimed: true,
+          ownerUserId: true,
+        },
+      },
+    },
+  });
+}
+
 export async function listProfileReviews(req, res) {
   try {
-    const profileId = String(req.params.profileId || "").trim();
+    const profileId = String(req.params.profileId || req.params.id || "").trim();
     if (!profileId) {
-      return res.status(400).json({ message: "Perfil inválido." });
+      return res.status(400).json({ message: "Perfil invÃ¡lido." });
     }
 
     const reviews = await prisma.profileReview.findMany({
@@ -183,17 +220,17 @@ export async function listProfileReviews(req, res) {
       visibleStatuses: PUBLIC_REVIEW_STATUSES,
     });
   } catch (error) {
-    return sendReviewControllerError(res, error, "Erro ao carregar reviews públicas.");
+    return sendReviewControllerError(res, error, "Erro ao carregar reviews pÃºblicas.");
   }
 }
 
 export async function submitReview(req, res) {
   try {
-    const parsed = createReviewSchema.safeParse(req.body);
+    const parsed = createReviewSchema.safeParse(normalizeIncomingReviewPayload(req.body));
 
     if (!parsed.success) {
       return res.status(400).json({
-        message: "Dados da review inválidos.",
+        message: "Dados da avaliaÃ§Ã£o invÃ¡lidos.",
         errors: parsed.error.flatten(),
       });
     }
@@ -213,10 +250,10 @@ export async function submitReview(req, res) {
     });
 
     if (!profile) {
-      return res.status(404).json({ message: "Perfil não encontrado." });
+      return res.status(404).json({ message: "Perfil nÃ£o encontrado." });
     }
 
-    const status = isOwnedPhysioProfile(profile) ? "published" : "pending";
+    const status = isOwnedClaimedPhysioProfile(profile) ? "pending_owner" : "pending_admin";
     const review = await prisma.profileReview.create({
       data: {
         profileId: profile.id,
@@ -248,19 +285,19 @@ export async function submitReview(req, res) {
       moderation: {
         status,
         message:
-          status === "published"
-            ? "Avaliação publicada com sucesso."
-            : "Avaliação enviada para aprovação da equipe.",
+          status === "pending_owner"
+            ? "Sua avaliaÃ§Ã£o foi enviada ao profissional e ficarÃ¡ visÃ­vel apÃ³s aprovaÃ§Ã£o."
+            : "Sua avaliaÃ§Ã£o foi enviada para anÃ¡lise e ficarÃ¡ visÃ­vel apÃ³s aprovaÃ§Ã£o.",
       },
     });
   } catch (error) {
-    return sendReviewControllerError(res, error, "Erro ao enviar avaliação.");
+    return sendReviewControllerError(res, error, "Erro ao enviar avaliaÃ§Ã£o.");
   }
 }
 
 export async function listMyReviews(req, res) {
   try {
-    const { profile } = await resolveOwnedPhysioProfile(req.user.userId);
+    const { profile } = await resolveOwnedPhysioProfile(req.user?.userId);
     const reviews = await prisma.profileReview.findMany({
       where: {
         profileId: profile.id,
@@ -284,7 +321,6 @@ export async function listMyReviews(req, res) {
     });
 
     return res.json({
-      profileId: profile.id,
       reviews: reviews.map((review) =>
         serializeReview(review, {
           includePrivateFields: true,
@@ -293,23 +329,68 @@ export async function listMyReviews(req, res) {
       ),
     });
   } catch (error) {
-    return sendReviewControllerError(res, error, "Erro ao carregar suas reviews.");
+    return sendReviewControllerError(res, error, "Erro ao carregar reviews do proprietÃ¡rio.");
   }
 }
 
-export async function reportReview(req, res) {
+export async function listMyPendingOwnerReviews(req, res) {
   try {
-    const parsed = reportReviewSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({
-        message: "Motivo do reporte inválido.",
-        errors: parsed.error.flatten(),
-      });
+    const { profile } = await resolveOwnedPhysioProfile(req.user?.userId);
+    const reviews = await prisma.profileReview.findMany({
+      where: {
+        profileId: profile.id,
+        status: { in: OWNER_PENDING_REVIEW_STATUSES },
+      },
+      include: {
+        profile: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            neighborhood: true,
+            specialty: true,
+            photoUrl: true,
+            isClaimed: true,
+            ownerUserId: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json({
+      reviews: reviews.map((review) =>
+        serializeReview(review, {
+          includePrivateFields: true,
+          includeModerationFields: true,
+        })
+      ),
+    });
+  } catch (error) {
+    return sendReviewControllerError(res, error, "Erro ao carregar reviews pendentes do proprietÃ¡rio.");
+  }
+}
+
+export async function approveOwnReview(req, res) {
+  try {
+    const { user, profile } = await resolveOwnedPhysioProfile(req.user?.userId);
+    const review = await fetchReviewWithProfile(req.params.reviewId);
+
+    if (!review || review.profileId !== profile.id) {
+      return res.status(404).json({ message: "Review nÃ£o encontrada para este perfil." });
     }
 
-    const { profile, user } = await resolveOwnedPhysioProfile(req.user.userId);
-    const review = await prisma.profileReview.findUnique({
-      where: { id: req.params.reviewId },
+    if (review.status !== "pending_owner") {
+      return res.status(409).json({ message: "Somente reviews pendentes podem ser aprovadas." });
+    }
+
+    const updated = await prisma.profileReview.update({
+      where: { id: review.id },
+      data: {
+        status: "approved",
+        moderatedAt: new Date(),
+        moderatedByUserId: user.id,
+      },
       include: {
         profile: {
           select: {
@@ -326,17 +407,92 @@ export async function reportReview(req, res) {
       },
     });
 
+    return res.json({
+      review: serializeReview(updated, {
+        includePrivateFields: true,
+        includeModerationFields: true,
+      }),
+      message: "AvaliaÃ§Ã£o aprovada com sucesso.",
+    });
+  } catch (error) {
+    return sendReviewControllerError(res, error, "Erro ao aprovar review do proprietÃ¡rio.");
+  }
+}
+
+export async function rejectOwnReview(req, res) {
+  try {
+    const { user, profile } = await resolveOwnedPhysioProfile(req.user?.userId);
+    const review = await fetchReviewWithProfile(req.params.reviewId);
+
     if (!review || review.profileId !== profile.id) {
-      return res.status(404).json({ message: "Review não encontrada para este perfil." });
+      return res.status(404).json({ message: "Review nÃ£o encontrada para este perfil." });
     }
 
-    if (!["published", "reported"].includes(review.status)) {
-      return res.status(409).json({
-        message: "Somente reviews publicadas podem ser reportadas pelo proprietário.",
+    if (review.status !== "pending_owner") {
+      return res.status(409).json({ message: "Somente reviews pendentes podem ser rejeitadas." });
+    }
+
+    const updated = await prisma.profileReview.update({
+      where: { id: review.id },
+      data: {
+        status: "rejected",
+        moderatedAt: new Date(),
+        moderatedByUserId: user.id,
+      },
+      include: {
+        profile: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            neighborhood: true,
+            specialty: true,
+            photoUrl: true,
+            isClaimed: true,
+            ownerUserId: true,
+          },
+        },
+      },
+    });
+
+    return res.json({
+      review: serializeReview(updated, {
+        includePrivateFields: true,
+        includeModerationFields: true,
+      }),
+      message: "AvaliaÃ§Ã£o rejeitada com sucesso.",
+    });
+  } catch (error) {
+    return sendReviewControllerError(res, error, "Erro ao rejeitar review do proprietÃ¡rio.");
+  }
+}
+
+export async function reportReview(req, res) {
+  try {
+    const { user, profile } = await resolveOwnedPhysioProfile(req.user?.userId);
+    const parsed = reportReviewSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return res.status(400).json({
+        message: "Dados do reporte invÃ¡lidos.",
+        errors: parsed.error.flatten(),
       });
     }
 
-    const updatedReview = await prisma.profileReview.update({
+    const review = await fetchReviewWithProfile(req.params.reviewId);
+
+    if (!review || review.profileId !== profile.id) {
+      return res.status(404).json({ message: "Review nÃ£o encontrada para este perfil." });
+    }
+
+    const currentStatus = String(review.status || "").trim().toLowerCase();
+    if (!["approved", "reported"].includes(currentStatus)) {
+      return res.status(409).json({
+        message: "Somente reviews publicadas podem ser reportadas.",
+      });
+    }
+
+    const updated = await prisma.profileReview.update({
       where: { id: review.id },
       data: {
         status: "reported",
@@ -361,11 +517,11 @@ export async function reportReview(req, res) {
     });
 
     return res.json({
-      review: serializeReview(updatedReview, {
+      review: serializeReview(updated, {
         includePrivateFields: true,
         includeModerationFields: true,
       }),
-      message: "Review reportada para análise administrativa.",
+      message: "Review reportada para anÃ¡lise administrativa.",
     });
   } catch (error) {
     return sendReviewControllerError(res, error, "Erro ao reportar review.");
@@ -374,13 +530,11 @@ export async function reportReview(req, res) {
 
 export async function listAdminReviews(req, res) {
   try {
-    await requireAdminUser(req.user.userId);
-    const requestedStatus = normalizeReviewStatus(req.query.status);
-    const statuses = requestedStatus ? [requestedStatus] : ["pending", "reported"];
-
+    await requireAdminUser(req.user?.userId);
+    const requestedStatus = normalizeReviewStatus(req.query?.status) || "pending_admin";
     const reviews = await prisma.profileReview.findMany({
       where: {
-        status: { in: statuses },
+        status: requestedStatus,
       },
       include: {
         profile: {
@@ -406,55 +560,35 @@ export async function listAdminReviews(req, res) {
           includeModerationFields: true,
         })
       ),
-      summary: reviews.map(buildReviewQueueSummary),
-      statusFilter: statuses,
+      summary: reviews.map((review) => ({
+        id: review.id,
+        text: buildReviewQueueSummary(review),
+      })),
     });
   } catch (error) {
-    return sendReviewControllerError(res, error, "Erro ao carregar fila de reviews.");
+    return sendReviewControllerError(res, error, "Erro ao carregar fila administrativa de reviews.");
   }
 }
 
-async function moderateReview(req, res, nextStatus) {
+export async function approveReview(req, res) {
   try {
-    const adminUser = await requireAdminUser(req.user.userId);
-    const review = await prisma.profileReview.findUnique({
-      where: { id: req.params.reviewId },
-      include: {
-        profile: {
-          select: {
-            id: true,
-            name: true,
-            city: true,
-            neighborhood: true,
-            specialty: true,
-            photoUrl: true,
-            isClaimed: true,
-            ownerUserId: true,
-          },
-        },
-      },
-    });
+    const adminUser = await requireAdminUser(req.user?.userId);
+    const review = await fetchReviewWithProfile(req.params.reviewId);
 
     if (!review) {
-      return res.status(404).json({ message: "Review não encontrada." });
+      return res.status(404).json({ message: "Review nÃ£o encontrada." });
     }
 
-    if (nextStatus === "published" && !["pending", "reported"].includes(review.status)) {
+    if (!["pending_admin", "reported"].includes(String(review.status || "").trim().toLowerCase())) {
       return res.status(409).json({
-        message: "Somente reviews pendentes ou reportadas podem ser publicadas.",
+        message: "Somente reviews pendentes da administraÃ§Ã£o ou reportadas podem ser aprovadas.",
       });
     }
 
-    if (nextStatus === "rejected" && review.status === "rejected") {
-      return res.status(409).json({
-        message: "Esta review já foi removida.",
-      });
-    }
-
-    const updatedReview = await prisma.profileReview.update({
+    const updated = await prisma.profileReview.update({
       where: { id: review.id },
       data: {
-        status: nextStatus,
+        status: "approved",
         moderatedAt: new Date(),
         moderatedByUserId: adminUser.id,
       },
@@ -475,28 +609,113 @@ async function moderateReview(req, res, nextStatus) {
     });
 
     return res.json({
-      review: serializeReview(updatedReview, {
+      review: serializeReview(updated, {
         includePrivateFields: true,
         includeModerationFields: true,
       }),
-      message:
-        nextStatus === "published"
-          ? "Review mantida/publicada com sucesso."
-          : "Review removida com sucesso.",
+      message: "Review aprovada e publicada com sucesso.",
     });
   } catch (error) {
-    return sendReviewControllerError(res, error, "Erro ao moderar review.");
+    return sendReviewControllerError(res, error, "Erro ao aprovar review.");
   }
 }
 
-export function approveReview(req, res) {
-  return moderateReview(req, res, "published");
+export async function keepPublishedReview(req, res) {
+  try {
+    const adminUser = await requireAdminUser(req.user?.userId);
+    const review = await fetchReviewWithProfile(req.params.reviewId);
+
+    if (!review) {
+      return res.status(404).json({ message: "Review nÃ£o encontrada." });
+    }
+
+    if (String(review.status || "").trim().toLowerCase() !== "reported") {
+      return res.status(409).json({
+        message: "Somente reviews reportadas podem ser mantidas como publicadas.",
+      });
+    }
+
+    const updated = await prisma.profileReview.update({
+      where: { id: review.id },
+      data: {
+        status: "approved",
+        moderatedAt: new Date(),
+        moderatedByUserId: adminUser.id,
+      },
+      include: {
+        profile: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            neighborhood: true,
+            specialty: true,
+            photoUrl: true,
+            isClaimed: true,
+            ownerUserId: true,
+          },
+        },
+      },
+    });
+
+    return res.json({
+      review: serializeReview(updated, {
+        includePrivateFields: true,
+        includeModerationFields: true,
+      }),
+      message: "Review mantida como publicada.",
+    });
+  } catch (error) {
+    return sendReviewControllerError(res, error, "Erro ao manter review publicada.");
+  }
 }
 
-export function keepPublishedReview(req, res) {
-  return moderateReview(req, res, "published");
-}
+export async function rejectReview(req, res) {
+  try {
+    const adminUser = await requireAdminUser(req.user?.userId);
+    const review = await fetchReviewWithProfile(req.params.reviewId);
 
-export function rejectReview(req, res) {
-  return moderateReview(req, res, "rejected");
+    if (!review) {
+      return res.status(404).json({ message: "Review nÃ£o encontrada." });
+    }
+
+    if (!ADMIN_REVIEW_STATUSES.includes(String(review.status || "").trim().toLowerCase())) {
+      return res.status(409).json({
+        message: "Somente reviews moderÃ¡veis podem ser rejeitadas.",
+      });
+    }
+
+    const updated = await prisma.profileReview.update({
+      where: { id: review.id },
+      data: {
+        status: "rejected",
+        moderatedAt: new Date(),
+        moderatedByUserId: adminUser.id,
+      },
+      include: {
+        profile: {
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            neighborhood: true,
+            specialty: true,
+            photoUrl: true,
+            isClaimed: true,
+            ownerUserId: true,
+          },
+        },
+      },
+    });
+
+    return res.json({
+      review: serializeReview(updated, {
+        includePrivateFields: true,
+        includeModerationFields: true,
+      }),
+      message: "Review removida com sucesso.",
+    });
+  } catch (error) {
+    return sendReviewControllerError(res, error, "Erro ao rejeitar review.");
+  }
 }
