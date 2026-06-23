@@ -294,6 +294,7 @@ function renderReviewCard(review, options = {}) {
 function renderReviewSubmissionForm(profileId) {
   return `
     <div class="profile-review-composer" data-profile-review-composer>
+      <div class="profile-review-toggle-row">
       <button
         type="button"
         class="btn btn-outline profile-review-toggle"
@@ -303,6 +304,7 @@ function renderReviewSubmissionForm(profileId) {
       >
         <span class="profile-review-toggle__text">+ Avaliar</span>
       </button>
+      </div>
       <div
         class="profile-review-form-panel"
         id="profileReviewFormPanel"
@@ -969,7 +971,7 @@ function setupReviewsDrawer() {
 
     toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     toggleButton.classList.toggle('is-open', isOpen);
-    toggleText.textContent = isOpen ? 'Fechar avaliações' : 'Avaliações';
+    toggleText.textContent = 'Avaliações';
     toggleIcon.textContent = isOpen ? '−' : '+';
 
     if (isOpen) {
