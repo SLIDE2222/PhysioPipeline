@@ -301,7 +301,7 @@ function renderReviewSubmissionForm(profileId) {
         aria-expanded="false"
         aria-controls="profileReviewFormPanel"
       >
-        + Avaliar
+        <span class="profile-review-toggle__text">+ Avaliar</span>
       </button>
       <div
         class="profile-review-form-panel"
@@ -385,8 +385,8 @@ function renderReviewsDrawer(profissional, isOwner) {
         aria-expanded="false"
         aria-controls="profileReviewsDrawer"
       >
-        <span class="profile-reviews-launcher__icon" aria-hidden="true">+</span>
-        <span class="profile-reviews-launcher__text">Avaliações</span>
+        <span class="profile-reviews-launcher__icon" data-profile-reviews-toggle-icon aria-hidden="true">+</span>
+        <span class="profile-reviews-launcher__text" data-profile-reviews-toggle-text>Avaliações</span>
       </button>
       <div class="profile-reviews-drawer" id="profileReviewsDrawer" data-profile-reviews-drawer hidden>
         <article class="profile-card-full profile-reviews-drawer__card">
@@ -955,15 +955,42 @@ function setupReviewReportButtons(profileId, isOwner) {
 function setupReviewsDrawer() {
   const toggleButton = document.querySelector('[data-profile-reviews-toggle]');
   const drawer = document.querySelector('[data-profile-reviews-drawer]');
+  const toggleText = document.querySelector('[data-profile-reviews-toggle-text]');
+  const toggleIcon = document.querySelector('[data-profile-reviews-toggle-icon]');
   if (!toggleButton || !drawer) return;
 
+  let closeTimer = null;
+
   function setDrawerOpen(isOpen) {
+    if (closeTimer) {
+      clearTimeout(closeTimer);
+      closeTimer = null;
+    }
+
     toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    drawer.hidden = !isOpen;
-    drawer.classList.toggle('is-open', isOpen);
+    toggleButton.classList.toggle('is-open', isOpen);
+    toggleText.textContent = isOpen ? 'Fechar avaliações' : 'Avaliações';
+    toggleIcon.textContent = isOpen ? '−' : '+';
+
+    if (isOpen) {
+      drawer.hidden = false;
+      requestAnimationFrame(() => {
+        drawer.classList.add('is-open');
+      });
+      return;
+    }
+
+    drawer.classList.remove('is-open');
+    closeTimer = setTimeout(() => {
+      drawer.hidden = true;
+    }, 220);
   }
 
   toggleButton.addEventListener('click', () => {
+    toggleButton.classList.remove('is-pressed');
+    void toggleButton.offsetWidth;
+    toggleButton.classList.add('is-pressed');
+
     const isOpen = toggleButton.getAttribute('aria-expanded') === 'true';
     setDrawerOpen(!isOpen);
   });
@@ -976,23 +1003,48 @@ function setupReviewForm(profileId, isOwner) {
   const formPanel = document.querySelector('[data-profile-review-form-panel]');
   const form = document.querySelector('[data-profile-review-form]');
   const message = document.querySelector('[data-profile-review-message]');
+  const toggleText = toggleButton?.querySelector('.profile-review-toggle__text');
   if (!toggleButton || !formPanel || !form) return;
 
+  let closeTimer = null;
+
   function setReviewFormOpen(isOpen) {
+    if (closeTimer) {
+      clearTimeout(closeTimer);
+      closeTimer = null;
+    }
+
     toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    toggleButton.textContent = isOpen ? 'Cancelar' : '+ Avaliar';
-    formPanel.hidden = !isOpen;
-    formPanel.classList.toggle('is-open', isOpen);
+    toggleButton.classList.toggle('is-open', isOpen);
+    if (toggleText) {
+      toggleText.textContent = isOpen ? 'Cancelar avaliação' : '+ Avaliar';
+    } else {
+      toggleButton.textContent = isOpen ? 'Cancelar avaliação' : '+ Avaliar';
+    }
 
     if (isOpen) {
+      formPanel.hidden = false;
+      requestAnimationFrame(() => {
+        formPanel.classList.add('is-open');
+      });
       requestAnimationFrame(() => {
         const firstInput = form.querySelector('input[name="authorName"]');
         firstInput?.focus();
       });
+      return;
     }
+
+    formPanel.classList.remove('is-open');
+    closeTimer = setTimeout(() => {
+      formPanel.hidden = true;
+    }, 220);
   }
 
   toggleButton.addEventListener('click', () => {
+    toggleButton.classList.remove('is-pressed');
+    void toggleButton.offsetWidth;
+    toggleButton.classList.add('is-pressed');
+
     const isOpen = toggleButton.getAttribute('aria-expanded') === 'true';
     setReviewFormOpen(!isOpen);
   });
