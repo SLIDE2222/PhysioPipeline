@@ -280,31 +280,49 @@ function renderReviewCard(review, options = {}) {
 
 function renderReviewSubmissionForm(profileId) {
   return `
-    <form class="profile-review-form" data-profile-review-form>
-      <div class="profile-review-form__grid">
-        <label class="profile-review-form__field">
-          <span>Seu nome</span>
-          <input type="text" name="authorName" maxlength="120" placeholder="Como você gostaria de aparecer" required />
-        </label>
-        <label class="profile-review-form__field">
-          <span>E-mail (opcional)</span>
-          <input type="email" name="authorEmail" maxlength="255" placeholder="voce@email.com" />
-        </label>
+    <div class="profile-review-composer" data-profile-review-composer>
+      <button
+        type="button"
+        class="btn btn-outline profile-review-toggle"
+        data-profile-review-toggle
+        aria-expanded="false"
+        aria-controls="profileReviewFormPanel"
+      >
+        + Avaliar
+      </button>
+      <div
+        class="profile-review-form-panel"
+        id="profileReviewFormPanel"
+        data-profile-review-form-panel
+        hidden
+      >
+        <form class="profile-review-form" data-profile-review-form>
+          <div class="profile-review-form__grid">
+            <label class="profile-review-form__field">
+              <span>Seu nome</span>
+              <input type="text" name="authorName" maxlength="120" placeholder="Como você gostaria de aparecer" required />
+            </label>
+            <label class="profile-review-form__field">
+              <span>E-mail (opcional)</span>
+              <input type="email" name="authorEmail" maxlength="255" placeholder="voce@email.com" />
+            </label>
+          </div>
+          <label class="profile-review-form__field">
+            <span>Título (opcional)</span>
+            <input type="text" name="title" maxlength="160" placeholder="Resumo curto da sua experiência" />
+          </label>
+          <label class="profile-review-form__field">
+            <span>Avaliação</span>
+            <textarea name="body" rows="5" maxlength="4000" placeholder="Conte como foi sua experiência com este profissional." required></textarea>
+          </label>
+          <input type="hidden" name="profileId" value="${escapeHtml(profileId)}" />
+          <div class="profile-review-form__actions">
+            <button type="submit" class="btn btn-primary">Enviar avaliação</button>
+            <span class="form-hint" data-profile-review-message aria-live="polite"></span>
+          </div>
+        </form>
       </div>
-      <label class="profile-review-form__field">
-        <span>Título (opcional)</span>
-        <input type="text" name="title" maxlength="160" placeholder="Resumo curto da sua experiência" />
-      </label>
-      <label class="profile-review-form__field">
-        <span>Avaliação</span>
-        <textarea name="body" rows="5" maxlength="4000" placeholder="Conte como foi sua experiência com este profissional." required></textarea>
-      </label>
-      <input type="hidden" name="profileId" value="${escapeHtml(profileId)}" />
-      <div class="profile-review-form__actions">
-        <button type="submit" class="btn btn-primary">Enviar avaliação</button>
-        <span class="form-hint" data-profile-review-message aria-live="polite"></span>
-      </div>
-    </form>
+    </div>
   `;
 }
 
@@ -887,9 +905,30 @@ function setupReviewReportButtons(profileId, isOwner) {
 function setupReviewForm(profileId, isOwner) {
   if (isOwner || !window.physioApi?.submitProfileReview) return;
 
+  const toggleButton = document.querySelector('[data-profile-review-toggle]');
+  const formPanel = document.querySelector('[data-profile-review-form-panel]');
   const form = document.querySelector('[data-profile-review-form]');
   const message = document.querySelector('[data-profile-review-message]');
-  if (!form) return;
+  if (!toggleButton || !formPanel || !form) return;
+
+  function setReviewFormOpen(isOpen) {
+    toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    toggleButton.textContent = isOpen ? 'Cancelar' : '+ Avaliar';
+    formPanel.hidden = !isOpen;
+    formPanel.classList.toggle('is-open', isOpen);
+
+    if (isOpen) {
+      requestAnimationFrame(() => {
+        const firstInput = form.querySelector('input[name="authorName"]');
+        firstInput?.focus();
+      });
+    }
+  }
+
+  toggleButton.addEventListener('click', () => {
+    const isOpen = toggleButton.getAttribute('aria-expanded') === 'true';
+    setReviewFormOpen(!isOpen);
+  });
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -928,6 +967,7 @@ function setupReviewForm(profileId, isOwner) {
       }
       showProfileToast(successMessage);
       await refreshProfileReviews(profileId, false);
+      setReviewFormOpen(false);
     } catch (error) {
       console.error('Could not submit review:', error);
       if (message) {

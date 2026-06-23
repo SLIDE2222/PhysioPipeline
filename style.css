@@ -5964,10 +5964,35 @@ body:has(#cadastroForm) .tag-input-shell {
   border-color: #cbd5e1;
 }
 
-.profile-review-form {
+.profile-review-composer {
   margin-top: 20px;
+}
+
+.profile-review-toggle {
+  min-height: 44px;
+}
+
+.profile-review-form-panel {
+  margin-top: 14px;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.profile-review-form-panel.is-open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.profile-review-form {
   display: grid;
   gap: 14px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,251,255,0.94));
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
 .profile-review-form__grid {
@@ -6048,7 +6073,8 @@ body:has(#cadastroForm) .tag-input-shell {
 
 @media (max-width: 768px) {
   .profile-review-card,
-  .profile-reviews-empty {
+  .profile-reviews-empty,
+  .profile-review-form {
     padding: 16px;
   }
 
