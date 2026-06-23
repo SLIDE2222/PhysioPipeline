@@ -1,0 +1,168 @@
+{
+  "filePath": "C:\\Users\\Jeffrey Walker\\Downloads\\Untitled spreadsheet - Sheet1 (1).csv",
+  "importedAt": "2026-06-23T02:35:31.829Z",
+  "dryRun": false,
+  "totalProfilesFound": 2,
+  "skippedEmptyRows": 4,
+  "importedProfiles": 2,
+  "updatedProfiles": 0,
+  "skippedProfiles": 0,
+  "validationErrors": [],
+  "urlsDetected": [
+    {
+      "rowNumber": 2,
+      "sheet": "Untitled spreadsheet - Sheet1 (1)",
+      "url": "https://www.instagram.com/rafaelaalmeida_fisioterapeuta/"
+    },
+    {
+      "rowNumber": 2,
+      "sheet": "Untitled spreadsheet - Sheet1 (1)",
+      "url": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20231457.png"
+    },
+    {
+      "rowNumber": 3,
+      "sheet": "Untitled spreadsheet - Sheet1 (1)",
+      "url": "https://www.instagram.com/anapaulasouzad_/"
+    },
+    {
+      "rowNumber": 3,
+      "sheet": "Untitled spreadsheet - Sheet1 (1)",
+      "url": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20232457.png"
+    }
+  ],
+  "urlsRejected": [],
+  "finalSavedProfileObjects": [
+    {
+      "id": "rafaelaalmeida-fisioterapeuta",
+      "name": "Rafaela Almeida",
+      "specialty": "Fisioterapia Ortopédica Esportiva",
+      "secondarySpecialty": null,
+      "tertiarySpecialty": null,
+      "city": "Itapetininga",
+      "neighborhood": "Centro",
+      "phone": "5515996419206",
+      "bio": "Fisioterapeuta @essencefisioterapiaepilates Instrutora de Pilates Pós graduada em Fisioterapia Ortopédica Esportiva Internacional. CREFITO3 372061-F",
+      "instagram": "https://www.instagram.com/rafaelaalmeida_fisioterapeuta/",
+      "linkedin": null,
+      "photoUrl": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20231457.png",
+      "publicEmail": null,
+      "attendance": null,
+      "isClaimed": false,
+      "ownerUserId": null,
+      "createdAt": "2026-06-23T02:35:31.883Z",
+      "updatedAt": "2026-06-23T02:35:31.883Z"
+    },
+    {
+      "id": "ana-paulasouzad",
+      "name": "Ana Paula",
+      "specialty": "Instrutora de Pilates",
+      "secondarySpecialty": null,
+      "tertiarySpecialty": null,
+      "city": "Itapetininga",
+      "neighborhood": "Parque Sao Bento",
+      "phone": "5515996304920",
+      "bio": "Physical Therapist 🤍 Pilates • Fisioterapia • Bem estar ✨ Transformando vidas através do Pilates 📍Francisco Senger 69 Parque São Bento. Itapetininga SP 💍",
+      "instagram": "https://www.instagram.com/anapaulasouzad_/",
+      "linkedin": null,
+      "photoUrl": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20232457.png",
+      "publicEmail": null,
+      "attendance": null,
+      "isClaimed": false,
+      "ownerUserId": null,
+      "createdAt": "2026-06-23T02:35:31.979Z",
+      "updatedAt": "2026-06-23T02:35:31.979Z"
+    }
+  ],
+  "rows": [
+    {
+      "sheet": "Untitled spreadsheet - Sheet1 (1)",
+      "rowNumber": 2,
+      "original": {
+        "id": "rafaelaalmeida-fisioterapeuta",
+        "name": "Rafaela Almeida",
+        "specialty": "Fisioterapia Ortopédica Esportiva",
+        "city": "Itapetininga",
+        "isClaimed": "(FALSE for imported profiles)",
+        "neighborhood": "Centro",
+        "phone": "15 99641-9206\r\n\r\n",
+        "bio": "Fisioterapeuta @essencefisioterapiaepilates\r\nInstrutora de Pilates\r\nPós graduada em Fisioterapia Ortopédica Esportiva Internacional.\r\nCREFITO3 372061-F",
+        "instagram": "https://www.instagram.com/rafaelaalmeida_fisioterapeuta/",
+        "linkedin": "",
+        "photoUrl": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20231457.png",
+        "attendance": "",
+        "ownerUserId": "",
+        "secondarySpecialty": "",
+        "tertiarySpecialty": "",
+        "createdAt": "Auto",
+        "updatedAt": "Auto"
+      },
+      "normalized": {
+        "id": "rafaelaalmeida-fisioterapeuta",
+        "name": "Rafaela Almeida",
+        "specialty": "Fisioterapia Ortopédica Esportiva",
+        "secondarySpecialty": null,
+        "tertiarySpecialty": null,
+        "city": "Itapetininga",
+        "neighborhood": "Centro",
+        "phone": "5515996419206",
+        "bio": "Fisioterapeuta @essencefisioterapiaepilates Instrutora de Pilates Pós graduada em Fisioterapia Ortopédica Esportiva Internacional. CREFITO3 372061-F",
+        "attendance": null,
+        "instagram": "https://www.instagram.com/rafaelaalmeida_fisioterapeuta/",
+        "linkedin": null,
+        "photoUrl": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20231457.png",
+        "isClaimed": false,
+        "ownerUserId": null,
+        "createdAt": null,
+        "updatedAt": null
+      },
+      "warnings": [],
+      "errors": [],
+      "action": "queued"
+    },
+    {
+      "sheet": "Untitled spreadsheet - Sheet1 (1)",
+      "rowNumber": 3,
+      "original": {
+        "id": "ana-paulasouzad",
+        "name": "Ana Paula",
+        "specialty": "Instrutora de Pilates",
+        "city": "",
+        "isClaimed": "(FALSE for imported profiles)",
+        "neighborhood": "Parque Sao Bento",
+        "phone": " 15 99630-4920",
+        "bio": "Physical Therapist\r\n🤍 Pilates • Fisioterapia • Bem estar\r\n✨ Transformando vidas através do Pilates\r\n📍Francisco Senger 69 Parque São Bento. Itapetininga SP\r\n💍",
+        "instagram": "https://www.instagram.com/anapaulasouzad_/",
+        "linkedin": "",
+        "photoUrl": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20232457.png",
+        "attendance": "",
+        "ownerUserId": "",
+        "secondarySpecialty": "",
+        "tertiarySpecialty": "",
+        "createdAt": "Auto",
+        "updatedAt": "Auto"
+      },
+      "normalized": {
+        "id": "ana-paulasouzad",
+        "name": "Ana Paula",
+        "specialty": "Instrutora de Pilates",
+        "secondarySpecialty": null,
+        "tertiarySpecialty": null,
+        "city": "Itapetininga",
+        "neighborhood": "Parque Sao Bento",
+        "phone": "5515996304920",
+        "bio": "Physical Therapist 🤍 Pilates • Fisioterapia • Bem estar ✨ Transformando vidas através do Pilates 📍Francisco Senger 69 Parque São Bento. Itapetininga SP 💍",
+        "attendance": null,
+        "instagram": "https://www.instagram.com/anapaulasouzad_/",
+        "linkedin": null,
+        "photoUrl": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20232457.png",
+        "isClaimed": false,
+        "ownerUserId": null,
+        "createdAt": null,
+        "updatedAt": null
+      },
+      "warnings": [],
+      "errors": [],
+      "action": "queued"
+    }
+  ]
+}

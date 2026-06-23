@@ -90,6 +90,9 @@ def main():
     else:
         raise SystemExit(f"Unsupported spreadsheet format: {input_path.suffix}")
 
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
     json.dump(
         {
             "filePath": str(input_path),

@@ -38,6 +38,19 @@ const PROFILE_FIELDS = [
   "updatedAt",
 ];
 
+function repairMojibake(value) {
+  const text = String(value ?? "");
+  if (!text) return text;
+  if (!/[Ãâð]/.test(text)) return text;
+
+  try {
+    const repaired = Buffer.from(text, "latin1").toString("utf8");
+    return repaired.includes("\uFFFD") ? text : repaired;
+  } catch (_) {
+    return text;
+  }
+}
+
 function parseArgs(argv) {
   const args = {
     filePath: null,
@@ -81,7 +94,7 @@ function normalizeLoose(value) {
 }
 
 function cleanText(value) {
-  const text = String(value ?? "")
+  const text = repairMojibake(String(value ?? ""))
     .replace(/\u00a0/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -282,10 +295,43 @@ function splitUrlsByType(urls) {
 }
 
 function isCompletelyEmptyRow(values) {
-  return Object.values(values || {}).every((value) => !cleanText(value));
+  const entries = Object.entries(values || {});
+  const meaningful = entries.filter(([key, value]) => {
+    const normalizedKey = normalizeHeader(key);
+    const text = cleanText(value);
+    if (!text) return false;
+    if (normalizedKey === "isclaimed" && normalizeLoose(text).includes("falseforimportedprofiles")) {
+      return false;
+    }
+    if ((normalizedKey === "createdat" || normalizedKey === "updatedat") && /^auto$/i.test(text)) {
+      return false;
+    }
+    return true;
+  });
+
+  return meaningful.length === 0;
 }
 
-function buildNormalizedRecord(row, headerMap) {
+async function loadReferenceCities() {
+  const profiles = await prisma.profile.findMany({
+    select: { city: true },
+    take: 5000,
+    orderBy: { updatedAt: "desc" },
+  });
+
+  return [...new Set(profiles.map((profile) => cleanText(profile.city)).filter(Boolean))];
+}
+
+function inferCityFromText(text, knownCities) {
+  const haystack = normalizeLoose(text);
+  if (!haystack) return null;
+  for (const city of knownCities) {
+    if (haystack.includes(normalizeLoose(city))) return city;
+  }
+  return null;
+}
+
+function buildNormalizedRecord(row, headerMap, referenceData) {
   const cells = row.cells || {};
   const warnings = [];
   const errors = [];
@@ -303,7 +349,9 @@ function buildNormalizedRecord(row, headerMap) {
   const id = normalizeNullishText(record.id);
   const name = normalizeNullishText(record.name) || humanizeNameFromId(id);
   const specialty = normalizeNullishText(record.specialty);
-  const city = normalizeNullishText(record.city);
+  const city =
+    normalizeNullishText(record.city) ||
+    inferCityFromText(`${record.bio || ""} ${record.attendance || ""} ${record.neighborhood || ""}`, referenceData.knownCities);
   const neighborhood = normalizeNullishText(record.neighborhood);
   const attendance = normalizeNullishText(record.attendance);
   const bio = normalizeNullishText(record.bio);
@@ -427,12 +475,16 @@ async function main() {
   const filePath = path.resolve(args.filePath);
   const extracted = extractRowsFromSpreadsheet(filePath);
   const headerMap = buildHeaderMap(extracted.headers);
+  const referenceData = {
+    knownCities: await loadReferenceCities(),
+  };
 
   const report = {
     filePath,
     importedAt: new Date().toISOString(),
     dryRun: args.dryRun,
     totalProfilesFound: 0,
+    skippedEmptyRows: 0,
     importedProfiles: 0,
     updatedProfiles: 0,
     skippedProfiles: 0,
@@ -446,10 +498,13 @@ async function main() {
   const rowsById = new Map();
 
   for (const row of extracted.rows) {
-    if (isCompletelyEmptyRow(row.cells)) continue;
+    if (isCompletelyEmptyRow(row.cells)) {
+      report.skippedEmptyRows += 1;
+      continue;
+    }
     report.totalProfilesFound += 1;
 
-    const parsed = buildNormalizedRecord(row, headerMap);
+    const parsed = buildNormalizedRecord(row, headerMap, referenceData);
     report.urlsDetected.push(
       ...parsed.urlsDetected.map((url) => ({ rowNumber: row.rowNumber, sheet: row.sheet, url }))
     );
@@ -568,6 +623,7 @@ async function main() {
       {
         summary: {
           totalProfilesFound: report.totalProfilesFound,
+          skippedEmptyRows: report.skippedEmptyRows,
           importedProfiles: report.importedProfiles,
           updatedProfiles: report.updatedProfiles,
           skippedProfiles: report.skippedProfiles,
