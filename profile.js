@@ -410,28 +410,75 @@ function renderReviewsDrawer(profissional, isOwner) {
   `;
 }
 
-function getGalleryPhotos(entity) {
-  const explicitList = Array.isArray(entity?.photosList)
-    ? entity.photosList
-    : Array.isArray(entity?.photos)
-      ? entity.photos
-      : [];
+function getProfileImageUrl(photo) {
+  const normalized = String(photo || '').trim();
+  if (!normalized) return '';
+
+  if (/^https?:\/\//i.test(normalized)) {
+    return normalized;
+  }
+
+  const client = window.supabaseClient || (typeof window.initializePhysioSupabaseClient === 'function'
+    ? window.initializePhysioSupabaseClient()
+    : null);
+
+  if (client?.storage?.from) {
+    const { data } = client.storage.from('profile-images').getPublicUrl(normalized);
+    return data?.publicUrl || '';
+  }
+
+  const baseUrl = (window.PHYSIO_SUPABASE_URL || 'https://epptihpvgwzrodfsukpr.supabase.co').replace(/\/$/, '');
+  const safePath = normalized
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+  return `${baseUrl}/storage/v1/object/public/profile-images/${safePath}`;
+}
+
+function normalizePhotos(value) {
+  if (!value) return [];
+
+  const rawValues = Array.isArray(value)
+    ? value
+    : (() => {
+        if (typeof value === 'string') {
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [value];
+          } catch {
+            return value ? [value] : [];
+          }
+        }
+
+        return [];
+      })();
 
   const seen = new Set();
 
-  return explicitList
-    .map((value) => String(value || '').trim())
+  return rawValues
+    .map((item) => getProfileImageUrl(item))
     .filter(Boolean)
-    .filter((value) => {
-      const key = value.toLowerCase();
+    .filter((item) => {
+      const key = item.toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
 }
 
+function getGalleryPhotos(entity) {
+  const source = (Array.isArray(entity?.photosList) && entity.photosList.length ? entity.photosList : null)
+    ?? (Array.isArray(entity?.photos) && entity.photos.length ? entity.photos : null)
+    ?? entity?.photos
+    ?? entity?.fotos
+    ?? [];
+
+  return normalizePhotos(source);
+}
+
 function renderProfileGallerySection(entity) {
   const photos = getGalleryPhotos(entity);
+  console.log('Normalized public gallery photos:', photos);
   if (!photos.length) return '';
 
   return `

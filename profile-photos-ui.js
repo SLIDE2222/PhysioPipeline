@@ -250,6 +250,7 @@
         console.log('File name:', file?.name || '');
 
         const objectPath = buildStoragePath(profileId, file);
+        console.log('Uploaded photo path:', objectPath);
         const contentType = normalizeImageMimeType(file);
 
         console.log('Normalized content type:', contentType);

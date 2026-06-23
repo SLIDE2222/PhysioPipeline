@@ -523,6 +523,26 @@
     }
   }
 
+  function buildProfilePhotoPublicUrl(value) {
+    const normalized = String(value || '').replace(/\s+/g, ' ').trim();
+    if (!normalized) return '';
+
+    try {
+      const parsed = new URL(normalized);
+      if (!/^https?:$/i.test(parsed.protocol)) return '';
+      const fullPath = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+      if (!/\.(jpg|jpeg|png|webp)(\?.*)?(#.*)?$/i.test(fullPath)) return '';
+      return normalized;
+    } catch (_) {
+      if (!/\.(jpg|jpeg|png|webp)(\?.*)?(#.*)?$/i.test(normalized)) return '';
+      const safePath = normalized
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+      return `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/profile-images/${safePath}`;
+    }
+  }
+
   function normalizeProfilePhotosList(value) {
     const rawValues = Array.isArray(value)
       ? value
@@ -530,18 +550,9 @@
     const seen = new Set();
 
     return rawValues
-      .map((item) => String(item || '').replace(/\s+/g, ' ').trim())
+      .map((item) => buildProfilePhotoPublicUrl(item))
       .filter(Boolean)
       .filter((item) => {
-        try {
-          const parsed = new URL(item);
-          if (!/^https?:$/i.test(parsed.protocol)) return false;
-          const fullPath = `${parsed.pathname}${parsed.search}${parsed.hash}`;
-          if (!/\.(jpg|jpeg|png|webp)(\?.*)?(#.*)?$/i.test(fullPath)) return false;
-        } catch (_) {
-          return false;
-        }
-
         const key = item.toLowerCase();
         if (seen.has(key)) return false;
         seen.add(key);
@@ -1083,6 +1094,8 @@
     async fetchProfile(id) {
       try {
         const profile = await fetchPublicProfileFromSupabase(id);
+        console.log('Fetched public profile:', profile);
+        console.log('Fetched public profile photos:', profile?.photos);
         if (profile) {
           try {
             const backendData = await request(`/profiles/${id}`, { timeoutMs: 5000 });

@@ -388,9 +388,9 @@ if (editarForm) {
       if (submitBtn) submitBtn.disabled = false;
       return;
     }
-
     try {
-      const profile = await window.physioApi.updateMyProfile({
+      const photos = profilePhotoValidation?.value || profilePhotosEditor?.getValue?.() || [];
+      const payload = {
         name: document.getElementById('nomeCompleto').value.trim() || null,
         phone: document.getElementById('telefone').value.trim() || null,
         city: document.getElementById('editarCidade')?.value.trim() || null,
@@ -402,9 +402,14 @@ if (editarForm) {
         instagram: document.getElementById('instagram').value.trim() || null,
         linkedin: document.getElementById('linkedin').value.trim() || null,
         photoUrl: fotoBase64 || null,
-        photos: profilePhotoValidation?.value || profilePhotosEditor?.getValue?.() || [],
+        photos,
         bio: document.getElementById('descricao').value.trim() || null,
-      });
+      };
+
+      console.log('Photos being saved:', photos);
+      console.log('Profile update payload:', payload);
+
+      const profile = await window.physioApi.updateMyProfile(payload);
 
       editarMensagem.textContent = 'Perfil atualizado com sucesso!';
       editarMensagem.style.color = '#166534';

@@ -318,7 +318,9 @@ export async function getProfile(req, res) {
   if (!profile) {
     return res.status(404).json({ message: "Perfil não encontrado." });
   }
-  return res.json({ profile: decorateProfile(profile) });
+  const decoratedProfile = decorateProfile(profile);
+  console.log("Profile photos returned:", decoratedProfile?.photos);
+  return res.json({ profile: decoratedProfile });
 }
 
 export async function getMyProfile(req, res) {
