@@ -1,0 +1,96 @@
+{
+  "filePath": "C:\\Users\\Jeffrey Walker\\Downloads\\Untitled spreadsheet - Sheet1.csv",
+  "importedAt": "2026-06-23T02:08:07.452Z",
+  "dryRun": true,
+  "totalProfilesFound": 1,
+  "importedProfiles": 1,
+  "updatedProfiles": 0,
+  "skippedProfiles": 0,
+  "validationErrors": [],
+  "urlsDetected": [
+    {
+      "rowNumber": 2,
+      "sheet": "Untitled spreadsheet - Sheet1",
+      "url": "https://www.instagram.com/fisio.samantadepaula/"
+    },
+    {
+      "rowNumber": 2,
+      "sheet": "Untitled spreadsheet - Sheet1",
+      "url": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20223050.png"
+    },
+    {
+      "rowNumber": 2,
+      "sheet": "Untitled spreadsheet - Sheet1",
+      "url": "https://www.instagram.com/fisio.samantadepaula/https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20223050.pngAutoAuto"
+    }
+  ],
+  "urlsRejected": [],
+  "finalSavedProfileObjects": [
+    {
+      "id": "fisio-samantadepaula",
+      "name": "Samantadepaula",
+      "specialty": "Instrutora de Pilates",
+      "secondarySpecialty": null,
+      "tertiarySpecialty": null,
+      "city": "Itapetininga",
+      "neighborhood": null,
+      "phone": "5515981234833",
+      "bio": "Fisioterapeuta Crefito 3: 448256-F Instrutora de Pilates @espacoinspirejaine Atendimento Domiciliar - Itapetininga/SP",
+      "attendance": null,
+      "instagram": "https://www.instagram.com/fisio.samantadepaula/",
+      "linkedin": null,
+      "photoUrl": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20223050.png",
+      "isClaimed": false,
+      "ownerUserId": null,
+      "createdAt": null,
+      "updatedAt": null
+    }
+  ],
+  "rows": [
+    {
+      "sheet": "Untitled spreadsheet - Sheet1",
+      "rowNumber": 2,
+      "original": {
+        "id": "fisio-samantadepaula",
+        "name": "",
+        "specialty": "Instrutora de Pilates",
+        "city": "Itapetininga",
+        "isClaimed": "(FALSE for imported profiles)",
+        "neighborhood": "",
+        "phone": "(15) 98123-4833",
+        "bio": "Fisioterapeuta Crefito 3: 448256-F Instrutora de Pilates @espacoinspirejaine Atendimento Domiciliar - Itapetininga/SP",
+        "instagram": "https://www.instagram.com/fisio.samantadepaula/",
+        "linkedin": "",
+        "photoUrl": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20223050.png",
+        "attendance": "",
+        "ownerUserId": "",
+        "secondarySpecialty": "",
+        "tertiarySpecialty": "",
+        "createdAt": "Auto",
+        "updatedAt": "Auto"
+      },
+      "normalized": {
+        "id": "fisio-samantadepaula",
+        "name": "Samantadepaula",
+        "specialty": "Instrutora de Pilates",
+        "secondarySpecialty": null,
+        "tertiarySpecialty": null,
+        "city": "Itapetininga",
+        "neighborhood": null,
+        "phone": "5515981234833",
+        "bio": "Fisioterapeuta Crefito 3: 448256-F Instrutora de Pilates @espacoinspirejaine Atendimento Domiciliar - Itapetininga/SP",
+        "attendance": null,
+        "instagram": "https://www.instagram.com/fisio.samantadepaula/",
+        "linkedin": null,
+        "photoUrl": "https://epptihpvgwzrodfsukpr.supabase.co/storage/v1/object/public/profile-images/Screenshot%202026-06-22%20223050.png",
+        "isClaimed": false,
+        "ownerUserId": null,
+        "createdAt": null,
+        "updatedAt": null
+      },
+      "warnings": [],
+      "errors": [],
+      "action": "queued"
+    }
+  ]
+}
