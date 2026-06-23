@@ -1001,7 +1001,7 @@ function openReviewReportModal({ reviewId, onSubmit }) {
       closeModal();
     } catch (error) {
       console.error('Could not report review:', error);
-      messageField.textContent = 'N\u00e3o foi poss\u00edvel enviar o reporte agora. Tente novamente em alguns instantes.';
+      messageField.textContent = error?.message || 'Não foi possível enviar o reporte agora. Tente novamente em alguns instantes.';
       messageField.style.color = '#b91c1c';
       submitButton.disabled = false;
       reasonField.disabled = false;
@@ -1028,12 +1028,25 @@ function setupReviewReportButtons(profileId, isOwner) {
           button.textContent = 'Reportando...';
 
           try {
+            console.log('Profile review report request', {
+              reviewId: button.dataset.reportReview,
+              reasonLength: reason.length,
+            });
             const response = await window.physioApi.reportProfileReview(button.dataset.reportReview, reason);
             showProfileToast(
-              response?.message || 'Reporte enviado com sucesso. Obrigado por ajudar na modera\u00e7\u00e3o.',
+              response?.message || 'Reporte enviado com sucesso. Obrigado por ajudar na moderação.',
               response?.emailSent === false ? 'info' : 'success'
             );
             await refreshProfileReviews(profileId, true);
+          } catch (error) {
+            console.error('Profile review report request failed:', {
+              reviewId: button.dataset.reportReview,
+              status: error?.status,
+              message: error?.message,
+              data: error?.data,
+              responseText: error?.responseText,
+            });
+            throw error;
           } finally {
             button.disabled = false;
             button.textContent = originalLabel;

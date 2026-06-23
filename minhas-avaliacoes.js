@@ -156,7 +156,7 @@ function openMyReviewReportModal({ onSubmit }) {
       closeModal();
     } catch (error) {
       console.error('My review report failed:', error);
-      messageField.textContent = 'N\u00e3o foi poss\u00edvel enviar o reporte agora. Tente novamente em alguns instantes.';
+      messageField.textContent = error?.message || 'Não foi possível enviar o reporte agora. Tente novamente em alguns instantes.';
       messageField.style.color = '#b91c1c';
       submitButton.disabled = false;
       reasonField.disabled = false;
@@ -179,15 +179,25 @@ document.addEventListener("click", async (event) => {
       onSubmit: async (reason) => {
         reportButton.disabled = true;
         try {
+          console.log('My reviews report request', {
+            reviewId: reportButton.dataset.ownerReportReview,
+            reasonLength: reason.length,
+          });
           const response = await window.physioApi.reportProfileReview(reportButton.dataset.ownerReportReview, reason);
           setMyReviewsMessage(
-            response?.message || "Reporte enviado com sucesso. Obrigado por ajudar na modera\u00e7\u00e3o.",
+            response?.message || "Reporte enviado com sucesso. Obrigado por ajudar na moderação.",
             response?.emailSent === false ? "error" : "success"
           );
           await loadMyReviews();
         } catch (error) {
-          console.error("My review report failed:", error);
-          setMyReviewsMessage("N\u00e3o foi poss\u00edvel enviar o reporte agora. Tente novamente em alguns instantes.", "error");
+          console.error("My review report failed:", {
+            reviewId: reportButton.dataset.ownerReportReview,
+            status: error?.status,
+            message: error?.message,
+            data: error?.data,
+            responseText: error?.responseText,
+          });
+          setMyReviewsMessage(error?.message || "Não foi possível enviar o reporte agora. Tente novamente em alguns instantes.", "error");
           throw error;
         } finally {
           reportButton.disabled = false;

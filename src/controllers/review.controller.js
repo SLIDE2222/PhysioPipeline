@@ -29,7 +29,7 @@ const createReviewSchema = z.object({
 });
 
 const reportReviewSchema = z.object({
-  reason: z.string().min(5, "Descreva o motivo do reporte.").max(1000, "Motivo muito longo."),
+  reason: z.string().trim().min(1, "Informe o motivo do reporte.").max(1000, "Motivo muito longo."),
 });
 
 function cleanOptionalString(value, maxLength = 4000) {
@@ -487,21 +487,42 @@ export async function rejectOwnReview(req, res) {
 
 export async function reportReview(req, res) {
   ensureUtf8Json(res);
+  console.log("Review report request received", {
+    method: req.method,
+    path: req.originalUrl,
+    reviewId: req.params.reviewId || null,
+    requesterUserId: req.user?.userId || null,
+    body: {
+      reasonLength: String(req.body?.reason || "").trim().length,
+    },
+  });
+
   try {
     const { user, profile } = await resolveOwnedPhysioProfile(req.user?.userId);
     const parsed = reportReviewSchema.safeParse(req.body);
 
     if (!parsed.success) {
+      console.warn("Review report validation failed", {
+        reviewId: req.params.reviewId || null,
+        requesterUserId: req.user?.userId || null,
+        errors: parsed.error.flatten(),
+      });
       return res.status(400).json({
-        message: "Dados do reporte invÃ¡lidos.",
+        message: parsed.error.issues?.[0]?.message || "Dados do reporte inválidos.",
         errors: parsed.error.flatten(),
       });
     }
 
+    console.log("Review report validation passed", {
+      reviewId: req.params.reviewId || null,
+      requesterUserId: req.user?.userId || null,
+      ownerProfileId: profile.id,
+    });
+
     const review = await fetchReviewWithProfile(req.params.reviewId);
 
     if (!review || review.profileId !== profile.id) {
-      return res.status(404).json({ message: "Review nÃ£o encontrada para este perfil." });
+      return res.status(404).json({ message: "Review não encontrada para este perfil." });
     }
 
     const currentStatus = String(review.status || "").trim().toLowerCase();
@@ -512,7 +533,15 @@ export async function reportReview(req, res) {
     }
 
     const reportReason = cleanOptionalString(parsed.data.reason, 1000);
-    const updated = await prisma.profileReview.update({
+    console.log("Saving review report", {
+      reviewId: review.id,
+      profileId: review.profileId,
+      requesterUserId: user.id,
+      currentStatus,
+      reportReasonLength: reportReason?.length || 0,
+    });
+
+    const updatedReview = await prisma.profileReview.update({
       where: { id: review.id },
       data: {
         status: "reported",
@@ -536,7 +565,14 @@ export async function reportReview(req, res) {
       },
     });
 
-    const reportedAt = updated.reportedAt || new Date();
+    console.log("Review report saved", {
+      reviewId: updatedReview.id,
+      profileId: updatedReview.profileId,
+      status: updatedReview.status,
+      reportedAt: updatedReview.reportedAt?.toISOString?.() || null,
+    });
+
+    const reportedAt = updatedReview.reportedAt || new Date();
     const clientBaseUrl =
       process.env.CLIENT_URL || process.env.PUBLIC_APP_URL || mailConfig.clientUrl || "";
     const normalizedClientBaseUrl = String(clientBaseUrl || "").replace(/\/+$/, "");
@@ -552,18 +588,18 @@ export async function reportReview(req, res) {
       sender: mailConfig.user,
       to: REVIEW_REPORT_EMAIL,
       replyTo: user.email || mailConfig.user,
-      subject: "Report from avalia\u00e7\u00e3o",
+      subject: "Report from avaliação",
       text: [
-        "Novo reporte de avaliaÃ§Ã£o recebido.",
+        "Novo reporte de avaliação recebido.",
         "",
-        `Review ID: ${updated.id}`,
-        `Profile ID: ${updated.profileId}`,
-        `Profile owner/user ID: ${updated.profile?.ownerUserId || profile.ownerUserId || user.id || "-"}`,
-        `Reviewer name: ${updated.authorName || "-"}`,
-        `Reviewer email: ${updated.authorEmail || "-"}`,
-        `Rating: ${Number(updated.rating || 0) || 0}`,
-        `Review title: ${updated.title || "-"}`,
-        `Review comment: ${updated.body || "-"}`,
+        `Review ID: ${updatedReview.id}`,
+        `Profile ID: ${updatedReview.profileId}`,
+        `Profile owner/user ID: ${updatedReview.profile?.ownerUserId || profile.ownerUserId || user.id || "-"}`,
+        `Reviewer name: ${updatedReview.authorName || "-"}`,
+        `Reviewer email: ${updatedReview.authorEmail || "-"}`,
+        `Rating: ${Number(updatedReview.rating || 0) || 0}`,
+        `Review title: ${updatedReview.title || "-"}`,
+        `Review comment: ${updatedReview.body || "-"}`,
         `Report reason: ${reportReason || "-"}`,
         `Reported at: ${reportedAt.toISOString()}`,
         `Admin reported reviews page: ${adminReportedReviewsUrl || "-"}`,
@@ -571,15 +607,15 @@ export async function reportReview(req, res) {
       ].join("\n"),
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.6">
-          <h2>Novo reporte de avaliaÃ§Ã£o recebido</h2>
-          <p><strong>Review ID:</strong> ${updated.id}</p>
-          <p><strong>Profile ID:</strong> ${updated.profileId}</p>
-          <p><strong>Profile owner/user ID:</strong> ${updated.profile?.ownerUserId || profile.ownerUserId || user.id || "-"}</p>
-          <p><strong>Reviewer name:</strong> ${updated.authorName || "-"}</p>
-          <p><strong>Reviewer email:</strong> ${updated.authorEmail || "-"}</p>
-          <p><strong>Rating:</strong> ${Number(updated.rating || 0) || 0}</p>
-          <p><strong>Review title:</strong> ${updated.title || "-"}</p>
-          <p><strong>Review comment:</strong><br>${String(updated.body || "-").replace(/\n/g, "<br>")}</p>
+          <h2>Novo reporte de avaliação recebido</h2>
+          <p><strong>Review ID:</strong> ${updatedReview.id}</p>
+          <p><strong>Profile ID:</strong> ${updatedReview.profileId}</p>
+          <p><strong>Profile owner/user ID:</strong> ${updatedReview.profile?.ownerUserId || profile.ownerUserId || user.id || "-"}</p>
+          <p><strong>Reviewer name:</strong> ${updatedReview.authorName || "-"}</p>
+          <p><strong>Reviewer email:</strong> ${updatedReview.authorEmail || "-"}</p>
+          <p><strong>Rating:</strong> ${Number(updatedReview.rating || 0) || 0}</p>
+          <p><strong>Review title:</strong> ${updatedReview.title || "-"}</p>
+          <p><strong>Review comment:</strong><br>${String(updatedReview.body || "-").replace(/\n/g, "<br>")}</p>
           <p><strong>Report reason:</strong><br>${String(reportReason || "-").replace(/\n/g, "<br>")}</p>
           <p><strong>Reported at:</strong> ${reportedAt.toISOString()}</p>
           ${adminReportedReviewsUrl ? `<p><strong>Admin reported reviews page:</strong> <a href="${adminReportedReviewsUrl}">${adminReportedReviewsUrl}</a></p>` : ""}
@@ -592,43 +628,41 @@ export async function reportReview(req, res) {
     let emailErrorMessage = null;
 
     try {
-      console.log("Review report email queued/sending", {
-        reviewId: updated.id,
-        profileId: updated.profileId,
+      console.log("Sending review report email", {
+        reviewId: updatedReview.id,
+        profileId: updatedReview.profileId,
         recipient: REVIEW_REPORT_EMAIL,
         reportedAt: reportedAt.toISOString(),
       });
       await sendMailOrThrow(reviewEmailPayload);
       emailSent = true;
       console.log("Review report email sent", {
-        reviewId: updated.id,
+        reviewId: updatedReview.id,
         recipient: REVIEW_REPORT_EMAIL,
       });
     } catch (mailError) {
       emailErrorMessage = mailError?.message || "Unknown email error";
-      console.error("Review report email failed", {
-        reviewId: updated.id,
-        recipient: REVIEW_REPORT_EMAIL,
-        error: emailErrorMessage,
-      });
+      console.error("Review report email failed", mailError?.stack || mailError);
     }
 
     return res.json({
-      review: serializeReview(updated, {
+      review: serializeReview(updatedReview, {
         includePrivateFields: true,
         includeModerationFields: true,
       }),
       emailSent,
       emailError: emailErrorMessage,
       message: emailSent
-        ? "Reporte enviado com sucesso. Obrigado por ajudar na moderaÃ§Ã£o."
-        : "Reporte salvo com sucesso, mas a notificaÃ§Ã£o por e-mail falhou.",
+        ? "Reporte enviado com sucesso. Obrigado por ajudar na moderação."
+        : "Reporte salvo com sucesso, mas a notificação por e-mail falhou.",
     });
   } catch (error) {
-    console.error("Review report route failed before saving:", error);
-    return res.status(500).json({
-      message: "NÃ£o foi possÃ­vel enviar o reporte agora. Tente novamente em alguns instantes.",
-    });
+    console.error("Review report route failed", error?.stack || error);
+    return sendReviewControllerError(
+      res,
+      error,
+      "Não foi possível enviar o reporte agora. Tente novamente em alguns instantes."
+    );
   }
 }
 
