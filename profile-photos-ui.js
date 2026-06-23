@@ -53,6 +53,22 @@
     return Boolean(getFileExtension(file));
   }
 
+  function normalizeImageMimeType(file) {
+    const name = file?.name?.toLowerCase() || '';
+    const type = file?.type || '';
+
+    if (type === 'image/jpg') return 'image/jpeg';
+    if (type === 'image/jpeg') return 'image/jpeg';
+    if (type === 'image/png') return 'image/png';
+    if (type === 'image/webp') return 'image/webp';
+
+    if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+    if (name.endsWith('.png')) return 'image/png';
+    if (name.endsWith('.webp')) return 'image/webp';
+
+    return '';
+  }
+
   function sanitizeFileName(fileName) {
     const base = String(fileName || 'foto')
       .normalize('NFD')
@@ -229,13 +245,27 @@
       render();
 
       try {
+        console.log('Selected file:', file);
+        console.log('Original file type:', file?.type || '');
+        console.log('File name:', file?.name || '');
+
         const objectPath = buildStoragePath(profileId, file);
+        const contentType = normalizeImageMimeType(file);
+
+        console.log('Normalized content type:', contentType);
+
+        if (!contentType) {
+          throw new Error('Envie uma imagem v?lida nos formatos JPG, PNG ou WEBP.');
+        }
+
+        console.log('Uploading photo with Supabase Storage');
+
         const uploadResult = await supabaseClient.storage
           .from(BUCKET_NAME)
           .upload(objectPath, file, {
             cacheControl: '3600',
-            upsert: false,
-            contentType: file.type || undefined,
+            upsert: true,
+            contentType,
           });
 
         if (uploadResult.error) {
@@ -247,6 +277,7 @@
           .getPublicUrl(objectPath);
 
         const publicUrl = publicUrlResult?.data?.publicUrl || '';
+        console.log('Uploaded photo URL:', publicUrl);
         if (!publicUrl || !isValidImageUrl(publicUrl)) {
           throw new Error('Não foi possível gerar a URL pública da imagem enviada.');
         }
@@ -254,6 +285,7 @@
         const nextValues = getValue();
         nextValues[index] = publicUrl;
         values = nextValues.filter(Boolean).slice(0, MAX_PROFILE_PHOTOS);
+        console.log('Saving profile photos:', values);
         setMessage('Foto enviada com sucesso.', 'success');
       } catch (error) {
         console.error('Profile photo upload failed:', error);
