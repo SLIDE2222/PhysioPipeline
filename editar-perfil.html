@@ -141,6 +141,18 @@
           <label for="descricao">Sobre voc&ecirc;</label>
           <textarea id="descricao" name="descricao" rows="5" placeholder="Fale brevemente sobre sua atua&ccedil;&atilde;o..."></textarea>
 
+                    <section class="profile-photos-section">
+            <div class="profile-photos-section__header">
+              <label>Fotos do perfil</label>
+              <p class="form-hint">Adicione até 5 fotos para deixar seu perfil mais completo e confiável.</p>
+            </div>
+            <div class="profile-photos-editor" id="profilePhotosList"></div>
+            <div class="profile-photos-editor__actions">
+              <button type="button" class="btn btn-outline" id="addProfilePhotoButton">+ Adicionar foto</button>
+              <p class="form-hint" id="profilePhotosMessage" aria-live="polite"></p>
+            </div>
+          </section>
+
           <section class="clinic-team-section" id="profileClinicLinksSection">
             <div class="clinic-team-section__header">
               <label>Solicitações de vínculo com clínicas</label>
@@ -166,6 +178,7 @@
  <script src="account-types.js?v=accounttype1"></script>
  <script src="api.js?v=rankedfallback2"></script>
   <script src="image-cropper.js?v=imagecrop1"></script>
+  <script src="profile-photos-ui.js?v=profilephotos1"></script>
   <script src="search-taxonomy.generated.js?v=taxonomy2"></script>
   <script src="search-taxonomy.js?v=taxonomy2"></script>
   <script src="js/notifications.js?v=notifshared1"></script>

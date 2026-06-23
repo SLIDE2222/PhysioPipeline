@@ -2,6 +2,9 @@
 import { prisma } from "../lib/prisma.js";
 import { ACCOUNT_TYPES, normalizeAccountType } from "../constants/account-types.js";
 
+const MAX_PROFILE_PHOTOS = 5;
+const VALID_IMAGE_URL_PATTERN = /^https?:\/\/.+\.(jpg|jpeg|png|webp)(\?.*)?(#.*)?$/i;
+
 const createProfileSchema = z.object({
   name: z.string().min(2),
   specialty: z.string().min(2),
@@ -14,6 +17,7 @@ const createProfileSchema = z.object({
   instagram: z.string().url().optional().or(z.literal("")).nullable(),
   linkedin: z.string().url().optional().or(z.literal("")).nullable(),
   photoUrl: z.string().optional().or(z.literal("")).nullable(),
+  photos: z.array(z.string().url()).max(MAX_PROFILE_PHOTOS).optional().nullable(),
   publicEmail: z.string().email().optional().or(z.literal("")).nullable(),
   attendance: z.string().optional().nullable(),
 });
@@ -21,6 +25,46 @@ const createProfileSchema = z.object({
 function clean(value) {
   if (value === "") return null;
   return value ?? null;
+}
+
+function isValidImageUrl(value) {
+  const normalized = String(value || "").trim();
+  return VALID_IMAGE_URL_PATTERN.test(normalized);
+}
+
+function normalizeProfilePhotos(value) {
+  const rawValues = Array.isArray(value)
+    ? value
+    : (() => {
+        if (typeof value === "string") {
+          try {
+            const parsed = JSON.parse(value);
+            if (Array.isArray(parsed)) return parsed;
+          } catch (_) {
+            return value.split(/[\n,|]/);
+          }
+        }
+
+        return [];
+      })();
+  const seen = new Set();
+
+  return rawValues
+    .map((item) => String(item || "").replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .filter((item) => isValidImageUrl(item))
+    .filter((item) => {
+      const key = item.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, MAX_PROFILE_PHOTOS);
+}
+
+function serializeProfilePhotos(value) {
+  const photos = normalizeProfilePhotos(value);
+  return photos.length ? JSON.stringify(photos) : null;
 }
 
 function cleanOption(value, maxLength = 160) {
@@ -171,6 +215,8 @@ function decorateProfile(profile) {
 
   return {
     ...profile,
+    photos: profile.photos ?? null,
+    photosList: normalizeProfilePhotos(profile.photos),
     linkedClinics,
   };
 }
@@ -335,6 +381,7 @@ export async function createProfile(req, res) {
       instagram: clean(parsed.data.instagram),
       linkedin: clean(parsed.data.linkedin),
       photoUrl: clean(parsed.data.photoUrl),
+      photos: serializeProfilePhotos(parsed.data.photos),
       publicEmail: clean(parsed.data.publicEmail) || user.email || null,
       attendance: clean(parsed.data.attendance),
       ownerUserId: req.user.userId,
@@ -397,6 +444,7 @@ export async function updateMyProfile(req, res) {
       ...(parsed.data.instagram !== undefined ? { instagram: clean(parsed.data.instagram) } : {}),
       ...(parsed.data.linkedin !== undefined ? { linkedin: clean(parsed.data.linkedin) } : {}),
       ...(parsed.data.photoUrl !== undefined ? { photoUrl: clean(parsed.data.photoUrl) } : {}),
+      ...(parsed.data.photos !== undefined ? { photos: serializeProfilePhotos(parsed.data.photos) } : {}),
       ...(parsed.data.publicEmail !== undefined
         ? { publicEmail: clean(parsed.data.publicEmail) }
         : {}),

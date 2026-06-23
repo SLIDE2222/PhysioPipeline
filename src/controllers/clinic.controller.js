@@ -4,6 +4,8 @@ import { ACCOUNT_TYPES, normalizeAccountType } from "../constants/account-types.
 
 const MAX_CLINIC_TEAM = 5;
 const MAX_SERVICE_TAGS = 20;
+const MAX_PROFILE_PHOTOS = 5;
+const VALID_IMAGE_URL_PATTERN = /^https?:\/\/.+\.(jpg|jpeg|png|webp)(\?.*)?(#.*)?$/i;
 
 const clinicTeamMemberSchema = z.object({
   name: z.string().min(2).max(160),
@@ -27,6 +29,7 @@ const clinicProfileSchema = z.object({
     .optional()
     .nullable(),
   logoUrl: z.string().optional().or(z.literal("")).nullable(),
+  photos: z.array(z.string().url()).max(MAX_PROFILE_PHOTOS).optional().nullable(),
   description: z.string().max(2000).optional().nullable(),
 });
 
@@ -95,6 +98,35 @@ function parseJsonArray(value) {
   } catch (_) {
     return null;
   }
+}
+
+function isValidImageUrl(value) {
+  const normalized = String(value || "").trim();
+  return VALID_IMAGE_URL_PATTERN.test(normalized);
+}
+
+function normalizeProfilePhotos(value) {
+  const rawValues = Array.isArray(value)
+    ? value
+    : parseJsonArray(value) || String(value || "").split(/[\n,|]/);
+  const seen = new Set();
+
+  return rawValues
+    .map((item) => String(item || "").replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .filter((item) => isValidImageUrl(item))
+    .filter((item) => {
+      const key = item.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, MAX_PROFILE_PHOTOS);
+}
+
+function serializeProfilePhotos(value) {
+  const photos = normalizeProfilePhotos(value);
+  return photos.length ? JSON.stringify(photos) : null;
 }
 
 // Clinic services are stored as a serialized list for backward compatibility.
@@ -202,6 +234,8 @@ function decorateClinicProfile(profile) {
     servicesList,
     physioTeam: profile.physioTeam ?? null,
     physioTeamList,
+    photos: profile.photos ?? null,
+    photosList: normalizeProfilePhotos(profile.photos),
     linkedPhysiotherapists,
     isClaimable: typeof profile.isClaimable === "boolean" ? profile.isClaimable : !profile.userId,
   };
@@ -738,6 +772,7 @@ export async function upsertMyClinicProfile(req, res) {
       services: serializeClinicServices(parsed.data.services),
       physioTeam: serializeClinicTeam(parsed.data.physioTeam),
       logoUrl: clean(parsed.data.logoUrl),
+      photos: serializeProfilePhotos(parsed.data.photos),
       description: clean(parsed.data.description),
     };
 

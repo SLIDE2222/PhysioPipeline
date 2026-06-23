@@ -319,6 +319,13 @@ if (clinicDashboardForm) {
     if (submitBtn) submitBtn.disabled = true;
     setClinicMessage('', '#166534');
 
+    const photoValidation = clinicPhotosEditor?.validate?.();
+    if (photoValidation && !photoValidation.valid) {
+      setClinicMessage(photoValidation.message, '#b91c1c');
+      if (submitBtn) submitBtn.disabled = false;
+      return;
+    }
+
     try {
       const clinicEditorValue = clinicEditor?.getValue?.() || { services: [], team: [] };
 

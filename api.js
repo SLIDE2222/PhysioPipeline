@@ -44,6 +44,7 @@
     'instagram',
     'linkedin',
     'photoUrl',
+    'photos',
     'publicEmail',
     'attendance',
     'isClaimed',
@@ -496,6 +497,9 @@
       instagram: profile.instagram ?? '',
       linkedin: profile.linkedin ?? '',
       foto: profile.photoUrl ?? profile.photo_url ?? profile.avatar_url ?? profile.foto ?? '',
+      fotos: normalizeProfilePhotosList(profile.photosList ?? profile.fotos ?? profile.photos),
+      photos: normalizeProfilePhotosList(profile.photosList ?? profile.fotos ?? profile.photos),
+      photosList: normalizeProfilePhotosList(profile.photosList ?? profile.fotos ?? profile.photos),
       email: profile.publicEmail ?? profile.email ?? '',
       atendimento: profile.attendance ?? profile.atendimento ?? '',
       isClaimed: Boolean(profile.isClaimed),
@@ -517,6 +521,33 @@
     } catch (_) {
       return null;
     }
+  }
+
+  function normalizeProfilePhotosList(value) {
+    const rawValues = Array.isArray(value)
+      ? value
+      : parseJsonArrayString(value) || String(value || '').split(/[\n,|]/);
+    const seen = new Set();
+
+    return rawValues
+      .map((item) => String(item || '').replace(/\s+/g, ' ').trim())
+      .filter(Boolean)
+      .filter((item) => {
+        try {
+          const parsed = new URL(item);
+          if (!/^https?:$/i.test(parsed.protocol)) return false;
+          const fullPath = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+          if (!/\.(jpg|jpeg|png|webp)(\?.*)?(#.*)?$/i.test(fullPath)) return false;
+        } catch (_) {
+          return false;
+        }
+
+        const key = item.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 5);
   }
 
   function normalizeClinicServicesList(value) {
@@ -600,6 +631,9 @@
       servicosLista: servicesList,
       services: clinic.services ?? clinic.servicos ?? '',
       servicesList,
+      fotos: normalizeProfilePhotosList(clinic.photosList ?? clinic.fotos ?? clinic.photos),
+      photos: normalizeProfilePhotosList(clinic.photosList ?? clinic.fotos ?? clinic.photos),
+      photosList: normalizeProfilePhotosList(clinic.photosList ?? clinic.fotos ?? clinic.photos),
       specialties: servicesList,
       especialidades: servicesList,
       fisioterapeutas: physioTeamList,
@@ -1058,6 +1092,9 @@
               ownerUserId: backendProfile?.ownerUserId || profile.ownerUserId || null,
               isClaimed: Boolean(backendProfile?.isClaimed || profile.isClaimed),
               linkedClinics: backendProfile?.linkedClinics || profile.linkedClinics || [],
+              photos: backendProfile?.photos || profile.photos || [],
+              photosList: backendProfile?.photosList || profile.photosList || [],
+              fotos: backendProfile?.fotos || profile.fotos || [],
             };
           } catch (backendError) {
             console.warn('Could not merge backend profile link data:', backendError);

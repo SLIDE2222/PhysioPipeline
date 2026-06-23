@@ -4,6 +4,11 @@ const fotoInput = document.getElementById('foto');
 const fotoPreview = document.getElementById('fotoPreview');
 const profileClinicLinkRequests = document.getElementById('profileClinicLinkRequests');
 const profileLinkedClinics = document.getElementById('profileLinkedClinics');
+const profilePhotosEditor = window.PhysioProfilePhotos?.createEditor?.({
+  listId: 'profilePhotosList',
+  addButtonId: 'addProfilePhotoButton',
+  messageId: 'profilePhotosMessage',
+});
 const VISIBLE_PROFILE_CLINIC_LINK_STATUSES = new Set(['PENDING', 'ACCEPTED']);
 
 let fotoBase64 = '';
