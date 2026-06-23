@@ -180,6 +180,7 @@ async function loadMyProfile() {
     }
 
     profilePhotosEditor?.setContext?.({ profileId: profile.id, accountType: 'physio' });
+    console.log('EDIT PROFILE PHOTOS FROM API:', profile.photos);
     profilePhotosEditor?.setValue?.(profile.photosList || profile.photos || []);
 
     return profile;
@@ -406,8 +407,9 @@ if (editarForm) {
         bio: document.getElementById('descricao').value.trim() || null,
       };
 
-      console.log('Photos being saved:', photos);
-      console.log('Profile update payload:', payload);
+      console.log('FINAL PHOTOS STATE BEFORE SAVE:', photos);
+      console.log('PHOTOS BEING SAVED:', photos);
+      console.log('PROFILE PAYLOAD WITH PHOTOS:', payload);
 
       const profile = await window.physioApi.updateMyProfile(payload);
 

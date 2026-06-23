@@ -118,6 +118,7 @@
     if (!list) return null;
 
     let values = [];
+    let previewUrls = [];
     let profileId = '';
     let uploadingSlot = -1;
     let activeSlot = -1;
@@ -138,7 +139,28 @@
       return values.map(normalizePhotoUrl).filter(Boolean).slice(0, MAX_PROFILE_PHOTOS);
     }
 
+    function revokePreviewUrl(value) {
+      if (!value || typeof value !== 'string' || !value.startsWith('blob:')) return;
+
+      try {
+        URL.revokeObjectURL(value);
+      } catch (_) {
+        // ignore object URL cleanup issues
+      }
+    }
+
+    function clearPreviewAt(index) {
+      if (!Number.isInteger(index) || index < 0) return;
+      revokePreviewUrl(previewUrls[index]);
+      previewUrls[index] = '';
+    }
+
+    function clearAllPreviewUrls() {
+      previewUrls.forEach(revokePreviewUrl);
+      previewUrls = [];
+    }
     function setValue(nextValues = []) {
+      clearAllPreviewUrls();
       values = (Array.isArray(nextValues) ? nextValues : [])
         .map(normalizePhotoUrl)
         .filter((value, index, array) => Boolean(value) && array.indexOf(value) === index)
@@ -146,31 +168,33 @@
 
       render();
     }
-
     function setContext(nextContext = {}) {
       profileId = String(nextContext.profileId || profileId || '').trim();
     }
 
     function getRenderableSlotCount() {
-      const filledCount = getValue().length;
-      if (!filledCount) return 1;
-      return Math.min(MAX_PROFILE_PHOTOS, filledCount < MAX_PROFILE_PHOTOS ? filledCount + 1 : filledCount);
+      const filledValues = getValue();
+      const visualCount = Array.from({ length: MAX_PROFILE_PHOTOS }).filter((_, index) => Boolean(filledValues[index] || previewUrls[index])).length;
+      if (!visualCount) return 1;
+      return Math.min(MAX_PROFILE_PHOTOS, visualCount < MAX_PROFILE_PHOTOS ? visualCount + 1 : visualCount);
     }
-
     function render() {
       const filledValues = getValue();
       const slotCount = getRenderableSlotCount();
+      const visualCount = Array.from({ length: MAX_PROFILE_PHOTOS }).filter((_, index) => Boolean(filledValues[index] || previewUrls[index])).length;
 
       list.innerHTML = Array.from({ length: slotCount }).map((_, index) => {
         const value = filledValues[index] || '';
-        const isFilled = Boolean(value);
+        const previewValue = previewUrls[index] || '';
+        const displayValue = value || previewValue;
+        const isFilled = Boolean(displayValue);
         const isUploading = uploadingSlot === index;
 
         return `
           <article class="profile-photo-slot ${isFilled ? 'is-filled' : 'is-empty'} ${isUploading ? 'is-uploading' : ''}">
             <div class="profile-photo-slot__preview">
               ${isFilled
-                ? `<img src="${escapeHtml(value)}" alt="Foto do perfil ${index + 1}" loading="lazy" decoding="async" />`
+                ? `<img src="${escapeHtml(displayValue)}" alt="Foto do perfil ${index + 1}" loading="lazy" decoding="async" />`
                 : `<div class="profile-photo-slot__placeholder">
                      <span class="profile-photo-slot__placeholder-icon">+</span>
                      <span class="profile-photo-slot__placeholder-text">Nenhuma foto enviada</span>
@@ -188,14 +212,14 @@
       }).join('');
 
       if (addButton) {
-        const canAddMore = filledValues.length < MAX_PROFILE_PHOTOS;
+        const canAddMore = visualCount < MAX_PROFILE_PHOTOS;
         addButton.hidden = !canAddMore;
         addButton.disabled = !canAddMore || uploadingSlot >= 0;
       }
 
       if (uploadingSlot >= 0) {
         setMessage('Enviando foto...');
-      } else if (filledValues.length >= MAX_PROFILE_PHOTOS) {
+      } else if (visualCount >= MAX_PROFILE_PHOTOS) {
         setMessage('Limite de 5 fotos atingido.');
       } else {
         setMessage('Adicione até 5 fotos para deixar seu perfil mais completo e confiável.');
@@ -241,25 +265,25 @@
         return;
       }
 
+      clearPreviewAt(index);
+      previewUrls[index] = URL.createObjectURL(file);
       uploadingSlot = index;
       render();
 
       try {
-        console.log('Selected file:', file);
+        console.log('SELECTED PHOTO FILE:', file);
         console.log('Original file type:', file?.type || '');
         console.log('File name:', file?.name || '');
 
         const objectPath = buildStoragePath(profileId, file);
-        console.log('Uploaded photo path:', objectPath);
+        console.log('PHOTO UPLOAD PATH:', objectPath);
         const contentType = normalizeImageMimeType(file);
 
         console.log('Normalized content type:', contentType);
 
         if (!contentType) {
-          throw new Error('Envie uma imagem v\u00e1lida nos formatos JPG, PNG ou WEBP.');
+          throw new Error('Envie uma imagem válida nos formatos JPG, PNG ou WEBP.');
         }
-
-        console.log('Uploading photo with Supabase Storage');
 
         const uploadResult = await supabaseClient.storage
           .from(BUCKET_NAME)
@@ -278,17 +302,19 @@
           .getPublicUrl(objectPath);
 
         const publicUrl = publicUrlResult?.data?.publicUrl || '';
-        console.log('Uploaded photo URL:', publicUrl);
+        console.log('PHOTO PUBLIC URL:', publicUrl);
         if (!publicUrl || !isValidImageUrl(publicUrl)) {
-          throw new Error('Não foi possível gerar a URL pública da imagem enviada.');
+          throw new Error('Não foi possível gerar a URL pública da foto.');
         }
 
         const nextValues = getValue();
         nextValues[index] = publicUrl;
         values = nextValues.filter(Boolean).slice(0, MAX_PROFILE_PHOTOS);
-        console.log('Saving profile photos:', values);
+        clearPreviewAt(index);
+        console.log('UPDATED EDIT PHOTOS STATE:', values);
         setMessage('Foto enviada com sucesso.', 'success');
       } catch (error) {
+        clearPreviewAt(index);
         console.error('Profile photo upload failed:', error);
         setMessage('Não foi possível enviar a foto agora. Tente novamente em alguns instantes.', 'error');
       } finally {
@@ -308,6 +334,7 @@
       if (!removeButton) return;
 
       const index = Number(removeButton.dataset.photoRemoveSlot);
+      clearPreviewAt(index);
       const nextValues = getValue();
       nextValues.splice(index, 1);
       values = nextValues;
@@ -320,9 +347,21 @@
       });
     }
 
-    fileInput.addEventListener('change', async () => {
-      const [file] = fileInput.files || [];
-      if (!file || activeSlot < 0) return;
+    fileInput.addEventListener('change', async (event) => {
+      console.log('PHOTO INPUT CHANGE EVENT:', event);
+      console.log('SELECTED FILES:', event?.target?.files);
+      const file = event?.target?.files?.[0];
+      console.log('SELECTED PHOTO FILE:', file);
+      if (!file) {
+        setMessage('Nenhuma imagem selecionada.', 'error');
+        activeSlot = -1;
+        fileInput.value = '';
+        return;
+      }
+      if (activeSlot < 0) {
+        fileInput.value = '';
+        return;
+      }
       await uploadFileForSlot(file, activeSlot);
       activeSlot = -1;
       fileInput.value = '';

@@ -478,7 +478,7 @@ function getGalleryPhotos(entity) {
 
 function renderProfileGallerySection(entity) {
   const photos = getGalleryPhotos(entity);
-  console.log('Normalized public gallery photos:', photos);
+  console.log('NORMALIZED PUBLIC GALLERY PHOTOS:', photos);
   if (!photos.length) return '';
 
   return `

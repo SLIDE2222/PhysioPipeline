@@ -319,7 +319,7 @@ export async function getProfile(req, res) {
     return res.status(404).json({ message: "Perfil não encontrado." });
   }
   const decoratedProfile = decorateProfile(profile);
-  console.log("Profile photos returned:", decoratedProfile?.photos);
+  console.log("PUBLIC PROFILE PHOTOS RETURNED:", decoratedProfile?.photos);
   return res.json({ profile: decoratedProfile });
 }
 

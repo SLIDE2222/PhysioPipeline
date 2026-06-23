@@ -1095,7 +1095,7 @@
       try {
         const profile = await fetchPublicProfileFromSupabase(id);
         console.log('Fetched public profile:', profile);
-        console.log('Fetched public profile photos:', profile?.photos);
+        console.log('PUBLIC PROFILE PHOTOS FROM API:', profile?.photos);
         if (profile) {
           try {
             const backendData = await request(`/profiles/${id}`, { timeoutMs: 5000 });
