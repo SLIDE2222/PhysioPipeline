@@ -10,6 +10,7 @@
                     "prisma:migrate":  "prisma migrate dev --schema prisma/schema.prisma",
                     "prisma:studio":  "prisma studio",
                     "db:seed":  "node prisma/seed.js",
+                    "import:profiles:pdf": "node tools/import-profiles-from-pdf.mjs",
                     "taxonomy:build":  "node tools/build-search-taxonomy.js",
                     "build":  "prisma generate --schema prisma/schema.prisma && prisma migrate deploy --schema prisma/schema.prisma && node tools/sync-clinic-schema.js",
                     "postinstall":  "prisma generate --schema prisma/schema.prisma",

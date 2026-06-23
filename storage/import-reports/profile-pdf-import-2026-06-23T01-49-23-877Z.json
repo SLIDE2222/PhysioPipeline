@@ -1,0 +1,60 @@
+{
+  "pdfPath": "C:\\Users\\Jeffrey Walker\\Downloads\\Untitled spreadsheet - Sheet1.pdf",
+  "importedAt": "2026-06-23T01:49:23.784Z",
+  "dryRun": true,
+  "totalProfilesFound": 1,
+  "successfullyImportedProfiles": 1,
+  "updatedProfiles": 0,
+  "skippedProfiles": 0,
+  "validationErrors": [],
+  "warnings": [],
+  "rows": [
+    {
+      "page": 1,
+      "top": 64.46,
+      "rawCells": {
+        "id": "fisio-samantadepaula",
+        "name": "",
+        "specialty": "Instrutora",
+        "city": "dePilatIetaspetininga",
+        "isClaimed": "(FALSEfor",
+        "neighborhood": "importedprofiles)",
+        "phone": "(15)98123-4833Fisioterapeuta",
+        "bio": "",
+        "instagram": "Crehftittpos3:/:/w4w48w2.i5n6s-tFa",
+        "linkedin": "gInrasmtru.ctoorma/",
+        "photoUrl": "fdiseioP.silaatmhetsatpn@sta:e/d/seepppapactuiohlaipn/vsgpwirezjraoidnfes",
+        "attendance": "uAktepnr.dsuimpeanbtaos",
+        "ownerUserId": "eD.ocmo/isctioliraarg",
+        "secondarySpecialty": "-eI/tva1p/eotbinjeincgt/ap/uSbPlic/profile-images/ScreenAsuhtoot%202026-06A-2u2to%20223050.png",
+        "tertiarySpecialty": "",
+        "createdAt": "",
+        "updatedAt": ""
+      },
+      "fullText": "fisio-samantadepaula InstrutoradePilatIetaspetininga (FALSEforimportedprofiles) (15)98123-4833FisioterapeutaCrehftittpos3:/:/w4w48w2.i5n6s-tFagInrasmtru.ctoorma/fdiseioP.silaatmhetsatpn@sta:e/d/seepppapactuiohlaipn/vsgpwirezjraoidnfesuAktepnr.dsuimpeanbtaoseD.ocmo/isctioliraarg-eI/tva1p/eotbinjeincgt/ap/uSbPlic/profile-images/ScreenAsuhtoot%202026-06A-2u2to%20223050.png",
+      "warnings": [
+        "Photo URL looked corrupted and was skipped."
+      ],
+      "errors": [],
+      "normalized": {
+        "id": "fisio-samantadepaula",
+        "name": "Samanta de Paula",
+        "specialty": "Instrutora",
+        "secondarySpecialty": "-eI/tva1p/eotbinjeincgt/ap/uSbPlic/profile-images/ScreenAsuhtoot%202026-06A-2u2to%20223050.png",
+        "tertiarySpecialty": null,
+        "city": "Itapetininga",
+        "neighborhood": "importedprofiles)",
+        "phone": "5515981234833",
+        "bio": null,
+        "instagram": null,
+        "linkedin": null,
+        "photoUrl": null,
+        "publicEmail": null,
+        "attendance": null,
+        "isClaimed": false,
+        "ownerUserId": null
+      },
+      "action": "created"
+    }
+  ]
+}
