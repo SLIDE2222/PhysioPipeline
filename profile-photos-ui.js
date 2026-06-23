@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   const MAX_PROFILE_PHOTOS = 5;
   const BUCKET_NAME = 'profile-images';
   const ACCEPTED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
@@ -122,15 +122,17 @@
     let profileId = '';
     let uploadingSlot = -1;
     let activeSlot = -1;
+    let helperMessageLocked = false;
 
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
+    fileInput.accept = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp';
     fileInput.hidden = true;
     document.body.appendChild(fileInput);
 
-    function setMessage(text = '', tone = 'muted') {
+    function setMessage(text = '', tone = 'muted', options = {}) {
       if (!message) return;
+      helperMessageLocked = Boolean(options.lockHelperMessage);
       message.textContent = text;
       message.style.color = tone === 'error' ? '#b91c1c' : tone === 'success' ? '#166534' : '#64748b';
     }
@@ -159,6 +161,7 @@
       previewUrls.forEach(revokePreviewUrl);
       previewUrls = [];
     }
+
     function setValue(nextValues = []) {
       clearAllPreviewUrls();
       values = (Array.isArray(nextValues) ? nextValues : [])
@@ -168,6 +171,7 @@
 
       render();
     }
+
     function setContext(nextContext = {}) {
       profileId = String(nextContext.profileId || profileId || '').trim();
     }
@@ -178,6 +182,7 @@
       if (!visualCount) return 1;
       return Math.min(MAX_PROFILE_PHOTOS, visualCount < MAX_PROFILE_PHOTOS ? visualCount + 1 : visualCount);
     }
+
     function render() {
       const filledValues = getValue();
       const slotCount = getRenderableSlotCount();
@@ -217,6 +222,10 @@
         addButton.disabled = !canAddMore || uploadingSlot >= 0;
       }
 
+      if (helperMessageLocked) {
+        return;
+      }
+
       if (uploadingSlot >= 0) {
         setMessage('Enviando foto...');
       } else if (visualCount >= MAX_PROFILE_PHOTOS) {
@@ -249,19 +258,19 @@
 
     async function uploadFileForSlot(file, index) {
       if (!isValidImageFile(file)) {
-        setMessage('Envie uma imagem válida nos formatos JPG, PNG ou WEBP.', 'error');
+        setMessage('Envie uma imagem válida nos formatos JPG, PNG ou WEBP.', 'error', { lockHelperMessage: true });
         return;
       }
 
       if (!profileId) {
-        setMessage('Salve ou recarregue o perfil antes de enviar fotos.', 'error');
+        setMessage('Salve ou recarregue o perfil antes de enviar fotos.', 'error', { lockHelperMessage: true });
         return;
       }
 
       const supabaseClient = ensureSupabaseClient();
       if (!supabaseClient?.storage) {
         console.error('Supabase storage client is not available for profile photo upload.');
-        setMessage('Não foi possível inicializar o envio das fotos agora.', 'error');
+        setMessage('Não foi possível inicializar o envio das fotos agora.', 'error', { lockHelperMessage: true });
         return;
       }
 
@@ -278,7 +287,6 @@
         const objectPath = buildStoragePath(profileId, file);
         console.log('PHOTO UPLOAD PATH:', objectPath);
         const contentType = normalizeImageMimeType(file);
-
         console.log('Normalized content type:', contentType);
 
         if (!contentType) {
@@ -312,11 +320,13 @@
         values = nextValues.filter(Boolean).slice(0, MAX_PROFILE_PHOTOS);
         clearPreviewAt(index);
         console.log('UPDATED EDIT PHOTOS STATE:', values);
-        setMessage('Foto enviada com sucesso.', 'success');
+        setMessage('Foto enviada com sucesso.', 'success', { lockHelperMessage: true });
       } catch (error) {
-        clearPreviewAt(index);
         console.error('Profile photo upload failed:', error);
-        setMessage('Não foi possível enviar a foto agora. Tente novamente em alguns instantes.', 'error');
+        const uploadErrorMessage = error?.message
+          ? `Não foi possível enviar a foto agora. ${error.message}`
+          : 'Não foi possível enviar a foto agora. Tente novamente em alguns instantes.';
+        setMessage(uploadErrorMessage, 'error', { lockHelperMessage: true });
       } finally {
         uploadingSlot = -1;
         render();
@@ -334,6 +344,7 @@
       if (!removeButton) return;
 
       const index = Number(removeButton.dataset.photoRemoveSlot);
+      helperMessageLocked = false;
       clearPreviewAt(index);
       const nextValues = getValue();
       nextValues.splice(index, 1);
@@ -353,15 +364,18 @@
       const file = event?.target?.files?.[0];
       console.log('SELECTED PHOTO FILE:', file);
       if (!file) {
-        setMessage('Nenhuma imagem selecionada.', 'error');
+        setMessage('Nenhuma imagem selecionada.', 'error', { lockHelperMessage: true });
         activeSlot = -1;
         fileInput.value = '';
         return;
       }
+
       if (activeSlot < 0) {
         fileInput.value = '';
         return;
       }
+
+      helperMessageLocked = false;
       await uploadFileForSlot(file, activeSlot);
       activeSlot = -1;
       fileInput.value = '';
