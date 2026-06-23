@@ -12,6 +12,7 @@ const createReviewSchema = z.object({
   authorName: z.string().min(2, "Informe seu nome.").max(120, "Nome muito longo."),
   authorEmail: z.string().email("E-mail inválido.").optional().or(z.literal("")).nullable(),
   title: z.string().max(160, "Título muito longo.").optional().or(z.literal("")).nullable(),
+  rating: z.coerce.number().int().min(1, "Selecione uma nota de 1 a 5 estrelas.").max(5, "Selecione uma nota de 1 a 5 estrelas."),
   body: z.string().min(10, "Escreva uma avaliação mais completa.").max(4000, "Avaliação muito longa."),
 });
 
@@ -49,6 +50,7 @@ function serializeReview(review, options = {}) {
     profileId: review.profileId,
     authorName: review.authorName,
     title: review.title || null,
+    rating: review.rating || null,
     body: review.body,
     status: review.status,
     createdAt: review.createdAt,
@@ -221,6 +223,7 @@ export async function submitReview(req, res) {
         authorName: cleanOptionalString(parsed.data.authorName, 120),
         authorEmail: cleanOptionalString(parsed.data.authorEmail, 255),
         title: cleanOptionalString(parsed.data.title, 160),
+        rating: parsed.data.rating,
         body: cleanOptionalString(parsed.data.body, 4000),
         status,
       },

@@ -5964,6 +5964,70 @@ body:has(#cadastroForm) .tag-input-shell {
   border-color: #cbd5e1;
 }
 
+.profile-reviews-shell {
+  margin-top: 18px;
+  display: grid;
+  gap: 16px;
+}
+
+.profile-reviews-launcher {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  background: rgba(255, 255, 255, 0.94);
+  color: #183153;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.profile-reviews-launcher:hover {
+  transform: translateY(-1px);
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
+}
+
+.profile-reviews-launcher__icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.profile-reviews-launcher__text {
+  font-size: 1rem;
+}
+
+.profile-reviews-drawer {
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.profile-reviews-drawer.is-open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.profile-reviews-drawer__card {
+  margin: 0;
+}
+
 .profile-review-composer {
   margin-top: 20px;
 }
@@ -6022,6 +6086,64 @@ body:has(#cadastroForm) .tag-input-shell {
   min-height: 132px;
 }
 
+.profile-review-rating-fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.profile-review-rating-fieldset legend {
+  margin-bottom: 8px;
+}
+
+.profile-review-rating-stars {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.profile-review-rating-stars input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.profile-review-rating-stars label {
+  cursor: pointer;
+  font-size: 2rem;
+  line-height: 1;
+  color: #cbd5e1;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.profile-review-rating-stars label:hover,
+.profile-review-rating-stars label:hover ~ label,
+.profile-review-rating-stars input:checked ~ label {
+  color: #f59e0b;
+}
+
+.profile-review-rating-stars label:active {
+  transform: scale(0.96);
+}
+
+.profile-review-stars,
+.profile-review-card__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: #f59e0b;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.profile-review-stars__value,
+.profile-review-card__rating__value {
+  letter-spacing: 0.08em;
+}
+
 .profile-review-form__actions {
   justify-content: flex-start;
   flex-wrap: wrap;
@@ -6076,6 +6198,11 @@ body:has(#cadastroForm) .tag-input-shell {
   .profile-reviews-empty,
   .profile-review-form {
     padding: 16px;
+  }
+
+  .profile-reviews-launcher {
+    width: 100%;
+    justify-content: center;
   }
 
   .profile-review-card__header,

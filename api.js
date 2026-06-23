@@ -646,6 +646,7 @@
       profileId: review.profileId,
       authorName: String(review.authorName || '').trim(),
       authorEmail: String(review.authorEmail || '').trim(),
+      rating: Number(review.rating || 0) || null,
       title: String(review.title || '').trim(),
       body: String(review.body || '').trim(),
       status: String(review.status || 'pending').trim().toLowerCase(),

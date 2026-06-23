@@ -83,6 +83,7 @@ model ProfileReview {
   profileId        String
   authorName       String
   authorEmail      String?
+  rating           Int?
   title            String?
   body             String
   status           ReviewStatus @default(pending)

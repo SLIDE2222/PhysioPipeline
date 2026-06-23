@@ -37,7 +37,10 @@ function renderOwnerReviewCard(review) {
   const reviewDate = review?.createdAt
     ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(review.createdAt))
     : 'Agora';
-  const rating = Number(review?.rating || 0);
+  const rating = Math.max(0, Math.min(Number(review?.rating || 0), 5));
+  const ratingMarkup = rating > 0
+    ? `<span class="profile-review-card__rating" aria-label="${rating} de 5 estrelas"><span class="profile-review-card__rating__value">${'★'.repeat(rating)}</span></span>`
+    : '';
 
   return `
     <article class="profile-review-card" data-owner-review-id="${escapeMyReviewsHtml(review.id)}">
@@ -48,13 +51,10 @@ function renderOwnerReviewCard(review) {
         </div>
         <span class="review-status-badge review-status-badge--${escapeMyReviewsHtml(statusMeta.tone)}">${escapeMyReviewsHtml(statusMeta.label)}</span>
       </div>
-      <div class="profile-review-card__footer">
-        <span>${escapeMyReviewsHtml(reviewDate)}</span>
-        ${rating > 0 ? `<span>${'★'.repeat(Math.min(rating, 5))}</span>` : ''}
-      </div>
+      ${ratingMarkup}
       <p class="profile-review-card__body">${escapeMyReviewsHtml(review.body || '')}</p>
       <div class="profile-review-card__footer">
-        <span>${escapeMyReviewsHtml(review.authorEmail || '')}</span>
+        <span>${escapeMyReviewsHtml(reviewDate)}</span>
         ${canReport ? `<button type="button" class="btn btn-outline btn-small" data-owner-report-review="${escapeMyReviewsHtml(review.id)}">${String(review.status || '').toLowerCase() === 'reported' ? 'Atualizar reporte' : 'Reportar review'}</button>` : ''}
       </div>
       ${review.reportReason ? `<p class="profile-review-card__report-reason"><strong>Motivo do reporte:</strong> ${escapeMyReviewsHtml(review.reportReason)}</p>` : ''}

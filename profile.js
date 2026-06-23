@@ -249,9 +249,21 @@ function formatReviewDate(value) {
   }).format(parsed);
 }
 
+function renderReviewStars(value, className = 'profile-review-stars') {
+  const rating = Math.max(0, Math.min(Number(value || 0), 5));
+  if (!rating) return '';
+
+  return `
+    <span class="${className}" aria-label="${rating} de 5 estrelas">
+      <span class="${className}__value">${'★'.repeat(rating)}</span>
+    </span>
+  `;
+}
+
 function renderReviewCard(review, options = {}) {
   const statusMeta = getReviewStatusMeta(review?.status);
   const allowOwnerReport = Boolean(options.isOwner && ['published', 'reported'].includes(String(review?.status || '').toLowerCase()));
+  const ratingMarkup = renderReviewStars(review?.rating, 'profile-review-card__rating');
 
   return `
     <article class="profile-review-card" data-review-id="${escapeHtml(review.id)}">
@@ -262,6 +274,7 @@ function renderReviewCard(review, options = {}) {
         </div>
         ${options.showStatus ? `<span class="review-status-badge review-status-badge--${escapeHtml(statusMeta.tone)}">${escapeHtml(statusMeta.label)}</span>` : ''}
       </div>
+      ${ratingMarkup}
       <p class="profile-review-card__body">${escapeHtml(review.body || '')}</p>
       <div class="profile-review-card__footer">
         <span>${escapeHtml(formatReviewDate(review.createdAt) || 'Agora')}</span>
@@ -311,6 +324,21 @@ function renderReviewSubmissionForm(profileId) {
             <span>Título (opcional)</span>
             <input type="text" name="title" maxlength="160" placeholder="Resumo curto da sua experiência" />
           </label>
+          <fieldset class="profile-review-form__field profile-review-rating-fieldset">
+            <legend>Nota</legend>
+            <div class="profile-review-rating-stars" role="radiogroup" aria-label="Nota da avaliação">
+              <input id="review-rating-5" type="radio" name="rating" value="5" required />
+              <label for="review-rating-5" aria-label="5 estrelas">★</label>
+              <input id="review-rating-4" type="radio" name="rating" value="4" />
+              <label for="review-rating-4" aria-label="4 estrelas">★</label>
+              <input id="review-rating-3" type="radio" name="rating" value="3" />
+              <label for="review-rating-3" aria-label="3 estrelas">★</label>
+              <input id="review-rating-2" type="radio" name="rating" value="2" />
+              <label for="review-rating-2" aria-label="2 estrelas">★</label>
+              <input id="review-rating-1" type="radio" name="rating" value="1" />
+              <label for="review-rating-1" aria-label="1 estrela">★</label>
+            </div>
+          </fieldset>
           <label class="profile-review-form__field">
             <span>Avaliação</span>
             <textarea name="body" rows="5" maxlength="4000" placeholder="Conte como foi sua experiência com este profissional." required></textarea>
@@ -343,6 +371,28 @@ function renderReviewsSection(profissional, isOwner) {
         <p class="form-hint">Carregando avaliações...</p>
       </div>
       ${isOwner ? '' : renderReviewSubmissionForm(profissional.id)}
+    </section>
+  `;
+}
+
+function renderReviewsDrawer(profissional, isOwner) {
+  return `
+    <section class="profile-reviews-shell">
+      <button
+        type="button"
+        class="profile-reviews-launcher"
+        data-profile-reviews-toggle
+        aria-expanded="false"
+        aria-controls="profileReviewsDrawer"
+      >
+        <span class="profile-reviews-launcher__icon" aria-hidden="true">+</span>
+        <span class="profile-reviews-launcher__text">Avaliações</span>
+      </button>
+      <div class="profile-reviews-drawer" id="profileReviewsDrawer" data-profile-reviews-drawer hidden>
+        <article class="profile-card-full profile-reviews-drawer__card">
+          ${renderReviewsSection(profissional, isOwner)}
+        </article>
+      </div>
     </section>
   `;
 }
@@ -604,9 +654,9 @@ function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton, clini
           ${showClaimButton ? '<p class="claim-profile-warning">Esse perfil é seu? Reivindique para atualizar as informações.</p>' : ''}
         </div>
       </section>
-
-      ${renderReviewsSection(profissional, isOwner)}
     </article>
+
+    ${renderReviewsDrawer(profissional, isOwner)}
   `;
 }
 
@@ -902,6 +952,23 @@ function setupReviewReportButtons(profileId, isOwner) {
   });
 }
 
+function setupReviewsDrawer() {
+  const toggleButton = document.querySelector('[data-profile-reviews-toggle]');
+  const drawer = document.querySelector('[data-profile-reviews-drawer]');
+  if (!toggleButton || !drawer) return;
+
+  function setDrawerOpen(isOpen) {
+    toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    drawer.hidden = !isOpen;
+    drawer.classList.toggle('is-open', isOpen);
+  }
+
+  toggleButton.addEventListener('click', () => {
+    const isOpen = toggleButton.getAttribute('aria-expanded') === 'true';
+    setDrawerOpen(!isOpen);
+  });
+}
+
 function setupReviewForm(profileId, isOwner) {
   if (isOwner || !window.physioApi?.submitProfileReview) return;
 
@@ -952,6 +1019,7 @@ function setupReviewForm(profileId, isOwner) {
         authorName: String(formData.get('authorName') || '').trim(),
         authorEmail: String(formData.get('authorEmail') || '').trim(),
         title: String(formData.get('title') || '').trim(),
+        rating: Number(formData.get('rating') || 0),
         body: String(formData.get('body') || '').trim(),
       });
 
@@ -1081,6 +1149,7 @@ async function renderProfilePage() {
 
     profileContainer.innerHTML = renderPhysioProfileMarkup(profissional, isOwner, showClaimButton, clinicLinkState);
     setupProfileClinicLinkRequest();
+    setupReviewsDrawer();
     setupReviewForm(profissional.id, isOwner);
     await refreshProfileReviews(profissional.id, isOwner);
 
