@@ -36,6 +36,12 @@ function setMyReviewsMessage(message, tone = "success") {
   myReviewsMessage.style.color = tone === "success" ? "#166534" : "#b91c1c";
 }
 
+function renderStarsMarkup(rating) {
+  const safeRating = Math.max(0, Math.min(5, Number(rating) || 0));
+  if (!safeRating) return "";
+  return "&#9733;".repeat(safeRating) + "&#9734;".repeat(5 - safeRating);
+}
+
 function renderOwnerReviewCard(review) {
   const statusMeta = getMyReviewStatusMeta(review?.status);
   const normalizedStatus = String(review?.status || "").trim().toLowerCase();
@@ -47,10 +53,8 @@ function renderOwnerReviewCard(review) {
   const rating = Math.max(0, Math.min(Number(review?.rating || 0), 5));
   const ratingMarkup =
     rating > 0
-      ? `<span class="profile-review-card__rating" aria-label="${rating} de 5 estrelas"><span class="profile-review-card__rating__value">${"â˜…".repeat(rating)}</span></span>`
-      : "";
-
-  return `
+      ? `<span class="profile-review-card__rating" aria-label="${rating} de 5 estrelas"><span class="profile-review-card__rating__value">${renderStarsMarkup(rating)}</span></span>`
+      : "";return `
     <article class="profile-review-card" data-owner-review-id="${escapeMyReviewsHtml(review.id)}">
       <div class="profile-review-card__header">
         <div>
@@ -90,6 +94,79 @@ async function loadMyReviews() {
   }
 }
 
+function openMyReviewReportModal({ onSubmit }) {
+  const existingModal = document.querySelector('[data-review-report-modal]');
+  existingModal?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'notification-review-modal';
+  overlay.setAttribute('data-review-report-modal', 'true');
+  overlay.innerHTML = `
+    <div class="notification-review-modal__backdrop" data-review-report-close></div>
+    <div class="notification-review-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="myReviewReportTitle">
+      <button type="button" class="notification-review-modal__close" aria-label="Fechar" data-review-report-close>&times;</button>
+      <div class="notification-review-modal__content">
+        <div class="notification-review-modal__header">
+          <span class="eyebrow">ModeraÃ§Ã£o</span>
+          <h3 id="myReviewReportTitle">Reportar review</h3>
+          <p>Explique por que esta avaliaÃ§Ã£o precisa de revisÃ£o da equipe do PhysioPipeline.</p>
+        </div>
+        <label class="profile-review-form__field">
+          <span>Motivo do reporte</span>
+          <textarea data-review-report-reason rows="5" maxlength="1000" placeholder="Descreva o motivo do reporte." required></textarea>
+        </label>
+        <p class="form-hint" data-review-report-message aria-live="polite"></p>
+        <div class="notification-review-modal__actions">
+          <button type="button" class="btn btn-outline" data-review-report-close>Cancelar</button>
+          <button type="button" class="btn btn-primary" data-review-report-submit>Enviar reporte</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  function closeModal() {
+    overlay.remove();
+  }
+
+  overlay.addEventListener('click', (event) => {
+    if (event.target.closest('[data-review-report-close]')) {
+      closeModal();
+    }
+  });
+
+  const submitButton = overlay.querySelector('[data-review-report-submit]');
+  const reasonField = overlay.querySelector('[data-review-report-reason]');
+  const messageField = overlay.querySelector('[data-review-report-message]');
+
+  submitButton.addEventListener('click', async () => {
+    const reason = String(reasonField.value || '').trim();
+    if (!reason) {
+      messageField.textContent = 'Informe o motivo do reporte.';
+      messageField.style.color = '#b91c1c';
+      reasonField.focus();
+      return;
+    }
+
+    submitButton.disabled = true;
+    reasonField.disabled = true;
+    messageField.textContent = '';
+
+    try {
+      await onSubmit(reason);
+      closeModal();
+    } catch (error) {
+      console.error('My review report failed:', error);
+      messageField.textContent = 'N\u00e3o foi poss\u00edvel enviar o reporte agora. Tente novamente em alguns instantes.';
+      messageField.style.color = '#b91c1c';
+      submitButton.disabled = false;
+      reasonField.disabled = false;
+    }
+  });
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => reasonField.focus());
+}
+
 document.addEventListener("click", async (event) => {
   const reportButton = event.target.closest("[data-owner-report-review]");
   const approveButton = event.target.closest("[data-owner-approve-review]");
@@ -97,19 +174,31 @@ document.addEventListener("click", async (event) => {
   const actionButton = reportButton || approveButton || rejectButton;
   if (!actionButton) return;
 
+  if (reportButton) {
+    openMyReviewReportModal({
+      onSubmit: async (reason) => {
+        reportButton.disabled = true;
+        try {
+          await window.physioApi.reportProfileReview(reportButton.dataset.ownerReportReview, reason);
+          setMyReviewsMessage("Reporte enviado com sucesso. Obrigado por ajudar na modera\u00e7\u00e3o.");
+          await loadMyReviews();
+        } catch (error) {
+          console.error("My review report failed:", error);
+          setMyReviewsMessage("N\u00e3o foi poss\u00edvel enviar o reporte agora. Tente novamente em alguns instantes.", "error");
+          throw error;
+        } finally {
+          reportButton.disabled = false;
+        }
+      },
+    });
+    return;
+  }
+
   actionButton.disabled = true;
   setMyReviewsMessage("");
 
   try {
-    if (reportButton) {
-      const reason = window.prompt("Descreva o motivo do reporte para a equipe de moderaÃ§Ã£o:");
-      if (!reason || !reason.trim()) {
-        actionButton.disabled = false;
-        return;
-      }
-      await window.physioApi.reportProfileReview(reportButton.dataset.ownerReportReview, reason.trim());
-      setMyReviewsMessage("Review reportada para anÃ¡lise administrativa.");
-    } else if (approveButton) {
+    if (approveButton) {
       await window.physioApi.approveOwnReview(approveButton.dataset.ownerApproveReview);
       setMyReviewsMessage("AvaliaÃ§Ã£o aprovada com sucesso.");
     } else if (rejectButton) {

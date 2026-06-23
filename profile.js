@@ -254,13 +254,19 @@ function formatReviewDate(value) {
   }).format(parsed);
 }
 
+function renderStarsMarkup(rating) {
+  const safeRating = Math.max(0, Math.min(5, Number(rating) || 0));
+  if (!safeRating) return '';
+  return '&#9733;'.repeat(safeRating) + '&#9734;'.repeat(5 - safeRating);
+}
+
 function renderReviewStars(value, className = 'profile-review-stars') {
   const rating = Math.max(0, Math.min(Number(value || 0), 5));
   if (!rating) return '';
 
   return `
     <span class="${className}" aria-label="${rating} de 5 estrelas">
-      <span class="${className}__value">${'★'.repeat(rating)}</span>
+      <span class="${className}__value">${renderStarsMarkup(rating)}</span>
     </span>
   `;
 }
@@ -933,28 +939,104 @@ async function refreshProfileReviews(profileId, isOwner) {
   }
 }
 
+function openReviewReportModal({ reviewId, onSubmit }) {
+  const existingModal = document.querySelector('[data-review-report-modal]');
+  existingModal?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'notification-review-modal';
+  overlay.setAttribute('data-review-report-modal', 'true');
+  overlay.innerHTML = `
+    <div class="notification-review-modal__backdrop" data-review-report-close></div>
+    <div class="notification-review-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="reviewReportTitle">
+      <button type="button" class="notification-review-modal__close" aria-label="Fechar" data-review-report-close>&times;</button>
+      <div class="notification-review-modal__content">
+        <div class="notification-review-modal__header">
+          <span class="eyebrow">ModeraÃ§Ã£o</span>
+          <h3 id="reviewReportTitle">Reportar review</h3>
+          <p>Explique por que esta avaliaÃ§Ã£o precisa de revisÃ£o da equipe do PhysioPipeline.</p>
+        </div>
+        <label class="profile-review-form__field">
+          <span>Motivo do reporte</span>
+          <textarea data-review-report-reason rows="5" maxlength="1000" placeholder="Descreva o motivo do reporte." required></textarea>
+        </label>
+        <p class="form-hint" data-review-report-message aria-live="polite"></p>
+        <div class="notification-review-modal__actions">
+          <button type="button" class="btn btn-outline" data-review-report-close>Cancelar</button>
+          <button type="button" class="btn btn-primary" data-review-report-submit>Enviar reporte</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  function closeModal() {
+    overlay.remove();
+  }
+
+  overlay.addEventListener('click', (event) => {
+    if (event.target.closest('[data-review-report-close]')) {
+      closeModal();
+    }
+  });
+
+  const submitButton = overlay.querySelector('[data-review-report-submit]');
+  const reasonField = overlay.querySelector('[data-review-report-reason]');
+  const messageField = overlay.querySelector('[data-review-report-message]');
+
+  submitButton.addEventListener('click', async () => {
+    const reason = String(reasonField.value || '').trim();
+    if (!reason) {
+      messageField.textContent = 'Informe o motivo do reporte.';
+      messageField.style.color = '#b91c1c';
+      reasonField.focus();
+      return;
+    }
+
+    submitButton.disabled = true;
+    reasonField.disabled = true;
+    messageField.textContent = '';
+
+    try {
+      await onSubmit(reason);
+      closeModal();
+    } catch (error) {
+      console.error('Could not report review:', error);
+      messageField.textContent = 'N\u00e3o foi poss\u00edvel enviar o reporte agora. Tente novamente em alguns instantes.';
+      messageField.style.color = '#b91c1c';
+      submitButton.disabled = false;
+      reasonField.disabled = false;
+    }
+  });
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => reasonField.focus());
+}
+
 function setupReviewReportButtons(profileId, isOwner) {
   if (!isOwner || !window.physioApi?.reportProfileReview) return;
 
   document.querySelectorAll('[data-report-review]').forEach((button) => {
+    if (button.dataset.reportBound === 'true') return;
+    button.dataset.reportBound = 'true';
+
     button.addEventListener('click', async () => {
-      const reason = window.prompt('Descreva o motivo do reporte para a equipe de moderação:');
-      if (!reason || !reason.trim()) return;
+      openReviewReportModal({
+        reviewId: button.dataset.reportReview,
+        onSubmit: async (reason) => {
+          const originalLabel = button.textContent;
+          button.disabled = true;
+          button.textContent = 'Reportando...';
 
-      const originalLabel = button.textContent;
-      button.disabled = true;
-      button.textContent = 'Reportando...';
-
-      try {
-        await window.physioApi.reportProfileReview(button.dataset.reportReview, reason.trim());
-        showProfileToast('Review reportada para análise administrativa.');
-        await refreshProfileReviews(profileId, true);
-      } catch (error) {
-        console.error('Could not report review:', error);
-        showProfileToast(error?.message || 'Não foi possível reportar esta review agora.', 'error');
-        button.disabled = false;
-        button.textContent = originalLabel;
-      }
+          try {
+            await window.physioApi.reportProfileReview(button.dataset.reportReview, reason);
+            showProfileToast('Reporte enviado com sucesso. Obrigado por ajudar na modera\u00e7\u00e3o.');
+            await refreshProfileReviews(profileId, true);
+          } finally {
+            button.disabled = false;
+            button.textContent = originalLabel;
+          }
+        },
+      });
     });
   });
 }

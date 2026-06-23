@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
+import { mailConfig, sendMailOrThrow } from "../lib/mail.js";
 import { requireAdminUser } from "../lib/admin.js";
 import { ACCOUNT_TYPES, normalizeAccountType } from "../constants/account-types.js";
 
@@ -7,6 +8,14 @@ const PUBLIC_REVIEW_STATUSES = ["approved"];
 const OWNER_REVIEW_STATUSES = ["pending_owner", "approved", "reported", "rejected"];
 const OWNER_PENDING_REVIEW_STATUSES = ["pending_owner"];
 const ADMIN_REVIEW_STATUSES = ["pending_admin", "reported", "approved", "rejected"];
+const REVIEW_REPORT_EMAIL =
+  process.env.REPORTS_EMAIL_TO ||
+  process.env.PHYSIOPIPELINE_EMAIL ||
+  process.env.CLAIMS_EMAIL_TO ||
+  process.env.ADMIN_EMAIL ||
+  process.env.CONTACT_EMAIL ||
+  mailConfig.user ||
+  "physiopipelinefisio@gmail.com";
 
 const createReviewSchema = z.object({
   profileId: z.string().min(1, "Perfil invÃ¡lido."),
@@ -154,7 +163,12 @@ async function resolveOwnedPhysioProfile(userId) {
   return { user, profile };
 }
 
+function ensureUtf8Json(res) {
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+}
+
 function sendReviewControllerError(res, error, fallbackMessage = "Erro ao processar reviews.") {
+  ensureUtf8Json(res);
   const status = error?.status || 500;
   if (status >= 500) {
     console.error(fallbackMessage, error);
@@ -187,6 +201,7 @@ async function fetchReviewWithProfile(reviewId) {
 }
 
 export async function listProfileReviews(req, res) {
+  ensureUtf8Json(res);
   try {
     const profileId = String(req.params.profileId || req.params.id || "").trim();
     if (!profileId) {
@@ -225,6 +240,7 @@ export async function listProfileReviews(req, res) {
 }
 
 export async function submitReview(req, res) {
+  ensureUtf8Json(res);
   try {
     const parsed = createReviewSchema.safeParse(normalizeIncomingReviewPayload(req.body));
 
@@ -296,6 +312,7 @@ export async function submitReview(req, res) {
 }
 
 export async function listMyReviews(req, res) {
+  ensureUtf8Json(res);
   try {
     const { profile } = await resolveOwnedPhysioProfile(req.user?.userId);
     const reviews = await prisma.profileReview.findMany({
@@ -334,6 +351,7 @@ export async function listMyReviews(req, res) {
 }
 
 export async function listMyPendingOwnerReviews(req, res) {
+  ensureUtf8Json(res);
   try {
     const { profile } = await resolveOwnedPhysioProfile(req.user?.userId);
     const reviews = await prisma.profileReview.findMany({
@@ -372,6 +390,7 @@ export async function listMyPendingOwnerReviews(req, res) {
 }
 
 export async function approveOwnReview(req, res) {
+  ensureUtf8Json(res);
   try {
     const { user, profile } = await resolveOwnedPhysioProfile(req.user?.userId);
     const review = await fetchReviewWithProfile(req.params.reviewId);
@@ -420,6 +439,7 @@ export async function approveOwnReview(req, res) {
 }
 
 export async function rejectOwnReview(req, res) {
+  ensureUtf8Json(res);
   try {
     const { user, profile } = await resolveOwnedPhysioProfile(req.user?.userId);
     const review = await fetchReviewWithProfile(req.params.reviewId);
@@ -468,6 +488,7 @@ export async function rejectOwnReview(req, res) {
 }
 
 export async function reportReview(req, res) {
+  ensureUtf8Json(res);
   try {
     const { user, profile } = await resolveOwnedPhysioProfile(req.user?.userId);
     const parsed = reportReviewSchema.safeParse(req.body);
@@ -492,11 +513,12 @@ export async function reportReview(req, res) {
       });
     }
 
+    const reportReason = cleanOptionalString(parsed.data.reason, 1000);
     const updated = await prisma.profileReview.update({
       where: { id: review.id },
       data: {
         status: "reported",
-        reportReason: cleanOptionalString(parsed.data.reason, 1000),
+        reportReason,
         reportedAt: new Date(),
         reportedByUserId: user.id,
       },
@@ -516,19 +538,64 @@ export async function reportReview(req, res) {
       },
     });
 
+    const profileUrl = process.env.CLIENT_URL
+      ? `${String(process.env.CLIENT_URL).replace(/\/+$/, "")}/profile.html?id=${encodeURIComponent(review.profileId)}`
+      : null;
+
+    await sendMailOrThrow({
+      from: mailConfig.from || mailConfig.user,
+      sender: mailConfig.user,
+      to: REVIEW_REPORT_EMAIL,
+      replyTo: user.email || mailConfig.user,
+      subject: "Report from avalia\u00e7\u00e3o",
+      text: [
+        "Novo reporte de avaliaÃ§Ã£o recebido.",
+        "",
+        `Review ID: ${review.id}`,
+        `Profile ID: ${review.profileId}`,
+        `Reviewer name: ${review.authorName || "-"}`,
+        `Reviewer email: ${review.authorEmail || "-"}`,
+        `Review title: ${review.title || "-"}`,
+        `Rating: ${Number(review.rating || 0) || 0}`,
+        `Review comment: ${review.body || "-"}`,
+        `Report reason: ${reportReason || "-"}`,
+        `Report date: ${new Date().toISOString()}`,
+        `Profile link: ${profileUrl || "-"}`,
+      ].join("\n"),
+      html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.6">
+          <h2>Novo reporte de avaliaÃ§Ã£o recebido</h2>
+          <p><strong>Review ID:</strong> ${review.id}</p>
+          <p><strong>Profile ID:</strong> ${review.profileId}</p>
+          <p><strong>Reviewer name:</strong> ${review.authorName || "-"}</p>
+          <p><strong>Reviewer email:</strong> ${review.authorEmail || "-"}</p>
+          <p><strong>Review title:</strong> ${review.title || "-"}</p>
+          <p><strong>Rating:</strong> ${Number(review.rating || 0) || 0}</p>
+          <p><strong>Review comment:</strong><br>${String(review.body || "-").replace(/\n/g, "<br>")}</p>
+          <p><strong>Report reason:</strong><br>${String(reportReason || "-").replace(/\n/g, "<br>")}</p>
+          <p><strong>Report date:</strong> ${new Date().toISOString()}</p>
+          ${profileUrl ? `<p><strong>Profile link:</strong> <a href="${profileUrl}">${profileUrl}</a></p>` : ""}
+        </div>
+      `,
+    });
+
     return res.json({
       review: serializeReview(updated, {
         includePrivateFields: true,
         includeModerationFields: true,
       }),
-      message: "Review reportada para anÃ¡lise administrativa.",
+      message: "Reporte enviado com sucesso. Obrigado por ajudar na modera\u00e7\u00e3o.",
     });
   } catch (error) {
-    return sendReviewControllerError(res, error, "Erro ao reportar review.");
+    console.error("Review report email failed:", error);
+    return res.status(500).json({
+      message: "N\u00e3o foi poss\u00edvel enviar o reporte agora. Tente novamente em alguns instantes.",
+    });
   }
 }
 
 export async function listAdminReviews(req, res) {
+  ensureUtf8Json(res);
   try {
     await requireAdminUser(req.user?.userId);
     const requestedStatus = normalizeReviewStatus(req.query?.status) || "pending_admin";
@@ -571,6 +638,7 @@ export async function listAdminReviews(req, res) {
 }
 
 export async function approveReview(req, res) {
+  ensureUtf8Json(res);
   try {
     const adminUser = await requireAdminUser(req.user?.userId);
     const review = await fetchReviewWithProfile(req.params.reviewId);
@@ -621,6 +689,7 @@ export async function approveReview(req, res) {
 }
 
 export async function keepPublishedReview(req, res) {
+  ensureUtf8Json(res);
   try {
     const adminUser = await requireAdminUser(req.user?.userId);
     const review = await fetchReviewWithProfile(req.params.reviewId);
@@ -671,6 +740,7 @@ export async function keepPublishedReview(req, res) {
 }
 
 export async function rejectReview(req, res) {
+  ensureUtf8Json(res);
   try {
     const adminUser = await requireAdminUser(req.user?.userId);
     const review = await fetchReviewWithProfile(req.params.reviewId);
