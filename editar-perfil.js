@@ -4,6 +4,7 @@ const fotoInput = document.getElementById('foto');
 const fotoPreview = document.getElementById('fotoPreview');
 const profileClinicLinkRequests = document.getElementById('profileClinicLinkRequests');
 const profileLinkedClinics = document.getElementById('profileLinkedClinics');
+const ownerReviewsList = document.getElementById('ownerReviewsList');
 const VISIBLE_PROFILE_CLINIC_LINK_STATUSES = new Set(['PENDING', 'ACCEPTED']);
 
 let fotoBase64 = '';
@@ -196,6 +197,60 @@ function renderClinicLinkCard(link, actions = '') {
   `;
 }
 
+function getOwnerReviewStatusMeta(status) {
+  const normalizedStatus = String(status || '').trim().toLowerCase();
+
+  switch (normalizedStatus) {
+    case 'published':
+      return { label: 'Publicada', tone: 'published' };
+    case 'reported':
+      return { label: 'Reportada', tone: 'reported' };
+    case 'rejected':
+      return { label: 'Removida', tone: 'rejected' };
+    default:
+      return { label: 'Pendente', tone: 'pending' };
+  }
+}
+
+function renderOwnerReviewCard(review) {
+  const statusMeta = getOwnerReviewStatusMeta(review?.status);
+  const canReport = ['published', 'reported'].includes(String(review?.status || '').toLowerCase());
+
+  return `
+    <article class="profile-review-card" data-owner-review-id="${escapeEditarHtml(review.id)}">
+      <div class="profile-review-card__header">
+        <div>
+          <strong>${escapeEditarHtml(review.authorName || 'Paciente')}</strong>
+          ${review.title ? `<p class="profile-review-card__title">${escapeEditarHtml(review.title)}</p>` : ''}
+        </div>
+        <span class="review-status-badge review-status-badge--${escapeEditarHtml(statusMeta.tone)}">${escapeEditarHtml(statusMeta.label)}</span>
+      </div>
+      <p class="profile-review-card__body">${escapeEditarHtml(review.body || '')}</p>
+      <div class="profile-review-card__footer">
+        <span>${escapeEditarHtml(review.createdAt ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(review.createdAt)) : 'Agora')}</span>
+        ${canReport ? `<button type="button" class="btn btn-outline btn-small" data-owner-report-review="${escapeEditarHtml(review.id)}">${String(review.status || '').toLowerCase() === 'reported' ? 'Atualizar reporte' : 'Reportar review'}</button>` : ''}
+      </div>
+      ${review.reportReason ? `<p class="profile-review-card__report-reason"><strong>Motivo do reporte:</strong> ${escapeEditarHtml(review.reportReason)}</p>` : ''}
+    </article>
+  `;
+}
+
+async function loadOwnerReviews() {
+  if (!ownerReviewsList || !window.physioApi?.fetchMyReviews) return;
+
+  try {
+    const response = await window.physioApi.fetchMyReviews();
+    const reviews = Array.isArray(response?.reviews) ? response.reviews : [];
+
+    ownerReviewsList.innerHTML = reviews.length
+      ? reviews.map(renderOwnerReviewCard).join('')
+      : '<p class="form-hint clinic-link-empty-state">Nenhuma avaliação vinculada ao seu perfil no momento.</p>';
+  } catch (error) {
+    console.error('Owner reviews load failed:', error);
+    ownerReviewsList.innerHTML = '<p class="form-hint">Não foi possível carregar suas avaliações agora.</p>';
+  }
+}
+
 async function loadClinicLinkRequests() {
   if (!profileClinicLinkRequests || !profileLinkedClinics || !window.physioApi?.fetchMyClinicLinkRequests) return;
 
@@ -324,15 +379,41 @@ if (editarForm) {
       return;
     }
 
-    loadMyProfile().then(() => loadClinicLinkRequests());
+    loadMyProfile().then(async () => {
+      await loadClinicLinkRequests();
+      await loadOwnerReviews();
+    });
   });
 
   document.addEventListener('click', async (event) => {
     const acceptButton = event.target.closest('[data-accept-clinic-link]');
     const rejectButton = event.target.closest('[data-reject-clinic-link]');
     const unlinkButton = event.target.closest('[data-unlink-clinic-link]');
-    const button = acceptButton || rejectButton || unlinkButton;
+    const reportReviewButton = event.target.closest('[data-owner-report-review]');
+    const button = acceptButton || rejectButton || unlinkButton || reportReviewButton;
     if (!button) return;
+
+    if (reportReviewButton) {
+      const reason = window.prompt('Descreva o motivo do reporte para a equipe de moderação:');
+      if (!reason || !reason.trim()) return;
+
+      reportReviewButton.disabled = true;
+
+      try {
+        await window.physioApi.reportProfileReview(reportReviewButton.dataset.ownerReportReview, reason.trim());
+        editarMensagem.textContent = 'Review reportada para análise administrativa.';
+        editarMensagem.style.color = '#166534';
+        await loadOwnerReviews();
+      } catch (error) {
+        console.error('Owner review report failed:', error);
+        editarMensagem.textContent = error.message || 'Não foi possível reportar esta review.';
+        editarMensagem.style.color = '#b91c1c';
+      } finally {
+        reportReviewButton.disabled = false;
+      }
+
+      return;
+    }
 
     button.disabled = true;
 

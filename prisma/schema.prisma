@@ -27,6 +27,13 @@ enum ClinicPhysioLinkStatus {
   UNLINKED
 }
 
+enum ReviewStatus {
+  pending
+  published
+  reported
+  rejected
+}
+
 model User {
   id             String        @id @default(cuid())
   email          String        @unique
@@ -41,6 +48,8 @@ model User {
   profiles       Profile[]
   clinicProfile  ClinicProfile?
   claimRequests  ClaimRequest[]
+  reportedReviews ProfileReview[] @relation("ReviewReportedBy")
+  moderatedReviews ProfileReview[] @relation("ReviewModeratedBy")
 }
 
 model Profile {
@@ -64,8 +73,33 @@ model Profile {
   claimRequests      ClaimRequest[]
   leadEvents         LeadEvent[]
   clinicLinks        ClinicPhysiotherapistLink[]
+  reviews            ProfileReview[]
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
+}
+
+model ProfileReview {
+  id               String       @id @default(cuid())
+  profileId        String
+  authorName       String
+  authorEmail      String?
+  title            String?
+  body             String
+  status           ReviewStatus @default(pending)
+  reportReason     String?
+  reportedAt       DateTime?
+  reportedByUserId String?
+  moderatedAt      DateTime?
+  moderatedByUserId String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  profile          Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  reportedByUser   User?        @relation("ReviewReportedBy", fields: [reportedByUserId], references: [id], onDelete: SetNull)
+  moderatedByUser  User?        @relation("ReviewModeratedBy", fields: [moderatedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([profileId, status])
+  @@index([status, createdAt])
 }
 
 model ClinicProfile {

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moderação de reviews | PhysioPipeline</title>
+  <meta name="description" content="Administre reviews pendentes e reportadas no PhysioPipeline." />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="shortcut icon" href="favicon.svg" />
+  <link rel="stylesheet" href="style.css?v=reviewsadmin1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+</head>
+<body>
+  <header class="header">
+    <div class="container nav">
+      <a href="index.html" class="logo">Physio<span>Pipeline</span></a>
+      <nav class="nav-links">
+        <a href="index.html">Inicio</a>
+        <a href="buscar.html">Buscar</a>
+      </nav>
+      <div id="authArea" style="display:flex; gap:10px; align-items:center;"></div>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <section class="page-section">
+      <div class="container">
+        <div class="section-heading left">
+          <p class="eyebrow">Admin Reviews</p>
+          <h1>Fila de moderação</h1>
+          <p>Analise reviews pendentes e reportadas com regras diferentes para perfis reivindicados e não reivindicados.</p>
+        </div>
+
+        <div id="adminReviewsMessage" class="success-message" aria-live="polite"></div>
+
+        <div class="admin-reviews-grid">
+          <section class="form-card admin-reviews-panel">
+            <div class="admin-reviews-panel__header">
+              <div>
+                <h2>Pending Reviews</h2>
+                <p>Reviews de perfis sem dono ficam pendentes até aprovação manual.</p>
+              </div>
+            </div>
+            <div id="adminPendingReviewsList" class="admin-review-list">
+              <p class="form-hint">Carregando reviews pendentes...</p>
+            </div>
+          </section>
+
+          <section class="form-card admin-reviews-panel">
+            <div class="admin-reviews-panel__header">
+              <div>
+                <h2>Reported Reviews</h2>
+                <p>Reviews reportadas pelo fisioterapeuta proprietário continuam visíveis até a decisão administrativa.</p>
+              </div>
+            </div>
+            <div id="adminReportedReviewsList" class="admin-review-list">
+              <p class="form-hint">Carregando reviews reportadas...</p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="account-types.js?v=accounttype1"></script>
+  <script src="api.js?v=reviewsadmin1"></script>
+  <script src="js/notifications.js?v=notifshared1"></script>
+  <script src="script.js?v=notifshared3"></script>
+  <script src="admin-reviews.js?v=reviewsadmin1"></script>
+</body>
+</html>

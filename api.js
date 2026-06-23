@@ -631,8 +631,30 @@
     return {
       ...user,
       accountType: resolvedAccountType,
+      isAdmin: Boolean(user.isAdmin),
       profiles: Array.isArray(user.profiles) ? user.profiles : [],
       clinicProfile: inferredClinicProfile,
+    };
+  }
+
+  function normalizeProfileReview(review) {
+    if (!review) return null;
+
+    return {
+      ...review,
+      id: review.id,
+      profileId: review.profileId,
+      authorName: String(review.authorName || '').trim(),
+      authorEmail: String(review.authorEmail || '').trim(),
+      title: String(review.title || '').trim(),
+      body: String(review.body || '').trim(),
+      status: String(review.status || 'pending').trim().toLowerCase(),
+      reportReason: String(review.reportReason || '').trim(),
+      reportedAt: review.reportedAt || null,
+      moderatedAt: review.moderatedAt || null,
+      createdAt: review.createdAt || null,
+      updatedAt: review.updatedAt || null,
+      profile: review.profile ? normalizeProfile(review.profile) : null,
     };
   }
 
@@ -783,6 +805,75 @@
     },
     fetchMyClinicProfile() {
       return request('/clinics/me').then((data) => normalizeClinicProfile(data.clinicProfile || data));
+    },
+    fetchProfileReviews(profileId) {
+      return request(`/reviews/profile/${encodeURIComponent(profileId)}`, {
+        timeoutMs: 10000,
+      }).then((data) => (data.reviews || []).map(normalizeProfileReview));
+    },
+    submitProfileReview(payload) {
+      return request('/reviews', {
+        method: 'POST',
+        body: payload,
+        timeoutMs: 15000,
+      }).then((data) => ({
+        ...data,
+        review: normalizeProfileReview(data.review),
+      }));
+    },
+    fetchMyReviews() {
+      return request('/reviews/me', {
+        timeoutMs: 10000,
+      }).then((data) => ({
+        ...data,
+        reviews: (data.reviews || []).map(normalizeProfileReview),
+      }));
+    },
+    reportProfileReview(reviewId, reason) {
+      return request(`/reviews/${encodeURIComponent(reviewId)}/report`, {
+        method: 'POST',
+        body: { reason },
+        timeoutMs: 15000,
+      }).then((data) => ({
+        ...data,
+        review: normalizeProfileReview(data.review),
+      }));
+    },
+    fetchAdminReviews(status) {
+      const query = status ? `?status=${encodeURIComponent(status)}` : '';
+      return request(`/admin/reviews${query}`, {
+        timeoutMs: 10000,
+      }).then((data) => ({
+        ...data,
+        reviews: (data.reviews || []).map(normalizeProfileReview),
+      }));
+    },
+    approveReview(reviewId) {
+      return request(`/admin/reviews/${encodeURIComponent(reviewId)}/approve`, {
+        method: 'POST',
+        timeoutMs: 15000,
+      }).then((data) => ({
+        ...data,
+        review: normalizeProfileReview(data.review),
+      }));
+    },
+    keepPublishedReview(reviewId) {
+      return request(`/admin/reviews/${encodeURIComponent(reviewId)}/keep-published`, {
+        method: 'POST',
+        timeoutMs: 15000,
+      }).then((data) => ({
+        ...data,
+        review: normalizeProfileReview(data.review),
+      }));
+    },
+    rejectReview(reviewId) {
+      return request(`/admin/reviews/${encodeURIComponent(reviewId)}/reject`, {
+        method: 'POST',
+        timeoutMs: 15000,
+      }).then((data) => ({
+        ...data,
+        review: normalizeProfileReview(data.review),
+      }));
     },
     async fetchProfiles(options = {}) {
       const startedAt = performance.now();

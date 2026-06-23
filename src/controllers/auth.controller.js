@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { createClient } from "@supabase/supabase-js";
 import { prisma } from "../lib/prisma.js";
 import { mailConfig, sendMailOrThrow } from "../lib/mail.js";
+import { isAdminEmail } from "../lib/admin.js";
 import {
   ACCOUNT_TYPES,
   isValidAccountType,
@@ -83,6 +84,7 @@ function sanitizeUser(user) {
     name: user.name || null,
     phone: user.phone || null,
     accountType: normalizeAccountType(user.accountType),
+    isAdmin: isAdminEmail(user.email),
     profiles: Array.isArray(user.profiles) ? user.profiles : [],
     clinicProfile: user.clinicProfile || null,
   };

@@ -2851,6 +2851,12 @@ async function renderAuthArea() {
   const editHref = isClinicAccount ? 'clinic-dashboard.html' : 'editar-perfil.html';
   const profileLabel = 'Meu perfil';
   const profileMenuItem = `<a role="menuitem" href="${profileHref}">${profileLabel}</a>`;
+  const ownerReviewsMenuItem = !isClinicAccount
+    ? '<a role="menuitem" href="editar-perfil.html#myReviewsSection">Minhas avaliações</a>'
+    : '';
+  const adminReviewsMenuItem = user.isAdmin
+    ? '<a role="menuitem" href="admin-reviews.html">Moderar reviews</a>'
+    : '';
   const notificationMenu = await buildSharedNotificationMenu(user);
 
   authArea.innerHTML = `
@@ -2870,7 +2876,9 @@ async function renderAuthArea() {
       </button>
       <div class="account-menu__panel" role="menu" data-account-menu-panel hidden>
         ${profileMenuItem}
+        ${ownerReviewsMenuItem}
         <a role="menuitem" href="${editHref}">${isClinicAccount ? 'Editar dados da clínica' : 'Editar perfil'}</a>
+        ${adminReviewsMenuItem}
         <a role="menuitem" href="planos.html">Planos</a>
         <button role="menuitem" type="button" onclick="logout()">Sair</button>
       </div>

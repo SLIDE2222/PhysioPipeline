@@ -5843,3 +5843,230 @@ body:has(#cadastroForm) .tag-input-shell {
     white-space: normal !important;
   }
 }
+
+/* =========================
+   Reviews
+========================= */
+
+.profile-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.profile-section-heading h3 {
+  margin-bottom: 6px;
+}
+
+.profile-reviews-list,
+.admin-review-list {
+  display: grid;
+  gap: 16px;
+}
+
+.profile-reviews-empty {
+  padding: 18px 20px;
+  border: 1px dashed rgba(37, 99, 235, 0.22);
+  border-radius: 18px;
+  background: rgba(239, 246, 255, 0.55);
+  color: #33517a;
+}
+
+.profile-review-card {
+  display: grid;
+  gap: 12px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(37, 99, 235, 0.12);
+  background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,251,255,0.92));
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.profile-review-card__header,
+.profile-review-card__footer,
+.admin-review-card__actions,
+.profile-review-form__actions,
+.profile-review-form__grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-review-card__header {
+  align-items: flex-start;
+}
+
+.profile-review-card__title {
+  margin: 4px 0 0;
+  color: #33517a;
+  font-weight: 600;
+}
+
+.profile-review-card__body {
+  margin: 0;
+  color: #183153;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.profile-review-card__footer {
+  flex-wrap: wrap;
+  color: #5b728f;
+  font-size: 0.92rem;
+}
+
+.profile-review-card__report-reason {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(239, 246, 255, 0.8);
+  color: #234168;
+  font-size: 0.94rem;
+}
+
+.review-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.review-status-badge--pending {
+  background: #fff7ed;
+  color: #b45309;
+  border-color: #fdba74;
+}
+
+.review-status-badge--published {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.review-status-badge--reported {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.review-status-badge--rejected {
+  background: #f8fafc;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.profile-review-form {
+  margin-top: 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.profile-review-form__grid {
+  align-items: stretch;
+}
+
+.profile-review-form__field {
+  display: grid;
+  gap: 8px;
+  color: #183153;
+  font-weight: 600;
+}
+
+.profile-review-form__field input,
+.profile-review-form__field textarea {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  background: rgba(255,255,255,0.96);
+  padding: 14px 16px;
+  font: inherit;
+  color: #0f172a;
+}
+
+.profile-review-form__field textarea {
+  resize: vertical;
+  min-height: 132px;
+}
+
+.profile-review-form__actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.btn-small {
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 0.92rem;
+}
+
+.admin-reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.admin-reviews-panel__header {
+  margin-bottom: 18px;
+}
+
+.admin-reviews-panel__header h2 {
+  margin-bottom: 6px;
+}
+
+.admin-review-card__profile {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  color: #33517a;
+  font-size: 0.95rem;
+}
+
+.admin-review-card__profile a {
+  color: #2563eb;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-review-card__profile a:hover {
+  text-decoration: underline;
+}
+
+.admin-review-card__actions {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .profile-review-card,
+  .profile-reviews-empty {
+    padding: 16px;
+  }
+
+  .profile-review-card__header,
+  .profile-review-card__footer,
+  .profile-review-form__actions,
+  .profile-review-form__grid,
+  .admin-review-card__actions,
+  .profile-section-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-reviews-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .review-status-badge {
+    width: fit-content;
+  }
+}

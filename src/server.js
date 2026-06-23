@@ -9,6 +9,7 @@ import clinicLinkRequestRoutes from "./routes/clinic-link-request.routes.js";
 import claimRoutes from "./routes/claim.routes.js";
 import leadRoutes from "./routes/lead.routes.js";
 import contactRoutes from "./routes/contact.routes.js";
+import reviewRoutes, { adminReviewRouter } from "./routes/review.routes.js";
 import {
   createClinicLinkRequest,
   listMyClinicLinkRequests,
@@ -59,6 +60,8 @@ app.use("/clinic-link-requests", clinicLinkRequestRoutes);
 app.use("/claims", claimRoutes);
 app.use("/lead-events", leadRoutes);
 app.use("/contact", contactRoutes);
+app.use("/reviews", reviewRoutes);
+app.use("/admin/reviews", adminReviewRouter);
 
 // Production/static hosts sometimes configure the frontend with an /api base
 // path. Keep both route shapes available so clinic profile calls never fall
@@ -70,6 +73,8 @@ app.use("/api/clinic-link-requests", clinicLinkRequestRoutes);
 app.use("/api/claims", claimRoutes);
 app.use("/api/lead-events", leadRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/reviews", reviewRoutes);
+app.use("/api/admin/reviews", adminReviewRouter);
 
 // Keep explicit aliases here as a safety net so this endpoint still resolves
 // even if a deployment ends up with stale router wiring.
