@@ -179,6 +179,9 @@ async function loadMyProfile() {
       fotoPreview.style.display = 'block';
     }
 
+    profilePhotosEditor?.setContext?.({ profileId: profile.id, accountType: 'physio' });
+    profilePhotosEditor?.setValue?.(profile.photosList || profile.photos || []);
+
     return profile;
   } catch (error) {
     editarMensagem.textContent = error.message || 'Sua sessão expirou.';
@@ -377,6 +380,14 @@ if (editarForm) {
     const submitBtn = editarForm.querySelector('button[type="submit"]');
     if (submitBtn) submitBtn.disabled = true;
     const especialidadeTerciaria = document.getElementById('especialidadeTerciaria').value.trim();
+    const profilePhotoValidation = profilePhotosEditor?.validate?.();
+
+    if (profilePhotoValidation && !profilePhotoValidation.valid) {
+      editarMensagem.textContent = profilePhotoValidation.message;
+      editarMensagem.style.color = '#b91c1c';
+      if (submitBtn) submitBtn.disabled = false;
+      return;
+    }
 
     try {
       const profile = await window.physioApi.updateMyProfile({
@@ -391,6 +402,7 @@ if (editarForm) {
         instagram: document.getElementById('instagram').value.trim() || null,
         linkedin: document.getElementById('linkedin').value.trim() || null,
         photoUrl: fotoBase64 || null,
+        photos: profilePhotoValidation?.value || profilePhotosEditor?.getValue?.() || [],
         bio: document.getElementById('descricao').value.trim() || null,
       });
 

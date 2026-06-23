@@ -410,6 +410,51 @@ function renderReviewsDrawer(profissional, isOwner) {
   `;
 }
 
+function getGalleryPhotos(entity) {
+  const explicitList = Array.isArray(entity?.photosList)
+    ? entity.photosList
+    : Array.isArray(entity?.photos)
+      ? entity.photos
+      : [];
+
+  const seen = new Set();
+
+  return explicitList
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .filter((value) => {
+      const key = value.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function renderProfileGallerySection(entity) {
+  const photos = getGalleryPhotos(entity);
+  if (!photos.length) return '';
+
+  return `
+    <section class="profile-gallery-section">
+      <article class="profile-card-full profile-gallery-card">
+        <div class="profile-section-heading">
+          <div>
+            <h3>Fotos</h3>
+            <p class="form-hint">Imagens adicionais deste perfil.</p>
+          </div>
+        </div>
+        <div class="profile-gallery-grid">
+          ${photos.map((photoUrl, index) => `
+            <figure class="profile-gallery-item">
+              <img src="${escapeHtml(photoUrl)}" alt="Foto do perfil ${index + 1}" loading="lazy" decoding="async" />
+            </figure>
+          `).join('')}
+        </div>
+      </article>
+    </section>
+  `;
+}
+
 function renderTeamMembers(team) {
   const members = Array.isArray(team)
     ? team.filter((member) => member?.name && member?.specialty)
@@ -583,6 +628,8 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton, clinicLinkS
 
       ${renderClinicMapSection(clinic)}
     </article>
+
+    ${renderProfileGallerySection(clinic)}
   `;
 }
 
@@ -669,6 +716,7 @@ function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton, clini
       </section>
     </article>
 
+    ${renderProfileGallerySection(profissional)}
     ${renderReviewsDrawer(profissional, isOwner)}
   `;
 }

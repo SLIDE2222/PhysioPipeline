@@ -6,6 +6,11 @@ const clinicPhysioSearchButton = document.getElementById('clinicPhysioSearchButt
 const clinicPhysioSearchResults = document.getElementById('clinicPhysioSearchResults');
 const clinicPhysioLinksList = document.getElementById('clinicPhysioLinksList');
 const clinicPhysioLinkMessage = document.getElementById('clinicPhysioLinkMessage');
+const clinicPhotosEditor = window.PhysioProfilePhotos?.createEditor?.({
+  listId: 'clinicProfilePhotosList',
+  addButtonId: 'addClinicProfilePhotoButton',
+  messageId: 'clinicProfilePhotosMessage',
+});
 const clinicEditor = window.PhysioClinicForm?.createClinicEditor?.({
   serviceInputId: 'clinicServiceInput',
   serviceListId: 'clinicServicesTags',
@@ -73,6 +78,9 @@ function fillClinicForm(profile) {
     clinicLogoPreview.src = clinicLogoBase64;
     clinicLogoPreview.style.display = 'block';
   }
+
+  clinicPhotosEditor?.setContext?.({ profileId: profile?.id, accountType: 'clinic' });
+  clinicPhotosEditor?.setValue?.(profile?.photosList || profile?.photos || []);
 }
 
 function setClinicLinkMessage(text, color = '#475569') {
@@ -340,6 +348,7 @@ if (clinicDashboardForm) {
         services: clinicEditorValue.services,
         physioTeam: clinicEditorValue.team,
         logoUrl: clinicLogoBase64 || null,
+        photos: photoValidation?.value || clinicPhotosEditor?.getValue?.() || [],
         description: document.getElementById('clinicDescription').value.trim() || null,
       });
 
