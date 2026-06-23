@@ -1087,14 +1087,23 @@
           try {
             const backendData = await request(`/profiles/${id}`, { timeoutMs: 5000 });
             const backendProfile = normalizeProfile(backendData.profile || backendData);
+            const mergedPhotos = normalizeProfilePhotosList(
+              (Array.isArray(backendProfile?.photosList) && backendProfile.photosList.length ? backendProfile.photosList : null)
+                ?? (Array.isArray(backendProfile?.photos) && backendProfile.photos.length ? backendProfile.photos : null)
+                ?? (Array.isArray(backendProfile?.fotos) && backendProfile.fotos.length ? backendProfile.fotos : null)
+                ?? profile.photosList
+                ?? profile.photos
+                ?? profile.fotos
+            );
+
             return {
               ...profile,
               ownerUserId: backendProfile?.ownerUserId || profile.ownerUserId || null,
               isClaimed: Boolean(backendProfile?.isClaimed || profile.isClaimed),
               linkedClinics: backendProfile?.linkedClinics || profile.linkedClinics || [],
-              photos: backendProfile?.photos || profile.photos || [],
-              photosList: backendProfile?.photosList || profile.photosList || [],
-              fotos: backendProfile?.fotos || profile.fotos || [],
+              photos: mergedPhotos,
+              photosList: mergedPhotos,
+              fotos: mergedPhotos,
             };
           } catch (backendError) {
             console.warn('Could not merge backend profile link data:', backendError);

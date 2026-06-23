@@ -1,6 +1,6 @@
 (function () {
   const MAX_PROFILE_PHOTOS = 5;
-  const BUCKET_NAME = 'profile-photos';
+  const BUCKET_NAME = 'profile-images';
   const ACCEPTED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
   const ACCEPTED_MIME_TYPES = new Set([
     'image/jpeg',
@@ -255,7 +255,7 @@
         console.log('Normalized content type:', contentType);
 
         if (!contentType) {
-          throw new Error('Envie uma imagem v?lida nos formatos JPG, PNG ou WEBP.');
+          throw new Error('Envie uma imagem v\u00e1lida nos formatos JPG, PNG ou WEBP.');
         }
 
         console.log('Uploading photo with Supabase Storage');
