@@ -5965,9 +5965,10 @@ body:has(#cadastroForm) .tag-input-shell {
 }
 
 .profile-reviews-shell {
-  margin-top: 18px;
+  margin-top: 6px;
   display: grid;
   gap: 16px;
+  justify-items: center;
 }
 
 .profile-reviews-launcher {
@@ -6025,7 +6026,8 @@ body:has(#cadastroForm) .tag-input-shell {
 }
 
 .profile-reviews-drawer__card {
-  margin: 0;
+  margin: 0 auto;
+  width: min(100%, 760px);
 }
 
 .profile-review-composer {
@@ -6222,4 +6224,10 @@ body:has(#cadastroForm) .tag-input-shell {
   .review-status-badge {
     width: fit-content;
   }
+}
+
+
+#profileContainer {
+  display: grid;
+  gap: 18px;
 }
