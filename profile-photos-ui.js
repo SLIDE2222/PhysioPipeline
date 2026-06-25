@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   const MAX_PROFILE_PHOTOS = 5;
   const BUCKET_NAME = 'profile-gallery';
   const ACCEPTED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
@@ -269,11 +269,29 @@
       }
 
       const supabaseClient = ensureSupabaseClient();
-      if (!supabaseClient?.storage) {
+      if (!supabaseClient?.storage || !supabaseClient?.auth?.getSession) {
         console.error('Supabase storage client is not available for profile photo upload.');
-        setMessage('Não foi possível inicializar o envio das fotos agora.', 'error', { lockHelperMessage: true });
+        setMessage('Não foi possível enviar a foto agora. Verifique se você está logado e tente novamente.', 'error', { lockHelperMessage: true });
         return;
       }
+
+      const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+
+      if (sessionError) {
+        console.error('Failed to get Supabase session:', sessionError);
+        setMessage('Não foi possível validar sua sessão. Faça login novamente.', 'error', { lockHelperMessage: true });
+        return;
+      }
+
+      const user = sessionData?.session?.user;
+
+      if (!user?.id) {
+        console.error('Profile gallery upload blocked because no authenticated Supabase session was found.', sessionData);
+        setMessage('Não foi possível enviar a foto agora. Verifique se você está logado e tente novamente.', 'error', { lockHelperMessage: true });
+        return;
+      }
+
+      const userId = user.id;
 
       clearPreviewAt(index);
       previewUrls[index] = URL.createObjectURL(file);
@@ -285,9 +303,9 @@
         console.log('Original file type:', file?.type || '');
         console.log('File name:', file?.name || '');
 
-        const objectPath = buildStoragePath(sessionUser.id, profileId, file);
+        const objectPath = buildStoragePath(userId, profileId, file);
         console.log('PHOTO UPLOAD PATH:', objectPath);
-        console.log('PHOTO UPLOAD USER ID:', sessionUser.id);
+        console.log('PHOTO UPLOAD USER ID:', userId);
         const contentType = normalizeImageMimeType(file);
         console.log('Normalized content type:', contentType);
 
