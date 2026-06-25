@@ -1100,44 +1100,62 @@
       }).then((data) => data.link || data);
     },
     async fetchProfile(id) {
-      try {
-        const profile = await fetchPublicProfileFromSupabase(id);
-        console.log('Fetched public profile:', profile);
-        console.log('PUBLIC PROFILE PHOTOS FROM API:', profile?.photos);
-        if (profile) {
-          try {
-            const backendData = await request(`/profiles/${id}`, { timeoutMs: 5000 });
-            const backendProfile = normalizeProfile(backendData.profile || backendData);
-            const mergedPhotos = normalizeProfilePhotosList(
-              (Array.isArray(backendProfile?.photosList) && backendProfile.photosList.length ? backendProfile.photosList : null)
-                ?? (Array.isArray(backendProfile?.photos) && backendProfile.photos.length ? backendProfile.photos : null)
-                ?? (Array.isArray(backendProfile?.fotos) && backendProfile.fotos.length ? backendProfile.fotos : null)
-                ?? profile.photosList
-                ?? profile.photos
-                ?? profile.fotos
-            );
+      let supabaseProfile = null;
+      let backendProfile = null;
+      let supabaseError = null;
+      let backendError = null;
 
-            return {
-              ...profile,
-              ownerUserId: backendProfile?.ownerUserId || profile.ownerUserId || null,
-              isClaimed: Boolean(backendProfile?.isClaimed || profile.isClaimed),
-              linkedClinics: backendProfile?.linkedClinics || profile.linkedClinics || [],
-              photos: mergedPhotos,
-              photosList: mergedPhotos,
-              fotos: mergedPhotos,
-            };
-          } catch (backendError) {
-            console.warn('Could not merge backend profile link data:', backendError);
-            return profile;
-          }
-        }
+      try {
+        supabaseProfile = await fetchPublicProfileFromSupabase(id);
+        console.log('Fetched public profile:', supabaseProfile);
+        console.log('PUBLIC PROFILE PHOTOS FROM SUPABASE:', supabaseProfile?.photos);
       } catch (error) {
-        console.warn('Using Render fallback for public profile:', error);
+        supabaseError = error;
+        console.warn('Supabase public profile fetch failed:', error);
       }
 
-      return request(`/profiles/${id}`).then((data) =>
-        normalizeProfile(data.profile || data)
-      );
+      try {
+        const backendData = await request(`/profiles/${id}`, { timeoutMs: 15000 });
+        backendProfile = normalizeProfile(backendData.profile || backendData);
+        console.log('PUBLIC PROFILE PHOTOS FROM BACKEND:', backendProfile?.photos);
+      } catch (error) {
+        backendError = error;
+        console.warn('Could not load backend public profile details:', error);
+      }
+
+      if (supabaseProfile && backendProfile) {
+        const mergedPhotos = normalizeProfilePhotosList(
+          (Array.isArray(backendProfile?.photosList) && backendProfile.photosList.length ? backendProfile.photosList : null)
+            ?? (Array.isArray(backendProfile?.photos) && backendProfile.photos.length ? backendProfile.photos : null)
+            ?? (Array.isArray(backendProfile?.fotos) && backendProfile.fotos.length ? backendProfile.fotos : null)
+            ?? supabaseProfile.photosList
+            ?? supabaseProfile.photos
+            ?? supabaseProfile.fotos
+        );
+
+        return {
+          ...supabaseProfile,
+          ...backendProfile,
+          ownerUserId: backendProfile?.ownerUserId || supabaseProfile.ownerUserId || null,
+          isClaimed: Boolean(backendProfile?.isClaimed || supabaseProfile.isClaimed),
+          linkedClinics: backendProfile?.linkedClinics || supabaseProfile.linkedClinics || [],
+          photos: mergedPhotos,
+          photosList: mergedPhotos,
+          fotos: mergedPhotos,
+        };
+      }
+
+      if (backendProfile) {
+        return backendProfile;
+      }
+
+      if (supabaseProfile) {
+        return supabaseProfile;
+      }
+
+      const finalError = backendError || supabaseError || new Error('Could not load public profile.');
+      console.warn('Using Render fallback for public profile:', finalError);
+      throw finalError;
     },
     async fetchProfileOptions(options = {}) {
       try {

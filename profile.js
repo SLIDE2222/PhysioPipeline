@@ -490,22 +490,20 @@ function renderProfileGallerySection(entity) {
   if (!photos.length) return '';
 
   return `
-    <section class="profile-gallery-section">
-      <article class="profile-card-full profile-gallery-card">
-        <div class="profile-section-heading">
-          <div>
-            <h3>Fotos</h3>
-            <p class="form-hint">Imagens adicionais deste perfil.</p>
-          </div>
+    <section class="profile-section profile-gallery-section">
+      <div class="profile-section-heading">
+        <div>
+          <h3>Fotos</h3>
+          <p class="form-hint">Imagens adicionais deste perfil.</p>
         </div>
-        <div class="profile-gallery-grid">
-          ${photos.map((photoUrl, index) => `
-            <figure class="profile-gallery-item">
-              <img src="${escapeHtml(photoUrl)}" alt="Foto do perfil ${index + 1}" loading="lazy" decoding="async" />
-            </figure>
-          `).join('')}
-        </div>
-      </article>
+      </div>
+      <div class="profile-gallery-grid">
+        ${photos.map((photoUrl, index) => `
+          <figure class="profile-gallery-item">
+            <img src="${escapeHtml(photoUrl)}" alt="Foto do perfil ${index + 1}" loading="lazy" decoding="async" />
+          </figure>
+        `).join('')}
+      </div>
     </section>
   `;
 }
@@ -656,6 +654,8 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton, clinicLinkS
         <p>${escapeHtml(clinic.descricao || 'Essa clínica ainda não adicionou uma descrição.')}</p>
       </section>
 
+      ${renderProfileGallerySection(clinic)}
+
       <section class="profile-section">
         <h3>Fisioterapeutas da clínica</h3>
         ${renderClinicTeamSection(clinic, team)}
@@ -684,7 +684,6 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton, clinicLinkS
       ${renderClinicMapSection(clinic)}
     </article>
 
-    ${renderProfileGallerySection(clinic)}
   `;
 }
 
@@ -747,6 +746,8 @@ function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton, clini
         <p>${escapeHtml(profissional.descricao || 'Esse profissional ainda não adicionou uma descrição.')}</p>
       </section>
 
+      ${renderProfileGallerySection(profissional)}
+
       ${isOwner ? renderLeadSummaryCard() : ''}
       ${renderLinkedClinics(profissional.linkedClinics)}
 
@@ -771,7 +772,6 @@ function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton, clini
       </section>
     </article>
 
-    ${renderProfileGallerySection(profissional)}
     ${renderReviewsDrawer(profissional, isOwner)}
   `;
 }

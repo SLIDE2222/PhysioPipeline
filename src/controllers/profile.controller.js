@@ -398,7 +398,7 @@ export async function createProfile(req, res) {
     });
   }
 
-  return res.status(201).json({ profile });
+  return res.status(201).json({ profile: decorateProfile(profile) });
 }
 
 export async function updateMyProfile(req, res) {
@@ -465,7 +465,7 @@ export async function updateMyProfile(req, res) {
     });
   }
 
-  return res.json({ profile: updated });
+  return res.json({ profile: decorateProfile(updated) });
 }
 
 export async function listMyClinicLinkRequests(req, res) {
