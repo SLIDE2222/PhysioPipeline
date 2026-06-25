@@ -418,21 +418,29 @@ function getProfileImageUrl(photo) {
     return normalized;
   }
 
+  const trimmed = normalized.replace(/^\/+/, '');
+  const hasLegacyBucketPrefix = /^profile-images\//i.test(trimmed);
+  const hasGalleryBucketPrefix = /^profile-gallery\//i.test(trimmed);
+  const bucketName = hasLegacyBucketPrefix ? 'profile-images' : 'profile-gallery';
+  const storagePath = (hasLegacyBucketPrefix || hasGalleryBucketPrefix)
+    ? trimmed.replace(/^[^/]+\//, '')
+    : trimmed;
+
   const client = window.supabaseClient || (typeof window.initializePhysioSupabaseClient === 'function'
     ? window.initializePhysioSupabaseClient()
     : null);
 
   if (client?.storage?.from) {
-    const { data } = client.storage.from('profile-images').getPublicUrl(normalized);
+    const { data } = client.storage.from(bucketName).getPublicUrl(storagePath);
     return data?.publicUrl || '';
   }
 
   const baseUrl = (window.PHYSIO_SUPABASE_URL || 'https://epptihpvgwzrodfsukpr.supabase.co').replace(/\/$/, '');
-  const safePath = normalized
+  const safePath = storagePath
     .split('/')
     .map((segment) => encodeURIComponent(segment))
     .join('/');
-  return `${baseUrl}/storage/v1/object/public/profile-images/${safePath}`;
+  return `${baseUrl}/storage/v1/object/public/${bucketName}/${safePath}`;
 }
 
 function normalizePhotos(value) {

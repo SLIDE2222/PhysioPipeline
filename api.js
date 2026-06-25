@@ -535,11 +535,19 @@
       return normalized;
     } catch (_) {
       if (!/\.(jpg|jpeg|png|webp)(\?.*)?(#.*)?$/i.test(normalized)) return '';
-      const safePath = normalized
+
+      const trimmed = normalized.replace(/^\/+/, '');
+      const hasLegacyBucketPrefix = /^profile-images\//i.test(trimmed);
+      const hasGalleryBucketPrefix = /^profile-gallery\//i.test(trimmed);
+      const bucketName = hasLegacyBucketPrefix ? 'profile-images' : 'profile-gallery';
+      const storagePath = (hasLegacyBucketPrefix || hasGalleryBucketPrefix)
+        ? trimmed.replace(/^[^/]+\//, '')
+        : trimmed;
+      const safePath = storagePath
         .split('/')
         .map((segment) => encodeURIComponent(segment))
         .join('/');
-      return `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/profile-images/${safePath}`;
+      return `${SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/${bucketName}/${safePath}`;
     }
   }
 

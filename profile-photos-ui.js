@@ -1,6 +1,6 @@
 ﻿(function () {
   const MAX_PROFILE_PHOTOS = 5;
-  const BUCKET_NAME = 'profile-images';
+  const BUCKET_NAME = 'profile-gallery';
   const ACCEPTED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
   const ACCEPTED_MIME_TYPES = new Set([
     'image/jpeg',
@@ -101,13 +101,14 @@
     return null;
   }
 
-  function buildStoragePath(profileId, file) {
-    const safeProfileId = sanitizePathSegment(profileId);
+  function buildStoragePath(userId, profileId, file) {
+    const safeUserId = sanitizePathSegment(userId || 'perfil');
+    const safeProfileId = sanitizePathSegment(profileId || 'perfil');
     const extension = getFileExtension(file) || 'jpg';
     const safeName = sanitizeFileName(String(file?.name || 'foto').replace(/\.[^.]+$/, ''));
     const timestamp = Date.now();
     const suffix = Math.random().toString(36).slice(2, 8);
-    return `profiles/${safeProfileId}/${timestamp}-${suffix}-${safeName}.${extension}`;
+    return `${safeUserId}/${safeProfileId}-${timestamp}-${suffix}-${safeName}.${extension}`;
   }
 
   function createEditor(options = {}) {
@@ -284,8 +285,9 @@
         console.log('Original file type:', file?.type || '');
         console.log('File name:', file?.name || '');
 
-        const objectPath = buildStoragePath(profileId, file);
+        const objectPath = buildStoragePath(sessionUser.id, profileId, file);
         console.log('PHOTO UPLOAD PATH:', objectPath);
+        console.log('PHOTO UPLOAD USER ID:', sessionUser.id);
         const contentType = normalizeImageMimeType(file);
         console.log('Normalized content type:', contentType);
 
