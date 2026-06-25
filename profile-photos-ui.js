@@ -102,13 +102,13 @@
   }
 
   function buildStoragePath(userId, profileId, file) {
-    const safeUserId = sanitizePathSegment(userId || 'perfil');
+    const exactUserId = String(userId || '').trim().replace(/^\/+|\/+$/g, '');
     const safeProfileId = sanitizePathSegment(profileId || 'perfil');
     const extension = getFileExtension(file) || 'jpg';
     const safeName = sanitizeFileName(String(file?.name || 'foto').replace(/\.[^.]+$/, ''));
     const timestamp = Date.now();
     const suffix = Math.random().toString(36).slice(2, 8);
-    return `${safeUserId}/${safeProfileId}-${timestamp}-${suffix}-${safeName}.${extension}`;
+    return `${exactUserId}/${safeProfileId}-${timestamp}-${suffix}-${safeName}.${extension}`;
   }
 
   function createEditor(options = {}) {
@@ -232,7 +232,7 @@
       } else if (visualCount >= MAX_PROFILE_PHOTOS) {
         setMessage('Limite de 5 fotos atingido.');
       } else {
-        setMessage('Adicione até 5 fotos para deixar seu perfil mais completo e confiável.');
+        setMessage('Adicione atÃ© 5 fotos para deixar seu perfil mais completo e confiÃ¡vel.');
       }
     }
 
@@ -259,7 +259,7 @@
 
     async function uploadFileForSlot(file, index) {
       if (!isValidImageFile(file)) {
-        setMessage('Envie uma imagem válida nos formatos JPG, PNG ou WEBP.', 'error', { lockHelperMessage: true });
+        setMessage('Envie uma imagem vÃ¡lida nos formatos JPG, PNG ou WEBP.', 'error', { lockHelperMessage: true });
         return;
       }
 
@@ -271,7 +271,7 @@
       const supabaseClient = ensureSupabaseClient();
       if (!supabaseClient?.storage || !supabaseClient?.auth?.getSession) {
         console.error('Supabase storage client is not available for profile photo upload.');
-        setMessage('Não foi possível enviar a foto agora. Verifique se você está logado e tente novamente.', 'error', { lockHelperMessage: true });
+        setMessage('NÃ£o foi possÃ­vel enviar a foto agora. Verifique se vocÃª estÃ¡ logado e tente novamente.', 'error', { lockHelperMessage: true });
         return;
       }
 
@@ -279,7 +279,7 @@
 
       if (sessionError) {
         console.error('Failed to get Supabase session:', sessionError);
-        setMessage('Não foi possível validar sua sessão. Faça login novamente.', 'error', { lockHelperMessage: true });
+        setMessage('NÃ£o foi possÃ­vel validar sua sessÃ£o. FaÃ§a login novamente.', 'error', { lockHelperMessage: true });
         return;
       }
 
@@ -287,7 +287,7 @@
 
       if (!user?.id) {
         console.error('Profile gallery upload blocked because no authenticated Supabase session was found.', sessionData);
-        setMessage('Não foi possível enviar a foto agora. Verifique se você está logado e tente novamente.', 'error', { lockHelperMessage: true });
+        setMessage('NÃ£o foi possÃ­vel enviar a foto agora. Verifique se vocÃª estÃ¡ logado e tente novamente.', 'error', { lockHelperMessage: true });
         return;
       }
 
@@ -304,13 +304,15 @@
         console.log('File name:', file?.name || '');
 
         const objectPath = buildStoragePath(userId, profileId, file);
-        console.log('PHOTO UPLOAD PATH:', objectPath);
+        console.log('GALLERY BUCKET:', BUCKET_NAME);
         console.log('PHOTO UPLOAD USER ID:', userId);
+        console.log('PHOTO UPLOAD FILE PATH:', objectPath);
+        console.log('PHOTO UPLOAD PATH:', objectPath);
         const contentType = normalizeImageMimeType(file);
         console.log('Normalized content type:', contentType);
 
         if (!contentType) {
-          throw new Error('Envie uma imagem válida nos formatos JPG, PNG ou WEBP.');
+          throw new Error('Envie uma imagem vÃ¡lida nos formatos JPG, PNG ou WEBP.');
         }
 
         const uploadResult = await supabaseClient.storage
@@ -332,7 +334,7 @@
         const publicUrl = publicUrlResult?.data?.publicUrl || '';
         console.log('PHOTO PUBLIC URL:', publicUrl);
         if (!publicUrl || !isValidImageUrl(publicUrl)) {
-          throw new Error('Não foi possível gerar a URL pública da foto.');
+          throw new Error('NÃ£o foi possÃ­vel gerar a URL pÃºblica da foto.');
         }
 
         const nextValues = getValue();
@@ -343,9 +345,7 @@
         setMessage('Foto enviada com sucesso.', 'success', { lockHelperMessage: true });
       } catch (error) {
         console.error('Profile photo upload failed:', error);
-        const uploadErrorMessage = error?.message
-          ? `Não foi possível enviar a foto agora. ${error.message}`
-          : 'Não foi possível enviar a foto agora. Tente novamente em alguns instantes.';
+        const uploadErrorMessage = 'Não foi possível enviar a foto agora. Verifique se você está logado e tente novamente.';
         setMessage(uploadErrorMessage, 'error', { lockHelperMessage: true });
       } finally {
         uploadingSlot = -1;
