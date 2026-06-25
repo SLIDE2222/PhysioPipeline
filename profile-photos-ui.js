@@ -103,12 +103,9 @@
 
   function buildStoragePath(userId, profileId, file) {
     const exactUserId = String(userId || '').trim().replace(/^\/+|\/+$/g, '');
-    const safeProfileId = sanitizePathSegment(profileId || 'perfil');
-    const extension = getFileExtension(file) || 'jpg';
-    const safeName = sanitizeFileName(String(file?.name || 'foto').replace(/\.[^.]+$/, ''));
+    const safeFileName = sanitizeFileName(String(file?.name || 'foto'));
     const timestamp = Date.now();
-    const suffix = Math.random().toString(36).slice(2, 8);
-    return `${exactUserId}/${safeProfileId}-${timestamp}-${suffix}-${safeName}.${extension}`;
+    return `${exactUserId}/${timestamp}-${safeFileName}`;
   }
 
   function createEditor(options = {}) {
@@ -232,7 +229,7 @@
       } else if (visualCount >= MAX_PROFILE_PHOTOS) {
         setMessage('Limite de 5 fotos atingido.');
       } else {
-        setMessage('Adicione atÃ© 5 fotos para deixar seu perfil mais completo e confiÃ¡vel.');
+        setMessage('Adicione atÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© 5 fotos para deixar seu perfil mais completo e confiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡vel.');
       }
     }
 
@@ -259,7 +256,7 @@
 
     async function uploadFileForSlot(file, index) {
       if (!isValidImageFile(file)) {
-        setMessage('Envie uma imagem vÃ¡lida nos formatos JPG, PNG ou WEBP.', 'error', { lockHelperMessage: true });
+        setMessage('Envie uma imagem vÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡lida nos formatos JPG, PNG ou WEBP.', 'error', { lockHelperMessage: true });
         return;
       }
 
@@ -271,7 +268,7 @@
       const supabaseClient = ensureSupabaseClient();
       if (!supabaseClient?.storage || !supabaseClient?.auth?.getSession) {
         console.error('Supabase storage client is not available for profile photo upload.');
-        setMessage('NÃ£o foi possÃ­vel enviar a foto agora. Verifique se vocÃª estÃ¡ logado e tente novamente.', 'error', { lockHelperMessage: true });
+        setMessage('NÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­vel enviar a foto agora. Verifique se vocÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âª estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ logado e tente novamente.', 'error', { lockHelperMessage: true });
         return;
       }
 
@@ -279,7 +276,7 @@
 
       if (sessionError) {
         console.error('Failed to get Supabase session:', sessionError);
-        setMessage('NÃ£o foi possÃ­vel validar sua sessÃ£o. FaÃ§a login novamente.', 'error', { lockHelperMessage: true });
+        setMessage('NÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­vel validar sua sessÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o. FaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§a login novamente.', 'error', { lockHelperMessage: true });
         return;
       }
 
@@ -287,7 +284,7 @@
 
       if (!user?.id) {
         console.error('Profile gallery upload blocked because no authenticated Supabase session was found.', sessionData);
-        setMessage('NÃ£o foi possÃ­vel enviar a foto agora. Verifique se vocÃª estÃ¡ logado e tente novamente.', 'error', { lockHelperMessage: true });
+        setMessage('NÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­vel enviar a foto agora. Verifique se vocÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âª estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ logado e tente novamente.', 'error', { lockHelperMessage: true });
         return;
       }
 
@@ -300,6 +297,7 @@
 
       try {
         console.log('SELECTED PHOTO FILE:', file);
+        console.log('SELECTED PHOTO FILE:', file);
         console.log('Original file type:', file?.type || '');
         console.log('File name:', file?.name || '');
 
@@ -308,7 +306,8 @@
         console.log('PHOTO UPLOAD USER ID:', userId);
         console.log('PHOTO UPLOAD FILE PATH:', objectPath);
         console.log('PHOTO UPLOAD PATH:', objectPath);
-        const contentType = normalizeImageMimeType(file);
+        console.log('PHOTO UPLOAD FILE:', file?.name || '', file?.type || '', file?.size || 0);
+        const contentType = normalizeImageMimeType(file) || file?.type || 'image/jpeg';
         console.log('Normalized content type:', contentType);
 
         if (!contentType) {
@@ -319,7 +318,7 @@
           .from(BUCKET_NAME)
           .upload(objectPath, file, {
             cacheControl: '3600',
-            upsert: true,
+            upsert: false,
             contentType,
           });
 
@@ -334,7 +333,7 @@
         const publicUrl = publicUrlResult?.data?.publicUrl || '';
         console.log('PHOTO PUBLIC URL:', publicUrl);
         if (!publicUrl || !isValidImageUrl(publicUrl)) {
-          throw new Error('NÃ£o foi possÃ­vel gerar a URL pÃºblica da foto.');
+          throw new Error('NÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o foi possÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­vel gerar a URL pÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºblica da foto.');
         }
 
         const nextValues = getValue();
