@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
@@ -33,13 +33,13 @@
         <div class="section-heading left">
           <p class="eyebrow">Conta de clinica</p>
           <h1>Dashboard da clinica</h1>
-          <p>🏥 Clínica</p>
+          <p>ðŸ¥ ClÃ­nica</p>
         </div>
 
         <form class="form-card" id="clinicDashboardForm">
           <label for="clinicLogo">Logo da clinica</label>
           <label for="clinicLogo" class="upload-dropzone">
-            <span class="upload-dropzone__title">Clique para enviar a logo da clínica</span>
+            <span class="upload-dropzone__title">Clique para enviar a logo da clÃ­nica</span>
             <span class="upload-dropzone__hint">PNG, JPG ou WEBP. A imagem pode ser ajustada antes de salvar.</span>
           </label>
           <input type="file" id="clinicLogo" name="clinicLogo" accept="image/*" class="sr-only-file-input" />
@@ -51,8 +51,8 @@
           <label for="clinicName">Nome da clinica</label>
           <input type="text" id="clinicName" name="clinicName" placeholder="Nome da sua clinica" />
 
-          <label for="clinicResponsible">Responsável</label>
-          <input type="text" id="clinicResponsible" name="clinicResponsible" placeholder="Nome do responsável" />
+          <label for="clinicResponsible">ResponsÃ¡vel</label>
+          <input type="text" id="clinicResponsible" name="clinicResponsible" placeholder="Nome do responsÃ¡vel" />
 
           <label for="clinicAddress">Endereco</label>
           <input type="text" id="clinicAddress" name="clinicAddress" placeholder="Rua, numero e complemento" />
@@ -69,19 +69,19 @@
           <label for="clinicWhatsapp">WhatsApp</label>
           <input type="text" id="clinicWhatsapp" name="clinicWhatsapp" placeholder="(11) 99999-9999" />
 
-          <label for="clinicServiceInput">Especialidades/serviços</label>
+          <label for="clinicServiceInput">Especialidades/serviÃ§os</label>
           <div class="tag-input-shell" id="clinicServicesEditor">
             <div class="tag-pill-list" id="clinicServicesTags"></div>
             <input
               type="text"
               id="clinicServiceInput"
-              placeholder="Digite uma especialidade ou serviço e pressione Enter"
+              placeholder="Digite uma especialidade ou serviÃ§o e pressione Enter"
               autocomplete="off"
             />
           </div>
           <div class="tag-editor-actions">
             <button type="button" class="btn btn-outline tag-editor-add-btn" id="addClinicService">
-              + Adicionar especialidade/serviço
+              + Adicionar especialidade/serviÃ§o
             </button>
             <p class="tag-editor-limit" id="clinicServiceLimitMessage" aria-live="polite"></p>
           </div>
@@ -89,12 +89,12 @@
 
           <div class="clinic-team-section">
             <div class="clinic-team-section__header">
-              <label for="clinicTeamRows">Fisioterapeutas da clínica</label>
-              <p class="form-hint">Adicione até 5 fisioterapeutas com nome e especialidade.</p>
+              <label for="clinicTeamRows">Fisioterapeutas da clÃ­nica</label>
+              <p class="form-hint">Adicione atÃ© 5 fisioterapeutas com nome e especialidade.</p>
             </div>
             <div class="clinic-link-request-box">
-              <h3>Vincular fisioterapeuta à clínica</h3>
-              <p class="form-hint">Envie solicitações para vincular fisioterapeutas reais à sua clínica ou adicione membros manualmente.</p>
+              <h3>Vincular fisioterapeuta Ã  clÃ­nica</h3>
+              <p class="form-hint">Envie solicitaÃ§Ãµes para vincular fisioterapeutas reais Ã  sua clÃ­nica ou adicione membros manualmente.</p>
               <div class="clinic-link-search-grid">
                 <input type="text" id="clinicPhysioSearchName" placeholder="Nome do fisioterapeuta" />
                 <input type="text" id="clinicPhysioSearchCity" placeholder="Cidade" />
@@ -106,13 +106,13 @@
             </div>
 
             <div class="clinic-link-request-box">
-              <h3>Vínculos e solicitações</h3>
+              <h3>VÃ­nculos e solicitaÃ§Ãµes</h3>
               <div id="clinicPhysioLinksList" class="clinic-link-results"></div>
             </div>
 
             <div class="clinic-link-request-box">
               <h3>Adicionar membro manualmente</h3>
-              <p class="form-hint">Membros manuais não vinculam perfis reais e não exigem aprovação.</p>
+              <p class="form-hint">Membros manuais nÃ£o vinculam perfis reais e nÃ£o exigem aprovaÃ§Ã£o.</p>
             </div>
             <div id="clinicTeamRows" class="clinic-team-rows"></div>
             <button type="button" class="btn btn-outline clinic-team-add-btn" id="addClinicTeamRow">
@@ -120,8 +120,8 @@
             </button>
           </div>
 
-          <label for="clinicDescription">Descrição</label>
-          <textarea id="clinicDescription" name="clinicDescription" rows="5" placeholder="Fale sobre a clínica, serviços e diferenciais."></textarea>
+          <label for="clinicDescription">DescriÃ§Ã£o</label>
+          <textarea id="clinicDescription" name="clinicDescription" rows="5" placeholder="Fale sobre a clÃ­nica, serviÃ§os e diferenciais."></textarea>
 
           <section class="profile-photos-section">
             <div class="profile-photos-section__header">
@@ -130,7 +130,6 @@
             </div>
             <div class="profile-photos-editor" id="clinicProfilePhotosList"></div>
             <div class="profile-photos-editor__actions">
-              <button type="button" class="btn btn-outline" id="addClinicProfilePhotoButton">+ Adicionar foto</button>
               <p class="form-hint" id="clinicProfilePhotosMessage" aria-live="polite"></p>
             </div>
           </section>
@@ -148,10 +147,10 @@
   <script src="supabase-client.js?v=supabase-client3"></script>
   <script src="image-cropper.js?v=imagecrop1"></script>
   <script src="clinic-form-ui.js?v=clinicui1"></script>
-  <script src="profile-photos-ui.js?v=profilephotos2"></script>
+  <script src="profile-photos-ui.js?v=profilephotos3"></script>
   <script src="js/notifications.js?v=notifshared1"></script>
   <script src="script.js?v=notifshared3"></script>
-  <script src="clinic-dashboard.js?v=accounttype1"></script>
+  <script src="clinic-dashboard.js?v=accounttype2"></script>
 
   <footer class="footer tech-signature-footer">
     <div class="container footer-content tech-signature-footer__content">
@@ -169,3 +168,4 @@
   </footer>
 </body>
 </html>
+
