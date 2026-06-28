@@ -1,4 +1,4 @@
-﻿const clinicDashboardForm = document.getElementById('clinicDashboardForm');
+const clinicDashboardForm = document.getElementById('clinicDashboardForm');
 const clinicDashboardMessage = document.getElementById('clinicDashboardMessage');
 const clinicLogoInput = document.getElementById('clinicLogo');
 const clinicLogoPreview = document.getElementById('clinicLogoPreview');
@@ -21,7 +21,9 @@ const clinicEditor = window.PhysioClinicForm?.createClinicEditor?.({
   addTeamButtonId: 'addClinicTeamRow',
 });
 
+const MAIN_CLINIC_IMAGE_BUCKET = 'profile-images';
 let clinicLogoBase64 = '';
+let currentClinicProfileId = '';
 
 const CLINIC_LINK_STATUS_LABELS = {
   PENDING: 'Pendente',
@@ -38,6 +40,124 @@ function escapeClinicDashboardHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function ensureClinicMainImageSupabaseClient() {
+  if (window.supabaseClient?.storage) return window.supabaseClient;
+
+  if (typeof window.initializePhysioSupabaseClient === 'function') {
+    const client = window.initializePhysioSupabaseClient();
+    if (client?.storage) return client;
+  }
+
+  return null;
+}
+
+function normalizeClinicMainImageContentType(fileLike) {
+  const name = String(fileLike?.name || '').toLowerCase();
+  const type = String(fileLike?.type || '').toLowerCase();
+
+  if (type === 'image/jpg' || type === 'image/jpeg') return 'image/jpeg';
+  if (type === 'image/png') return 'image/png';
+  if (type === 'image/webp') return 'image/webp';
+
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.webp')) return 'image/webp';
+
+  return '';
+}
+
+function sanitizeClinicMainImageFileName(fileName) {
+  return String(fileName || 'logo')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-_.]+|[-_.]+$/g, '') || 'logo';
+}
+
+function clinicDataUrlToBlob(dataUrl) {
+  const matches = String(dataUrl || '').match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!matches) {
+    throw new Error('Nao foi possivel preparar a imagem para envio.');
+  }
+
+  const mimeType = matches[1];
+  const binary = atob(matches[2]);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return new Blob([bytes], { type: mimeType });
+}
+
+async function uploadClinicMainImage(source, profileId, imageKind = 'logo') {
+  const normalizedSource = String(source || '').trim();
+  if (!normalizedSource) return '';
+  if (/^https?:\/\//i.test(normalizedSource)) return normalizedSource;
+  if (!/^data:image\//i.test(normalizedSource)) return normalizedSource;
+
+  const supabaseClient = ensureClinicMainImageSupabaseClient();
+  if (!supabaseClient?.storage || !supabaseClient?.auth?.getSession) {
+    throw new Error('Nao foi possivel conectar ao armazenamento de imagens agora.');
+  }
+
+  const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+  if (sessionError) {
+    console.error('Clinic logo session lookup failed:', sessionError);
+    throw new Error('Nao foi possivel validar sua sessao. Faca login novamente.');
+  }
+
+  const user = sessionData?.session?.user;
+  if (!user?.id) {
+    throw new Error('Nao foi possivel enviar a foto agora. Verifique se voce esta logado e tente novamente.');
+  }
+
+  const blob = clinicDataUrlToBlob(normalizedSource);
+  const contentType = normalizeClinicMainImageContentType({
+    name: `${imageKind}.jpg`,
+    type: blob.type || 'image/jpeg',
+  });
+
+  if (!contentType) {
+    throw new Error('Envie uma imagem valida nos formatos JPG, PNG ou WEBP.');
+  }
+
+  const extension = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg';
+  const fileName = `${imageKind}.${extension}`;
+  const safeFileName = sanitizeClinicMainImageFileName(`${profileId || 'clinic'}-${Date.now()}-${fileName}`);
+  const filePath = `${user.id}/${safeFileName}`;
+  const file = new File([blob], fileName, { type: contentType });
+
+  console.log('MAIN CLINIC IMAGE BUCKET:', MAIN_CLINIC_IMAGE_BUCKET);
+  console.log('MAIN CLINIC IMAGE FILE PATH:', filePath);
+
+  const { error: uploadError } = await supabaseClient.storage
+    .from(MAIN_CLINIC_IMAGE_BUCKET)
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: true,
+      contentType,
+    });
+
+  if (uploadError) {
+    console.error('Clinic main image upload failed:', uploadError);
+    throw new Error('Nao foi possivel enviar a foto agora. Verifique se voce esta logado e tente novamente.');
+  }
+
+  const { data: publicUrlData } = supabaseClient.storage
+    .from(MAIN_CLINIC_IMAGE_BUCKET)
+    .getPublicUrl(filePath);
+
+  const publicUrl = publicUrlData?.publicUrl || '';
+  if (!publicUrl) {
+    throw new Error('Nao foi possivel gerar a URL publica da foto.');
+  }
+
+  return publicUrl;
 }
 
 function setClinicMessage(text, color) {
@@ -73,10 +193,14 @@ function fillClinicForm(profile) {
     team: profile?.physioTeamList || profile?.fisioterapeutas || profile?.physioTeam || [],
   });
 
+  currentClinicProfileId = profile?.id || currentClinicProfileId || '';
   clinicLogoBase64 = profile?.logo || profile?.logoUrl || '';
   if (clinicLogoBase64 && clinicLogoPreview) {
     clinicLogoPreview.src = clinicLogoBase64;
     clinicLogoPreview.style.display = 'block';
+  } else if (clinicLogoPreview) {
+    clinicLogoPreview.removeAttribute('src');
+    clinicLogoPreview.style.display = 'none';
   }
 
   clinicPhotosEditor?.setContext?.({ profileId: profile?.id, accountType: 'clinic' });
@@ -337,6 +461,20 @@ if (clinicDashboardForm) {
     try {
       const clinicEditorValue = clinicEditor?.getValue?.() || { services: [], team: [] };
 
+      const persistedLogoUrl = await uploadClinicMainImage(
+        clinicLogoBase64,
+        currentClinicProfileId || 'clinic',
+        'logo'
+      );
+
+      if (persistedLogoUrl) {
+        clinicLogoBase64 = persistedLogoUrl;
+        if (clinicLogoPreview) {
+          clinicLogoPreview.src = persistedLogoUrl;
+          clinicLogoPreview.style.display = 'block';
+        }
+      }
+
       const updatedClinicProfile = await window.physioApi.updateMyClinicProfile({
         clinicName: document.getElementById('clinicName').value.trim() || null,
         responsibleName: document.getElementById('clinicResponsible').value.trim() || null,
@@ -347,7 +485,7 @@ if (clinicDashboardForm) {
         whatsapp: document.getElementById('clinicWhatsapp').value.trim() || null,
         services: clinicEditorValue.services,
         physioTeam: clinicEditorValue.team,
-        logoUrl: clinicLogoBase64 || null,
+        logoUrl: persistedLogoUrl || null,
         photos: photoValidation?.value || clinicPhotosEditor?.getValue?.() || [],
         description: document.getElementById('clinicDescription').value.trim() || null,
       });

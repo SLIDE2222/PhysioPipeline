@@ -11,7 +11,9 @@ const profilePhotosEditor = window.PhysioProfilePhotos?.createEditor?.({
 });
 const VISIBLE_PROFILE_CLINIC_LINK_STATUSES = new Set(['PENDING', 'ACCEPTED']);
 
+const MAIN_PROFILE_IMAGE_BUCKET = 'profile-images';
 let fotoBase64 = '';
+let currentProfileId = '';
 
 function escapeEditarHtml(value) {
   return String(value ?? '')
@@ -29,6 +31,124 @@ function fileToBase64(file) {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+}
+
+function ensureMainProfileSupabaseClient() {
+  if (window.supabaseClient?.storage) return window.supabaseClient;
+
+  if (typeof window.initializePhysioSupabaseClient === 'function') {
+    const client = window.initializePhysioSupabaseClient();
+    if (client?.storage) return client;
+  }
+
+  return null;
+}
+
+function normalizeMainProfileImageContentType(fileLike) {
+  const name = String(fileLike?.name || '').toLowerCase();
+  const type = String(fileLike?.type || '').toLowerCase();
+
+  if (type === 'image/jpg' || type === 'image/jpeg') return 'image/jpeg';
+  if (type === 'image/png') return 'image/png';
+  if (type === 'image/webp') return 'image/webp';
+
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.webp')) return 'image/webp';
+
+  return '';
+}
+
+function sanitizeMainProfileImageFileName(fileName) {
+  return String(fileName || 'foto')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-_.]+|[-_.]+$/g, '') || 'foto';
+}
+
+function dataUrlToBlob(dataUrl) {
+  const matches = String(dataUrl || '').match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!matches) {
+    throw new Error('Nao foi possivel preparar a foto para envio.');
+  }
+
+  const mimeType = matches[1];
+  const binary = atob(matches[2]);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+
+  return new Blob([bytes], { type: mimeType });
+}
+
+async function uploadMainProfileImage(source, profileId, imageKind = 'avatar') {
+  const normalizedSource = String(source || '').trim();
+  if (!normalizedSource) return '';
+  if (/^https?:\/\//i.test(normalizedSource)) return normalizedSource;
+  if (!/^data:image\//i.test(normalizedSource)) return normalizedSource;
+
+  const supabaseClient = ensureMainProfileSupabaseClient();
+  if (!supabaseClient?.storage || !supabaseClient?.auth?.getSession) {
+    throw new Error('Nao foi possivel conectar ao armazenamento de imagens agora.');
+  }
+
+  const { data: sessionData, error: sessionError } = await supabaseClient.auth.getSession();
+  if (sessionError) {
+    console.error('Main profile image session lookup failed:', sessionError);
+    throw new Error('Nao foi possivel validar sua sessao. Faca login novamente.');
+  }
+
+  const user = sessionData?.session?.user;
+  if (!user?.id) {
+    throw new Error('Nao foi possivel enviar a foto agora. Verifique se voce esta logado e tente novamente.');
+  }
+
+  const blob = dataUrlToBlob(normalizedSource);
+  const contentType = normalizeMainProfileImageContentType({
+    name: `${imageKind}.jpg`,
+    type: blob.type || 'image/jpeg',
+  });
+
+  if (!contentType) {
+    throw new Error('Envie uma imagem valida nos formatos JPG, PNG ou WEBP.');
+  }
+
+  const extension = contentType === 'image/png' ? 'png' : contentType === 'image/webp' ? 'webp' : 'jpg';
+  const fileName = `${imageKind}.${extension}`;
+  const safeFileName = sanitizeMainProfileImageFileName(`${profileId || 'profile'}-${Date.now()}-${fileName}`);
+  const filePath = `${user.id}/${safeFileName}`;
+  const file = new File([blob], fileName, { type: contentType });
+
+  console.log('MAIN PROFILE IMAGE BUCKET:', MAIN_PROFILE_IMAGE_BUCKET);
+  console.log('MAIN PROFILE IMAGE FILE PATH:', filePath);
+
+  const { error: uploadError } = await supabaseClient.storage
+    .from(MAIN_PROFILE_IMAGE_BUCKET)
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: true,
+      contentType,
+    });
+
+  if (uploadError) {
+    console.error('Main profile image upload failed:', uploadError);
+    throw new Error('Nao foi possivel enviar a foto agora. Verifique se voce esta logado e tente novamente.');
+  }
+
+  const { data: publicUrlData } = supabaseClient.storage
+    .from(MAIN_PROFILE_IMAGE_BUCKET)
+    .getPublicUrl(filePath);
+
+  const publicUrl = publicUrlData?.publicUrl || '';
+  if (!publicUrl) {
+    throw new Error('Nao foi possivel gerar a URL publica da foto.');
+  }
+
+  return publicUrl;
 }
 
 
@@ -172,11 +292,15 @@ async function loadMyProfile() {
     document.getElementById('instagram').value = profile.instagram || '';
     document.getElementById('linkedin').value = profile.linkedin || '';
     document.getElementById('descricao').value = profile.descricao || profile.bio || '';
+    currentProfileId = profile.id || currentProfileId || '';
     fotoBase64 = profile.foto || profile.photoUrl || '';
 
     if (fotoBase64) {
       fotoPreview.src = fotoBase64;
       fotoPreview.style.display = 'block';
+    } else if (fotoPreview) {
+      fotoPreview.removeAttribute('src');
+      fotoPreview.style.display = 'none';
     }
 
     profilePhotosEditor?.setContext?.({ profileId: profile.id, accountType: 'physio' });
@@ -391,6 +515,20 @@ if (editarForm) {
     }
     try {
       const photos = profilePhotoValidation?.value || profilePhotosEditor?.getValue?.() || [];
+      const persistedPhotoUrl = await uploadMainProfileImage(
+        fotoBase64,
+        currentProfileId || 'profile',
+        'avatar'
+      );
+
+      if (persistedPhotoUrl) {
+        fotoBase64 = persistedPhotoUrl;
+        if (fotoPreview) {
+          fotoPreview.src = persistedPhotoUrl;
+          fotoPreview.style.display = 'block';
+        }
+      }
+
       const payload = {
         name: document.getElementById('nomeCompleto').value.trim() || null,
         phone: document.getElementById('telefone').value.trim() || null,
@@ -402,7 +540,7 @@ if (editarForm) {
         attendance: document.getElementById('atendimento').value.trim() || null,
         instagram: document.getElementById('instagram').value.trim() || null,
         linkedin: document.getElementById('linkedin').value.trim() || null,
-        photoUrl: fotoBase64 || null,
+        photoUrl: persistedPhotoUrl || null,
         photos,
         bio: document.getElementById('descricao').value.trim() || null,
       };

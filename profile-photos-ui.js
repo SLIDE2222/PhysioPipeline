@@ -161,6 +161,9 @@
     }
 
     function setValue(nextValues = []) {
+      helperMessageLocked = false;
+      uploadingSlot = -1;
+      activeSlot = -1;
       clearAllPreviewUrls();
       values = (Array.isArray(nextValues) ? nextValues : [])
         .map(normalizePhotoUrl)

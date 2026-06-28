@@ -410,19 +410,23 @@ function renderReviewsDrawer(profissional, isOwner) {
   `;
 }
 
-function getProfileImageUrl(photo) {
+function getStorageImageUrl(photo, fallbackBucket = 'profile-gallery') {
   const normalized = String(photo || '').trim();
   if (!normalized) return '';
 
-  if (/^https?:\/\//i.test(normalized)) {
+  if (/^data:image\//i.test(normalized) || /^https?:\/\//i.test(normalized)) {
     return normalized;
   }
 
   const trimmed = normalized.replace(/^\/+/, '');
-  const hasLegacyBucketPrefix = /^profile-images\//i.test(trimmed);
+  const hasAvatarBucketPrefix = /^profile-images\//i.test(trimmed);
   const hasGalleryBucketPrefix = /^profile-gallery\//i.test(trimmed);
-  const bucketName = hasLegacyBucketPrefix ? 'profile-images' : 'profile-gallery';
-  const storagePath = (hasLegacyBucketPrefix || hasGalleryBucketPrefix)
+  const bucketName = hasAvatarBucketPrefix
+    ? 'profile-images'
+    : hasGalleryBucketPrefix
+      ? 'profile-gallery'
+      : fallbackBucket;
+  const storagePath = (hasAvatarBucketPrefix || hasGalleryBucketPrefix)
     ? trimmed.replace(/^[^/]+\//, '')
     : trimmed;
 
@@ -441,6 +445,14 @@ function getProfileImageUrl(photo) {
     .map((segment) => encodeURIComponent(segment))
     .join('/');
   return `${baseUrl}/storage/v1/object/public/${bucketName}/${safePath}`;
+}
+
+function getAvatarImageUrl(photo) {
+  return getStorageImageUrl(photo, 'profile-images');
+}
+
+function getGalleryImageUrl(photo) {
+  return getStorageImageUrl(photo, 'profile-gallery');
 }
 
 function normalizePhotos(value) {
@@ -464,7 +476,7 @@ function normalizePhotos(value) {
   const seen = new Set();
 
   return rawValues
-    .map((item) => getProfileImageUrl(item))
+    .map((item) => getGalleryImageUrl(item))
     .filter(Boolean)
     .filter((item) => {
       const key = item.toLowerCase();
@@ -627,8 +639,9 @@ function renderClinicProfileMarkup(clinic, isOwner, showClaimButton, clinicLinkS
   const services = clinic?.servicesList || clinic?.servicosLista || [];
   const team = clinic?.physioTeamList || clinic?.fisioterapeutas || [];
   const clinicWhatsAppLink = buildClinicWhatsAppLink(clinic);
-  const logoHTML = clinic?.logo
-    ? `<img src="${escapeHtml(clinic.logo)}" alt="${escapeHtml(clinicName)}" class="clickable-avatar" loading="lazy" decoding="async">`
+  const clinicLogoUrl = getAvatarImageUrl(clinic?.logo || clinic?.logoUrl || clinic?.foto);
+  const logoHTML = clinicLogoUrl
+    ? `<img src="${escapeHtml(clinicLogoUrl)}" alt="${escapeHtml(clinicName)}" class="clickable-avatar" loading="lazy" decoding="async">`
     : `<span>${escapeHtml((clinicName || '?').charAt(0).toUpperCase())}</span>`;
 
   return `
@@ -715,8 +728,9 @@ function renderClinicLinkRequestCta(profissional, clinicLinkState) {
 function renderPhysioProfileMarkup(profissional, isOwner, showClaimButton, clinicLinkState = null) {
   const specialties = getProfileSpecialties(profissional);
   const specialtiesText = specialties.length ? specialties.join(' • ') : '-';
-  const fotoHTML = profissional.foto
-    ? `<img src="${escapeHtml(profissional.foto)}" alt="${escapeHtml(profissional.nome)}" class="clickable-avatar" loading="lazy" decoding="async">`
+  const profileAvatarUrl = getAvatarImageUrl(profissional.foto || profissional.photoUrl);
+  const fotoHTML = profileAvatarUrl
+    ? `<img src="${escapeHtml(profileAvatarUrl)}" alt="${escapeHtml(profissional.nome)}" class="clickable-avatar" loading="lazy" decoding="async">`
     : `<span>${escapeHtml((profissional.nome || '?').charAt(0).toUpperCase())}</span>`;
 
   const whatsappLink = buildWhatsAppLink(profissional.telefone, profissional.nome);

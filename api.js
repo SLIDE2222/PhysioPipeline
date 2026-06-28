@@ -496,7 +496,12 @@
       descricao: profile.bio ?? profile.descricao ?? '',
       instagram: profile.instagram ?? '',
       linkedin: profile.linkedin ?? '',
-      foto: profile.photoUrl ?? profile.photo_url ?? profile.avatar_url ?? profile.foto ?? '',
+      photoUrl: buildAvatarPhotoPublicUrl(
+        profile.photoUrl ?? profile.photo_url ?? profile.avatar_url ?? profile.foto ?? ''
+      ),
+      foto: buildAvatarPhotoPublicUrl(
+        profile.photoUrl ?? profile.photo_url ?? profile.avatar_url ?? profile.foto ?? ''
+      ),
       fotos: normalizeProfilePhotosList(profile.photosList ?? profile.fotos ?? profile.photos),
       photos: normalizeProfilePhotosList(profile.photosList ?? profile.fotos ?? profile.photos),
       photosList: normalizeProfilePhotosList(profile.photosList ?? profile.fotos ?? profile.photos),
@@ -523,9 +528,13 @@
     }
   }
 
-  function buildProfilePhotoPublicUrl(value) {
+  function buildStoragePhotoPublicUrl(value, fallbackBucket = 'profile-gallery') {
     const normalized = String(value || '').replace(/\s+/g, ' ').trim();
     if (!normalized) return '';
+
+    if (/^data:image\//i.test(normalized)) {
+      return normalized;
+    }
 
     try {
       const parsed = new URL(normalized);
@@ -537,10 +546,14 @@
       if (!/\.(jpg|jpeg|png|webp)(\?.*)?(#.*)?$/i.test(normalized)) return '';
 
       const trimmed = normalized.replace(/^\/+/, '');
-      const hasLegacyBucketPrefix = /^profile-images\//i.test(trimmed);
+      const hasAvatarBucketPrefix = /^profile-images\//i.test(trimmed);
       const hasGalleryBucketPrefix = /^profile-gallery\//i.test(trimmed);
-      const bucketName = hasLegacyBucketPrefix ? 'profile-images' : 'profile-gallery';
-      const storagePath = (hasLegacyBucketPrefix || hasGalleryBucketPrefix)
+      const bucketName = hasAvatarBucketPrefix
+        ? 'profile-images'
+        : hasGalleryBucketPrefix
+          ? 'profile-gallery'
+          : fallbackBucket;
+      const storagePath = (hasAvatarBucketPrefix || hasGalleryBucketPrefix)
         ? trimmed.replace(/^[^/]+\//, '')
         : trimmed;
       const safePath = storagePath
@@ -551,6 +564,14 @@
     }
   }
 
+  function buildAvatarPhotoPublicUrl(value) {
+    return buildStoragePhotoPublicUrl(value, 'profile-images');
+  }
+
+  function buildGalleryPhotoPublicUrl(value) {
+    return buildStoragePhotoPublicUrl(value, 'profile-gallery');
+  }
+
   function normalizeProfilePhotosList(value) {
     const rawValues = Array.isArray(value)
       ? value
@@ -558,7 +579,7 @@
     const seen = new Set();
 
     return rawValues
-      .map((item) => buildProfilePhotoPublicUrl(item))
+      .map((item) => buildGalleryPhotoPublicUrl(item))
       .filter(Boolean)
       .filter((item) => {
         const key = item.toLowerCase();
@@ -659,7 +680,8 @@
       physioTeamList,
       physioTeam: clinic.physioTeam ?? null,
       linkedPhysiotherapists,
-      logo: clinic.logoUrl ?? clinic.logo ?? clinic.foto ?? '',
+      logoUrl: buildAvatarPhotoPublicUrl(clinic.logoUrl ?? clinic.logo ?? clinic.foto ?? ''),
+      logo: buildAvatarPhotoPublicUrl(clinic.logoUrl ?? clinic.logo ?? clinic.foto ?? ''),
       descricao: clinic.description ?? clinic.descricao ?? '',
       userId: clinic.userId ?? null,
       isClaimable: typeof clinic.isClaimable === 'boolean' ? clinic.isClaimable : !clinic.userId,
