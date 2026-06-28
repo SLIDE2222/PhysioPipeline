@@ -8,6 +8,11 @@ const profilePhotosEditor = window.PhysioProfilePhotos?.createEditor?.({
   listId: 'profilePhotosList',
   addButtonId: 'addProfilePhotoButton',
   messageId: 'profilePhotosMessage',
+  persistPhotos: async (photos) => {
+    const updatedProfile = await window.physioApi.updateMyProfile({ photos });
+    currentProfileId = updatedProfile?.id || currentProfileId || '';
+    return getPersistedProfilePhotos(updatedProfile);
+  },
 });
 const VISIBLE_PROFILE_CLINIC_LINK_STATUSES = new Set(['PENDING', 'ACCEPTED']);
 
@@ -122,9 +127,6 @@ async function uploadMainProfileImage(source, profileId, imageKind = 'avatar') {
   const safeFileName = sanitizeMainProfileImageFileName(`${profileId || 'profile'}-${Date.now()}-${fileName}`);
   const filePath = `${user.id}/${safeFileName}`;
   const file = new File([blob], fileName, { type: contentType });
-
-  console.log('MAIN PROFILE IMAGE BUCKET:', MAIN_PROFILE_IMAGE_BUCKET);
-  console.log('MAIN PROFILE IMAGE FILE PATH:', filePath);
 
   const { error: uploadError } = await supabaseClient.storage
     .from(MAIN_PROFILE_IMAGE_BUCKET)
@@ -267,7 +269,7 @@ async function loadMyProfile() {
     const profile = await window.physioApi.fetchMyProfile();
 
     if (!profile) {
-      editarMensagem.textContent = 'Nenhum perfil estÃ¡ vinculado Ã  sua conta.';
+      editarMensagem.textContent = 'Nenhum perfil está vinculado à sua conta.';
       editarMensagem.style.color = '#b91c1c';
       return null;
     }
@@ -323,12 +325,11 @@ async function loadMyProfile() {
     }
 
     profilePhotosEditor?.setContext?.({ profileId: profile.id, accountType: 'physio' });
-    console.log('EDIT PROFILE PHOTOS FROM API:', profile.photosList || profile.photos);
     profilePhotosEditor?.setValue?.(getPersistedProfilePhotos(profile));
 
     return profile;
   } catch (error) {
-    editarMensagem.textContent = error.message || 'Sua sessÃ£o expirou.';
+    editarMensagem.textContent = error.message || 'Sua sessão expirou.';
     editarMensagem.style.color = '#b91c1c';
     return null;
   }
@@ -336,11 +337,11 @@ async function loadMyProfile() {
 
 function renderClinicLinkCard(link, actions = '') {
   const clinic = link.clinic || {};
-  const location = [clinic.city, clinic.neighborhood].filter(Boolean).join(' â€¢ ') || 'LocalizaÃ§Ã£o nÃ£o informada';
+  const location = [clinic.city, clinic.neighborhood].filter(Boolean).join(' • ') || 'Localização não informada';
 
   return `
     <article class="clinic-link-card">
-      <strong>${escapeEditarHtml(clinic.clinicName || 'ClÃ­nica')}</strong>
+      <strong>${escapeEditarHtml(clinic.clinicName || 'Clínica')}</strong>
       <p class="clinic-link-card__meta">${escapeEditarHtml(location)}</p>
       ${link.message ? `<p class="clinic-link-card__meta">${escapeEditarHtml(link.message)}</p>` : ''}
       ${actions ? `<div class="clinic-link-actions">${actions}</div>` : ''}
@@ -356,32 +357,32 @@ async function loadClinicLinkRequests() {
       .filter((link) => VISIBLE_PROFILE_CLINIC_LINK_STATUSES.has(String(link?.status || '').toUpperCase()));
     const pending = links.filter((link) => link.status === 'PENDING');
     const accepted = links.filter((link) => link.status === 'ACCEPTED');
-    const emptyStateHtml = '<p class="form-hint clinic-link-empty-state">Nenhum vÃ­nculo ativo ou solicitaÃ§Ã£o pendente no momento.</p>';
+    const emptyStateHtml = '<p class="form-hint clinic-link-empty-state">Nenhum vínculo ativo ou solicitação pendente no momento.</p>';
 
     profileClinicLinkRequests.innerHTML = pending.length
       ? pending.map((link) => renderClinicLinkCard(
           link,
           `
-            <button type="button" class="btn btn-primary" data-accept-clinic-link="${escapeEditarHtml(link.id)}">Aceitar vÃ­nculo</button>
-            <button type="button" class="btn btn-outline" data-reject-clinic-link="${escapeEditarHtml(link.id)}">Recusar vÃ­nculo</button>
+            <button type="button" class="btn btn-primary" data-accept-clinic-link="${escapeEditarHtml(link.id)}">Aceitar vínculo</button>
+            <button type="button" class="btn btn-outline" data-reject-clinic-link="${escapeEditarHtml(link.id)}">Recusar vínculo</button>
           `
         )).join('')
-      : '<p class="form-hint">Nenhuma solicitaÃ§Ã£o pendente.</p>';
+      : '<p class="form-hint">Nenhuma solicitação pendente.</p>';
 
     profileLinkedClinics.innerHTML = accepted.length
       ? accepted.map((link) => renderClinicLinkCard(
           link,
-          `<button type="button" class="btn btn-outline" data-unlink-clinic-link="${escapeEditarHtml(link.id)}">Desvincular clÃ­nica</button>`
+          `<button type="button" class="btn btn-outline" data-unlink-clinic-link="${escapeEditarHtml(link.id)}">Desvincular clínica</button>`
         )).join('')
-      : '<p class="form-hint">Nenhuma clÃ­nica vinculada.</p>';
+      : '<p class="form-hint">Nenhuma clínica vinculada.</p>';
     if (!pending.length && !accepted.length) {
       profileClinicLinkRequests.innerHTML = emptyStateHtml;
       profileLinkedClinics.innerHTML = emptyStateHtml;
     }
   } catch (error) {
     console.error('Profile clinic links load failed:', error);
-    profileClinicLinkRequests.innerHTML = '<p class="form-hint">NÃ£o foi possÃ­vel carregar solicitaÃ§Ãµes agora.</p>';
-    profileLinkedClinics.innerHTML = '<p class="form-hint clinic-link-empty-state">Nenhum vÃ­nculo ativo ou solicitaÃ§Ã£o pendente no momento.</p>';
+    profileClinicLinkRequests.innerHTML = '<p class="form-hint">Não foi possível carregar solicitações agora.</p>';
+    profileLinkedClinics.innerHTML = '<p class="form-hint clinic-link-empty-state">Nenhum vínculo ativo ou solicitação pendente no momento.</p>';
   }
 }
 
@@ -403,7 +404,7 @@ if (fotoInput) {
       fotoInput.value = '';
     } catch (error) {
       console.error(error);
-      editarMensagem.textContent = 'NÃ£o foi possÃ­vel ajustar essa imagem.';
+      editarMensagem.textContent = 'Não foi possível ajustar essa imagem.';
       editarMensagem.style.color = '#b91c1c';
       fotoInput.value = '';
     }
@@ -414,7 +415,7 @@ if (fotoInput) {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      editarMensagem.textContent = 'Escolha um arquivo de imagem vÃ¡lido.';
+      editarMensagem.textContent = 'Escolha um arquivo de imagem válido.';
       editarMensagem.style.color = '#b91c1c';
       fotoInput.value = '';
       return;
@@ -502,7 +503,7 @@ if (editarForm) {
       await loadClinicLinkRequests();
     } catch (error) {
       console.error('Clinic link action failed:', error);
-      editarMensagem.textContent = error.message || 'NÃ£o foi possÃ­vel atualizar o vÃ­nculo.';
+      editarMensagem.textContent = error.message || 'Não foi possível atualizar o vínculo.';
       editarMensagem.style.color = '#b91c1c';
     } finally {
       button.disabled = false;
@@ -516,7 +517,7 @@ if (editarForm) {
     const especialidadeSecundaria = document.getElementById('especialidadeSecundaria').value.trim();
 
     if (especialidade && especialidadeSecundaria && especialidade === especialidadeSecundaria) {
-      editarMensagem.textContent = 'Escolha uma especializaÃ§Ã£o adicional diferente da principal.';
+      editarMensagem.textContent = 'Escolha uma especialização adicional diferente da principal.';
       editarMensagem.style.color = '#b91c1c';
       return;
     }
@@ -564,20 +565,19 @@ if (editarForm) {
         bio: document.getElementById('descricao').value.trim() || null,
       };
 
-      console.log('FINAL PHOTOS STATE BEFORE SAVE:', photos);
-      console.log('PHOTOS BEING SAVED:', photos);
-      console.log('PROFILE PAYLOAD WITH PHOTOS:', payload);
-
       const profile = await window.physioApi.updateMyProfile(payload);
+      currentProfileId = profile?.id || currentProfileId || '';
+      profilePhotosEditor?.setContext?.({ profileId: currentProfileId, accountType: 'physio' });
+      profilePhotosEditor?.setValue?.(getPersistedProfilePhotos(profile));
 
-      editarMensagem.textContent = 'Perfil atualizado com sucesso!';
+      editarMensagem.textContent = 'Perfil atualizado com sucesso.';
       editarMensagem.style.color = '#166534';
 
       setTimeout(() => {
         window.location.href = `profile.html?id=${encodeURIComponent(profile.id)}`;
       }, 700);
     } catch (error) {
-      editarMensagem.textContent = error.message || 'NÃ£o foi possÃ­vel atualizar o perfil.';
+      editarMensagem.textContent = error.message || 'Não foi possível atualizar o perfil.';
       editarMensagem.style.color = '#b91c1c';
     } finally {
       if (submitBtn) submitBtn.disabled = false;

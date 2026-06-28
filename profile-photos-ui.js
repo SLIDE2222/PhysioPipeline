@@ -30,11 +30,47 @@
       const parsed = new URL(normalized);
       if (!/^https?:$/i.test(parsed.protocol)) return false;
       return ACCEPTED_EXTENSIONS.some((extension) =>
-        new RegExp('\\.' + extension + '(\\?.*)?(#.*)?$', 'i').test(parsed.pathname + parsed.search + parsed.hash)
+        new RegExp(`\\.${extension}(\\?.*)?(#.*)?$`, 'i').test(parsed.pathname + parsed.search + parsed.hash)
       );
     } catch (_) {
       return false;
     }
+  }
+
+  function normalizeSavedPhotos(value) {
+    const rawValues = Array.isArray(value)
+      ? value
+      : (() => {
+          if (typeof value === 'string') {
+            try {
+              const parsed = JSON.parse(value);
+              return Array.isArray(parsed) ? parsed : [value];
+            } catch (_) {
+              return value ? [value] : [];
+            }
+          }
+
+          if (value && typeof value === 'object') {
+            const source = value.photosList ?? value.photos ?? value.fotos ?? [];
+            return Array.isArray(source) ? source : source ? [source] : [];
+          }
+
+          return [];
+        })();
+
+    const seen = new Set();
+
+    return rawValues
+      .map(normalizePhotoUrl)
+      .filter(Boolean)
+      .filter((photoUrl) => isValidImageUrl(photoUrl))
+      .filter((photoUrl) => {
+        const key = photoUrl.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, MAX_PROFILE_PHOTOS);
   }
 
   function getFileExtension(file) {
@@ -113,6 +149,7 @@
     const list = document.getElementById(options.listId);
     const addButton = document.getElementById(options.addButtonId);
     const message = document.getElementById(options.messageId);
+    const persistPhotos = typeof options.persistPhotos === 'function' ? options.persistPhotos : null;
 
     if (!list) return null;
 
@@ -122,12 +159,17 @@
     let uploadingSlot = -1;
     let activeSlot = -1;
     let helperMessageLocked = false;
+    let persisting = false;
 
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp';
     fileInput.hidden = true;
     document.body.appendChild(fileInput);
+
+    function isBusy() {
+      return uploadingSlot >= 0 || persisting;
+    }
 
     function setMessage(text = '', tone = 'muted', messageOptions = {}) {
       if (!message) return;
@@ -137,7 +179,7 @@
     }
 
     function getValue() {
-      return values.map(normalizePhotoUrl).filter(Boolean).slice(0, MAX_PROFILE_PHOTOS);
+      return normalizeSavedPhotos(values);
     }
 
     function revokePreviewUrl(value) {
@@ -165,12 +207,9 @@
       helperMessageLocked = false;
       uploadingSlot = -1;
       activeSlot = -1;
+      persisting = false;
       clearAllPreviewUrls();
-      values = (Array.isArray(nextValues) ? nextValues : [])
-        .map(normalizePhotoUrl)
-        .filter((value, index, array) => Boolean(value) && array.indexOf(value) === index)
-        .slice(0, MAX_PROFILE_PHOTOS);
-
+      values = normalizeSavedPhotos(nextValues);
       render();
     }
 
@@ -192,6 +231,7 @@
       const filledValues = getValue();
       const slotCount = getRenderableSlotCount();
       const visiblePhotoCount = getVisiblePhotoCount();
+      const disableActions = isBusy();
 
       list.innerHTML = Array.from({ length: slotCount }).map((_, index) => {
         const value = filledValues[index] || '';
@@ -212,10 +252,10 @@
               ${isUploading ? '<div class="profile-photo-slot__overlay">Enviando foto...</div>' : ''}
             </div>
             <div class="profile-photo-slot__actions">
-              <button type="button" class="btn btn-outline profile-photo-slot__button" data-photo-upload-slot="${index}">
+              <button type="button" class="btn btn-outline profile-photo-slot__button" data-photo-upload-slot="${index}" ${disableActions ? 'disabled' : ''}>
                 ${isFilled ? 'Trocar foto' : 'Adicionar foto'}
               </button>
-              ${isFilled ? `<button type="button" class="btn btn-outline profile-photo-slot__button profile-photo-slot__button--danger" data-photo-remove-slot="${index}">Remover</button>` : ''}
+              ${isFilled ? `<button type="button" class="btn btn-outline profile-photo-slot__button profile-photo-slot__button--danger" data-photo-remove-slot="${index}" ${disableActions ? 'disabled' : ''}>Remover</button>` : ''}
             </div>
           </article>
         `;
@@ -230,6 +270,8 @@
 
       if (uploadingSlot >= 0) {
         setMessage('Enviando foto...');
+      } else if (persisting) {
+        setMessage('Salvando fotos...');
       } else if (visiblePhotoCount >= MAX_PROFILE_PHOTOS) {
         setMessage('Limite de 5 fotos atingido.');
       } else {
@@ -238,10 +280,10 @@
     }
 
     function validate() {
-      if (uploadingSlot >= 0) {
+      if (isBusy()) {
         return {
           valid: false,
-          message: 'Aguarde o envio da foto terminar antes de salvar.',
+          message: 'Aguarde a atualização das fotos terminar antes de salvar.',
         };
       }
 
@@ -252,10 +294,50 @@
     }
 
     function requestFileForSlot(index) {
-      if (uploadingSlot >= 0 || index < 0 || index >= MAX_PROFILE_PHOTOS) return;
+      if (isBusy() || index < 0 || index >= MAX_PROFILE_PHOTOS) return;
       activeSlot = index;
       fileInput.value = '';
       fileInput.click();
+    }
+
+    async function persistPhotoSet(nextValues, previousValues, successMessage, cleanup = null) {
+      values = normalizeSavedPhotos(nextValues);
+      render();
+
+      if (!persistPhotos) {
+        setMessage(successMessage, 'success', { lockHelperMessage: true });
+        return true;
+      }
+
+      persisting = true;
+      helperMessageLocked = false;
+      render();
+
+      try {
+        const persistedResult = await persistPhotos(values);
+        values = normalizeSavedPhotos(persistedResult || values);
+        setMessage(successMessage, 'success', { lockHelperMessage: true });
+        return true;
+      } catch (error) {
+        console.error('Profile gallery persistence failed:', error);
+        values = normalizeSavedPhotos(previousValues);
+
+        if (cleanup?.supabaseClient?.storage?.from && cleanup?.objectPath) {
+          try {
+            await cleanup.supabaseClient.storage.from(BUCKET_NAME).remove([cleanup.objectPath]);
+          } catch (cleanupError) {
+            console.warn('Could not clean up orphaned gallery upload:', cleanupError);
+          }
+        }
+
+        setMessage('Não foi possível salvar as fotos do perfil agora. Tente novamente em alguns instantes.', 'error', {
+          lockHelperMessage: true,
+        });
+        return false;
+      } finally {
+        persisting = false;
+        render();
+      }
     }
 
     async function uploadFileForSlot(file, index) {
@@ -291,28 +373,23 @@
         return;
       }
 
-      const previousValue = getValue()[index] || '';
+      const previousValues = getValue();
       clearPreviewAt(index);
       previewUrls[index] = URL.createObjectURL(file);
       uploadingSlot = index;
+      helperMessageLocked = false;
       render();
 
-      try {
-        console.log('PHOTO INPUT CHANGE EVENT FILE:', file);
-        console.log('Original file type:', file?.type || '');
-        console.log('File name:', file?.name || '');
+      let objectPath = '';
 
+      try {
         const contentType = normalizeImageMimeType(file);
-        console.log('Normalized content type:', contentType);
 
         if (!contentType) {
           throw new Error('Envie uma imagem válida nos formatos JPG, PNG ou WEBP.');
         }
 
-        const objectPath = buildStoragePath(user.id, profileId, file);
-        console.log('GALLERY BUCKET:', BUCKET_NAME);
-        console.log('PHOTO UPLOAD USER ID:', user.id);
-        console.log('PHOTO UPLOAD FILE PATH:', objectPath);
+        objectPath = buildStoragePath(user.id, profileId, file);
 
         const uploadResult = await supabaseClient.storage
           .from(BUCKET_NAME)
@@ -326,35 +403,36 @@
           throw uploadResult.error;
         }
 
-        const publicUrlResult = supabaseClient.storage
-          .from(BUCKET_NAME)
-          .getPublicUrl(objectPath);
-
+        const publicUrlResult = supabaseClient.storage.from(BUCKET_NAME).getPublicUrl(objectPath);
         const publicUrl = publicUrlResult?.data?.publicUrl || '';
-        console.log('Uploaded photo URL:', publicUrl);
 
         if (!publicUrl || !isValidImageUrl(publicUrl)) {
           throw new Error('Não foi possível gerar a URL pública da foto.');
         }
 
-        const nextValues = getValue();
-        nextValues[index] = publicUrl;
-        values = nextValues.filter(Boolean).slice(0, MAX_PROFILE_PHOTOS);
         clearPreviewAt(index);
-        setMessage('Foto enviada com sucesso.', 'success', { lockHelperMessage: true });
+        uploadingSlot = -1;
+
+        const nextValues = previousValues.slice();
+        nextValues[index] = publicUrl;
+        await persistPhotoSet(nextValues, previousValues, 'Foto enviada com sucesso.', {
+          supabaseClient,
+          objectPath,
+        });
       } catch (error) {
         console.error('Gallery upload failed:', error);
-        if (!previousValue) {
-          clearPreviewAt(index);
-        }
-        setMessage('Não foi possível enviar a foto agora. Verifique se você está logado e tente novamente.', 'error', { lockHelperMessage: true });
+        clearPreviewAt(index);
+        values = normalizeSavedPhotos(previousValues);
+        setMessage('Não foi possível enviar a foto agora. Verifique se você está logado e tente novamente.', 'error', {
+          lockHelperMessage: true,
+        });
       } finally {
         uploadingSlot = -1;
         render();
       }
     }
 
-    list.addEventListener('click', (event) => {
+    list.addEventListener('click', async (event) => {
       const uploadButton = event.target.closest('[data-photo-upload-slot]');
       if (uploadButton) {
         requestFileForSlot(Number(uploadButton.dataset.photoUploadSlot));
@@ -362,22 +440,18 @@
       }
 
       const removeButton = event.target.closest('[data-photo-remove-slot]');
-      if (!removeButton) return;
+      if (!removeButton || isBusy()) return;
 
       const index = Number(removeButton.dataset.photoRemoveSlot);
-      helperMessageLocked = false;
-      clearPreviewAt(index);
-      const nextValues = getValue();
+      const previousValues = getValue();
+      const nextValues = previousValues.slice();
       nextValues.splice(index, 1);
-      values = nextValues;
-      render();
+      helperMessageLocked = false;
+      await persistPhotoSet(nextValues, previousValues, 'Foto removida com sucesso.');
     });
 
     fileInput.addEventListener('change', async (event) => {
-      console.log('PHOTO INPUT CHANGE EVENT:', event);
-      console.log('SELECTED FILES:', event?.target?.files);
       const file = event?.target?.files?.[0];
-      console.log('SELECTED PHOTO FILE:', file);
 
       if (!file) {
         setMessage('Nenhuma imagem selecionada.', 'error', { lockHelperMessage: true });

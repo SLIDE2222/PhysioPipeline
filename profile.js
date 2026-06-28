@@ -231,7 +231,7 @@ function getReviewStatusMeta(status) {
     case 'published':
       return { label: 'Publicada', tone: 'published' };
     case 'pending_owner':
-      return { label: 'Pendente de aprovaÃ§Ã£o', tone: 'pending' };
+      return { label: 'Pendente de aprovação', tone: 'pending' };
     case 'pending_admin':
       return { label: 'Pendente de anÃ¡lise', tone: 'pending' };
     case 'reported':
@@ -498,7 +498,6 @@ function getGalleryPhotos(entity) {
 
 function renderProfileGallerySection(entity) {
   const photos = getGalleryPhotos(entity);
-  console.log('NORMALIZED PUBLIC GALLERY PHOTOS:', photos);
   if (!photos.length) return '';
 
   return `
@@ -939,7 +938,7 @@ function setupProfileClinicLinkRequest() {
       button.disabled = false;
       button.textContent = originalLabel;
       if (message) {
-        message.textContent = "NÃ£o foi possÃ­vel enviar sua avaliaÃ§Ã£o agora. Tente novamente em alguns instantes.";
+        message.textContent = "Não foi possível enviar sua avaliação agora. Tente novamente em alguns instantes.";
         message.style.color = '#b91c1c';
       }
       console.error('Profile clinic link request failed:', error);
@@ -1010,7 +1009,7 @@ function setupClinicProfileLinkRequest() {
       button.disabled = false;
       button.textContent = originalLabel;
       if (message) {
-        message.textContent = "NÃ£o foi possÃ­vel enviar sua avaliaÃ§Ã£o agora. Tente novamente em alguns instantes.";
+        message.textContent = "Não foi possível enviar sua avaliação agora. Tente novamente em alguns instantes.";
         message.style.color = '#b91c1c';
       }
       console.error('Clinic profile link request failed:', error);
@@ -1069,9 +1068,9 @@ function openReviewReportModal({ reviewId, onSubmit }) {
       <button type="button" class="notification-review-modal__close" aria-label="Fechar" data-review-report-close>&times;</button>
       <div class="notification-review-modal__content">
         <div class="notification-review-modal__header">
-          <span class="eyebrow">ModeraÃ§Ã£o</span>
+          <span class="eyebrow">Moderação</span>
           <h3 id="reviewReportTitle">Reportar review</h3>
-          <p>Explique por que esta avaliaÃ§Ã£o precisa de revisÃ£o da equipe do PhysioPipeline.</p>
+          <p>Explique por que esta avaliação precisa de revisão da equipe do PhysioPipeline.</p>
         </div>
         <label class="profile-review-form__field">
           <span>Motivo do reporte</span>
@@ -1300,10 +1299,10 @@ function setupReviewForm(profileId, isOwner) {
       form.reset();
       const moderationStatus = String(response?.moderation?.status || response?.review?.status || '').toLowerCase();
       const successMessage = moderationStatus === 'pending_owner'
-        ? 'Sua avaliaÃ§Ã£o foi enviada ao profissional e ficarÃ¡ visÃ­vel apÃ³s aprovaÃ§Ã£o.'
+        ? 'Sua avaliação foi enviada ao profissional e ficará visível após aprovação.'
         : moderationStatus === 'pending_admin'
-          ? 'Sua avaliaÃ§Ã£o foi enviada para anÃ¡lise e ficarÃ¡ visÃ­vel apÃ³s aprovaÃ§Ã£o.'
-          : 'Sua avaliaÃ§Ã£o foi enviada com sucesso.';
+          ? 'Sua avaliação foi enviada para análise e ficará visível após aprovação.'
+          : 'Sua avaliação foi enviada com sucesso.';
 
       if (message) {
         message.textContent = successMessage;
@@ -1315,7 +1314,7 @@ function setupReviewForm(profileId, isOwner) {
     } catch (error) {
       console.error('Could not submit review:', error);
       if (message) {
-        message.textContent = "NÃ£o foi possÃ­vel enviar sua avaliaÃ§Ã£o agora. Tente novamente em alguns instantes.";
+        message.textContent = "Não foi possível enviar sua avaliação agora. Tente novamente em alguns instantes.";
         message.style.color = '#b91c1c';
       }
     } finally {

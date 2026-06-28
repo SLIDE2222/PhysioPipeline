@@ -10,6 +10,11 @@ const clinicPhotosEditor = window.PhysioProfilePhotos?.createEditor?.({
   listId: 'clinicProfilePhotosList',
   addButtonId: 'addClinicProfilePhotoButton',
   messageId: 'clinicProfilePhotosMessage',
+  persistPhotos: async (photos) => {
+    const updatedClinicProfile = await window.physioApi.updateMyClinicProfile({ photos });
+    currentClinicProfileId = updatedClinicProfile?.id || currentClinicProfileId || '';
+    return getPersistedClinicPhotos(updatedClinicProfile);
+  },
 });
 const clinicEditor = window.PhysioClinicForm?.createClinicEditor?.({
   serviceInputId: 'clinicServiceInput',
@@ -132,9 +137,6 @@ async function uploadClinicMainImage(source, profileId, imageKind = 'logo') {
   const filePath = `${user.id}/${safeFileName}`;
   const file = new File([blob], fileName, { type: contentType });
 
-  console.log('MAIN CLINIC IMAGE BUCKET:', MAIN_CLINIC_IMAGE_BUCKET);
-  console.log('MAIN CLINIC IMAGE FILE PATH:', filePath);
-
   const { error: uploadError } = await supabaseClient.storage
     .from(MAIN_CLINIC_IMAGE_BUCKET)
     .upload(filePath, file, {
@@ -256,7 +258,7 @@ function getPhysioSpecialtyText(profile) {
     ? profile.specialties
     : [profile?.specialty, profile?.secondarySpecialty, profile?.tertiarySpecialty].filter(Boolean);
 
-  return specialties.filter(Boolean).join(' â€¢ ') || 'Especialidade nÃ£o informada';
+  return specialties.filter(Boolean).join(' • ') || 'Especialidade não informada';
 }
 
 async function loadClinicPhysioLinks() {
@@ -267,7 +269,7 @@ async function loadClinicPhysioLinks() {
       .filter((link) => VISIBLE_CLINIC_LINK_STATUSES.has(String(link?.status || '').toUpperCase()));
 
     if (!links.length) {
-      clinicPhysioLinksList.innerHTML = '<p class="form-hint clinic-link-empty-state">Nenhum vÃ­nculo ativo ou solicitaÃ§Ã£o pendente no momento.</p>';
+      clinicPhysioLinksList.innerHTML = '<p class="form-hint clinic-link-empty-state">Nenhum vínculo ativo ou solicitação pendente no momento.</p>';
       return;
     }
 
@@ -275,7 +277,7 @@ async function loadClinicPhysioLinks() {
       const profile = link.profile || {};
       const status = CLINIC_LINK_STATUS_LABELS[link.status] || link.status || 'Pendente';
       const canUnlink = link.status === 'PENDING' || link.status === 'ACCEPTED';
-      const actionLabel = link.status === 'PENDING' ? 'Cancelar solicitaÃ§Ã£o' : 'Desvincular';
+      const actionLabel = link.status === 'PENDING' ? 'Cancelar solicitação' : 'Desvincular';
       const statusClass = link.status === 'ACCEPTED'
         ? 'clinic-link-status--active'
         : 'clinic-link-status--pending';
@@ -294,7 +296,7 @@ async function loadClinicPhysioLinks() {
       `;
     }).join('');
   } catch (error) {
-    clinicPhysioLinksList.innerHTML = '<p class="form-hint">NÃ£o foi possÃ­vel carregar os vÃ­nculos agora.</p>';
+    clinicPhysioLinksList.innerHTML = '<p class="form-hint">Não foi possível carregar os vínculos agora.</p>';
     console.error('Clinic physio links load failed:', error);
   }
 }
@@ -321,16 +323,16 @@ async function searchClinicPhysios() {
       <article class="clinic-link-card">
         <strong>${escapeClinicDashboardHtml(profile.nome || profile.name || 'Fisioterapeuta')}</strong>
         <p class="clinic-link-card__meta">${escapeClinicDashboardHtml(getPhysioSpecialtyText(profile))}</p>
-        <p class="clinic-link-card__meta">${escapeClinicDashboardHtml([profile.cidade || profile.city, profile.bairro || profile.neighborhood].filter(Boolean).join(' â€¢ ') || 'LocalizaÃ§Ã£o nÃ£o informada')}</p>
+        <p class="clinic-link-card__meta">${escapeClinicDashboardHtml([profile.cidade || profile.city, profile.bairro || profile.neighborhood].filter(Boolean).join(' • ') || 'Localização não informada')}</p>
         <div class="clinic-link-actions">
           <button type="button" class="btn btn-primary" data-request-clinic-physio="${escapeClinicDashboardHtml(profile.id)}">
-            Enviar solicitaÃ§Ã£o de vÃ­nculo
+            Enviar solicitação de vínculo
           </button>
         </div>
       </article>
     `).join('');
   } catch (error) {
-    clinicPhysioSearchResults.innerHTML = '<p class="form-hint">NÃ£o foi possÃ­vel buscar fisioterapeutas agora.</p>';
+    clinicPhysioSearchResults.innerHTML = '<p class="form-hint">Não foi possível buscar fisioterapeutas agora.</p>';
     console.error('Clinic physio search failed:', error);
   }
 }
@@ -353,7 +355,7 @@ async function loadClinicDashboard() {
     fillClinicForm(clinicProfile);
     await loadClinicPhysioLinks();
   } catch (error) {
-    setClinicMessage(error.message || 'NÃ£o foi possÃ­vel carregar os dados da clÃ­nica.', '#b91c1c');
+    setClinicMessage(error.message || 'Não foi possível carregar os dados da clínica.', '#b91c1c');
   }
 }
 
@@ -374,11 +376,11 @@ if (clinicPhysioSearchResults) {
         profileId: button.dataset.requestClinicPhysio,
       });
       setClinicLinkMessage('');
-      showClinicDashboardToast('SolicitaÃ§Ã£o enviada ao fisioterapeuta.');
+      showClinicDashboardToast('Solicitação enviada ao fisioterapeuta.');
       await loadClinicPhysioLinks();
     } catch (error) {
       console.error('Clinic physio request failed:', error);
-      setClinicLinkMessage(error.message || 'NÃ£o foi possÃ­vel enviar a solicitaÃ§Ã£o.', '#b91c1c');
+      setClinicLinkMessage(error.message || 'Não foi possível enviar a solicitação.', '#b91c1c');
     } finally {
       button.disabled = false;
     }
@@ -396,11 +398,11 @@ if (clinicPhysioLinksList) {
     try {
       await window.physioApi.unlinkClinicPhysioLink(button.dataset.unlinkClinicPhysio);
       setClinicLinkMessage('');
-      showClinicDashboardToast('VÃ­nculo atualizado com sucesso.');
+      showClinicDashboardToast('Vínculo atualizado com sucesso.');
       await loadClinicPhysioLinks();
     } catch (error) {
       console.error('Clinic physio unlink failed:', error);
-      setClinicLinkMessage(error.message || 'NÃ£o foi possÃ­vel desvincular.', '#b91c1c');
+      setClinicLinkMessage(error.message || 'Não foi possível desvincular.', '#b91c1c');
     } finally {
       button.disabled = false;
     }
@@ -425,7 +427,7 @@ if (clinicLogoInput) {
       clinicLogoInput.value = '';
     } catch (error) {
       console.error(error);
-      setClinicMessage('NÃ£o foi possÃ­vel ajustar essa imagem.', '#b91c1c');
+      setClinicMessage('Não foi possível ajustar essa imagem.', '#b91c1c');
       clinicLogoInput.value = '';
     }
   }
@@ -435,7 +437,7 @@ if (clinicLogoInput) {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setClinicMessage('Escolha um arquivo de imagem valido.', '#b91c1c');
+      setClinicMessage('Escolha um arquivo de imagem válido.', '#b91c1c');
       clinicLogoInput.value = '';
       return;
     }
@@ -531,7 +533,7 @@ if (clinicDashboardForm) {
         window.location.href = redirectTarget;
       }, 1000);
     } catch (error) {
-      setClinicMessage(error.message || 'NÃ£o foi possÃ­vel salvar os dados da clÃ­nica.', '#b91c1c');
+      setClinicMessage(error.message || 'Não foi possível salvar os dados da clínica.', '#b91c1c');
     } finally {
       if (submitBtn) submitBtn.disabled = false;
     }

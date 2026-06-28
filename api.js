@@ -1037,7 +1037,10 @@
         method,
         body: payload,
         timeoutMs: 20000,
-      }).then((data) => normalizeClinicProfile(data.clinicProfile || data));
+      }).then((data) => {
+        clearPublicProfileCache();
+        return normalizeClinicProfile(data.clinicProfile || data);
+      });
 
       try {
         const clinicProfile = await upsertWith('/clinics/me', 'PATCH');
