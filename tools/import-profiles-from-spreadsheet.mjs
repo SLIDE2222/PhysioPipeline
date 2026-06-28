@@ -38,10 +38,25 @@ const PROFILE_FIELDS = [
   "updatedAt",
 ];
 
+const UPDATEABLE_PROFILE_FIELDS = [
+  "name",
+  "specialty",
+  "secondarySpecialty",
+  "tertiarySpecialty",
+  "city",
+  "neighborhood",
+  "phone",
+  "bio",
+  "attendance",
+  "instagram",
+  "linkedin",
+  "photoUrl",
+];
+
 function repairMojibake(value) {
   const text = String(value ?? "");
   if (!text) return text;
-  if (!/[Ãâð]/.test(text)) return text;
+  if (!/[ÃƒÃ¢Ã°]/.test(text)) return text;
 
   try {
     const repaired = Buffer.from(text, "latin1").toString("utf8");
@@ -183,7 +198,7 @@ function humanizeNameFromId(id) {
 
   if (!slug) return null;
 
-  const mergedPreposition = slug.match(/^([a-zà-ÿ]+?)(de|da|do|dos|das)([a-zà-ÿ]+)$/i);
+  const mergedPreposition = slug.match(/^([a-zÃ -Ã¿]+?)(de|da|do|dos|das)([a-zÃ -Ã¿]+)$/i);
   const expanded = mergedPreposition
     ? `${mergedPreposition[1]} ${mergedPreposition[2]} ${mergedPreposition[3]}`
     : slug;
@@ -294,6 +309,44 @@ function splitUrlsByType(urls) {
   return { detected, rejected, instagram, linkedin, photoUrl };
 }
 
+function normalizeInstagramKey(value) {
+  const text = normalizeNullishText(value);
+  if (!text) return null;
+
+  try {
+    const candidate = /^https?:\/\//i.test(text) ? text : `https://instagram.com/${text.replace(/^@/, "")}`;
+    const parsed = new URL(candidate);
+    const hostname = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+    if (hostname !== "instagram.com") {
+      return normalizeLoose(text.replace(/^@/, ""));
+    }
+
+    const handle = parsed.pathname
+      .split("/")
+      .map((part) => cleanText(part))
+      .filter(Boolean)[0];
+
+    return handle ? normalizeLoose(String(handle).replace(/^@/, "")) : normalizeLoose(text.replace(/^@/, ""));
+  } catch (_) {
+    return normalizeLoose(text.replace(/^@/, ""));
+  }
+}
+
+function normalizeNameCityKey(name, city) {
+  const normalizedName = normalizeLoose(name);
+  const normalizedCity = normalizeLoose(city);
+  if (!normalizedName || !normalizedCity) return null;
+  return `${normalizedName}::${normalizedCity}`;
+}
+
+function isProtectedClaimedProfile(profile) {
+  return Boolean(profile?.isClaimed || profile?.ownerUserId);
+}
+
+function hasMeaningfulValue(value) {
+  return value !== null && value !== undefined && value !== "";
+}
+
 function isCompletelyEmptyRow(values) {
   const entries = Object.entries(values || {});
   const meaningful = entries.filter(([key, value]) => {
@@ -312,14 +365,40 @@ function isCompletelyEmptyRow(values) {
   return meaningful.length === 0;
 }
 
-async function loadReferenceCities() {
+async function loadReferenceData() {
   const profiles = await prisma.profile.findMany({
-    select: { city: true },
-    take: 5000,
+    select: {
+      id: true,
+      name: true,
+      city: true,
+      phone: true,
+      instagram: true,
+      isClaimed: true,
+      ownerUserId: true,
+      specialty: true,
+      secondarySpecialty: true,
+      tertiarySpecialty: true,
+      neighborhood: true,
+      bio: true,
+      attendance: true,
+      linkedin: true,
+      photoUrl: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    take: 10000,
     orderBy: { updatedAt: "desc" },
   });
 
-  return [...new Set(profiles.map((profile) => cleanText(profile.city)).filter(Boolean))];
+  const knownCities = [...new Set(profiles.map((profile) => cleanText(profile.city)).filter(Boolean))];
+  const existingProfiles = profiles.map((profile) => ({
+    ...profile,
+    normalizedPhone: normalizePhoneNumber(profile.phone),
+    normalizedInstagram: normalizeInstagramKey(profile.instagram),
+    normalizedNameCity: normalizeNameCityKey(profile.name, profile.city),
+  }));
+
+  return { knownCities, existingProfiles };
 }
 
 function inferCityFromText(text, knownCities) {
@@ -355,7 +434,6 @@ function buildNormalizedRecord(row, headerMap, referenceData) {
   const neighborhood = normalizeNullishText(record.neighborhood);
   const attendance = normalizeNullishText(record.attendance);
   const bio = normalizeNullishText(record.bio);
-  const ownerUserId = normalizeNullishText(record.ownerUserId);
   const secondarySpecialty = normalizeNullishText(record.secondarySpecialty);
   const tertiarySpecialty = normalizeNullishText(record.tertiarySpecialty);
   const createdAt = parseSpreadsheetDate(record.createdAt);
@@ -387,6 +465,15 @@ function buildNormalizedRecord(row, headerMap, referenceData) {
       return normalizeNullishText(match?.[0] || null);
     })();
 
+  const csvRequestedClaimed = normalizeBoolean(record.isClaimed, false);
+  if (csvRequestedClaimed) {
+    warnings.push("Spreadsheet isClaimed flag was ignored; imported seed profiles remain unclaimed.");
+  }
+
+  if (normalizeNullishText(record.ownerUserId)) {
+    warnings.push("Spreadsheet ownerUserId was ignored for public seed imports.");
+  }
+
   const normalized = {
     id,
     name,
@@ -401,8 +488,8 @@ function buildNormalizedRecord(row, headerMap, referenceData) {
     instagram,
     linkedin,
     photoUrl,
-    isClaimed: normalizeBoolean(record.isClaimed, false),
-    ownerUserId: ownerUserId || null,
+    isClaimed: false,
+    ownerUserId: null,
     createdAt,
     updatedAt,
   };
@@ -418,20 +505,176 @@ function buildNormalizedRecord(row, headerMap, referenceData) {
 }
 
 function mergeRecords(baseRecord, nextRecord) {
-  const merged = { ...baseRecord, ...nextRecord };
+  const merged = { ...baseRecord };
+
   for (const field of PROFILE_FIELDS) {
     if (field === "isClaimed") {
-      merged[field] = nextRecord[field] ?? baseRecord[field] ?? false;
+      merged[field] = false;
       continue;
     }
 
-    if (nextRecord[field] !== null && nextRecord[field] !== undefined && nextRecord[field] !== "") {
+    if (field === "ownerUserId") {
+      merged[field] = null;
+      continue;
+    }
+
+    if (hasMeaningfulValue(nextRecord[field])) {
       merged[field] = nextRecord[field];
-    } else if (baseRecord[field] !== undefined) {
+      continue;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(baseRecord, field)) {
       merged[field] = baseRecord[field];
     }
   }
+
   return merged;
+}
+
+function pushProfileIndex(map, key, profile) {
+  if (!key) return;
+  const bucket = map.get(key) || [];
+  bucket.push(profile);
+  map.set(key, bucket);
+}
+
+function buildProfileMatchIndexes(existingProfiles) {
+  const indexes = {
+    byId: new Map(),
+    byPhone: new Map(),
+    byInstagram: new Map(),
+    byNameCity: new Map(),
+  };
+
+  for (const profile of existingProfiles) {
+    if (profile?.id) indexes.byId.set(profile.id, profile);
+    pushProfileIndex(indexes.byPhone, profile?.normalizedPhone, profile);
+    pushProfileIndex(indexes.byInstagram, profile?.normalizedInstagram, profile);
+    pushProfileIndex(indexes.byNameCity, profile?.normalizedNameCity, profile);
+  }
+
+  return indexes;
+}
+
+function findExistingProfileMatch(record, indexes) {
+  if (record.id && indexes.byId.has(record.id)) {
+    return { reason: "id", profile: indexes.byId.get(record.id) };
+  }
+
+  const checks = [
+    { reason: "phone", key: normalizePhoneNumber(record.phone), map: indexes.byPhone },
+    { reason: "instagram", key: normalizeInstagramKey(record.instagram), map: indexes.byInstagram },
+    { reason: "name_city", key: normalizeNameCityKey(record.name, record.city), map: indexes.byNameCity },
+  ];
+
+  for (const check of checks) {
+    if (!check.key) continue;
+    const matches = check.map.get(check.key) || [];
+    if (!matches.length) continue;
+    if (matches.length > 1) {
+      return {
+        reason: check.reason,
+        ambiguous: true,
+        profiles: matches,
+      };
+    }
+
+    return {
+      reason: check.reason,
+      profile: matches[0],
+    };
+  }
+
+  return null;
+}
+
+function createPlannedCreateIndexes() {
+  return {
+    byPhone: new Map(),
+    byInstagram: new Map(),
+    byNameCity: new Map(),
+  };
+}
+
+function findPlannedCreateDuplicate(record, plannedIndexes) {
+  const checks = [
+    { reason: "phone", key: normalizePhoneNumber(record.phone), map: plannedIndexes.byPhone },
+    { reason: "instagram", key: normalizeInstagramKey(record.instagram), map: plannedIndexes.byInstagram },
+    { reason: "name_city", key: normalizeNameCityKey(record.name, record.city), map: plannedIndexes.byNameCity },
+  ];
+
+  for (const check of checks) {
+    if (!check.key) continue;
+    if (check.map.has(check.key)) {
+      return {
+        reason: check.reason,
+        duplicateOf: check.map.get(check.key),
+      };
+    }
+  }
+
+  return null;
+}
+
+function registerPlannedCreate(record, decisionId, plannedIndexes) {
+  const phoneKey = normalizePhoneNumber(record.phone);
+  const instagramKey = normalizeInstagramKey(record.instagram);
+  const nameCityKey = normalizeNameCityKey(record.name, record.city);
+
+  if (phoneKey) plannedIndexes.byPhone.set(phoneKey, decisionId);
+  if (instagramKey) plannedIndexes.byInstagram.set(instagramKey, decisionId);
+  if (nameCityKey) plannedIndexes.byNameCity.set(nameCityKey, decisionId);
+}
+
+function buildCreateData(normalized) {
+  return {
+    id: normalized.id,
+    name: normalized.name,
+    specialty: normalized.specialty,
+    secondarySpecialty: normalized.secondarySpecialty,
+    tertiarySpecialty: normalized.tertiarySpecialty,
+    city: normalized.city,
+    neighborhood: normalized.neighborhood,
+    phone: normalized.phone,
+    bio: normalized.bio,
+    attendance: normalized.attendance,
+    instagram: normalized.instagram,
+    linkedin: normalized.linkedin,
+    photoUrl: normalized.photoUrl,
+    isClaimed: false,
+    ownerUserId: null,
+    ...(normalized.createdAt ? { createdAt: normalized.createdAt } : {}),
+    ...(normalized.updatedAt ? { updatedAt: normalized.updatedAt } : {}),
+  };
+}
+
+function buildUpdateData(normalized) {
+  const data = {};
+
+  for (const field of UPDATEABLE_PROFILE_FIELDS) {
+    if (hasMeaningfulValue(normalized[field])) {
+      data[field] = normalized[field];
+    }
+  }
+
+  return data;
+}
+
+function buildDryRunSavedObject(existing, action, createData, updateData) {
+  if (action === "create") {
+    return {
+      ...createData,
+      plannedAction: action,
+    };
+  }
+
+  return {
+    ...existing,
+    ...updateData,
+    isClaimed: existing?.isClaimed ?? false,
+    ownerUserId: existing?.ownerUserId ?? null,
+    plannedAction: action,
+  };
 }
 
 function resolvePythonCommand() {
@@ -475,24 +718,29 @@ async function main() {
   const filePath = path.resolve(args.filePath);
   const extracted = extractRowsFromSpreadsheet(filePath);
   const headerMap = buildHeaderMap(extracted.headers);
-  const referenceData = {
-    knownCities: await loadReferenceCities(),
-  };
+  const referenceData = await loadReferenceData();
 
   const report = {
     filePath,
     importedAt: new Date().toISOString(),
     dryRun: args.dryRun,
+    totalRowsRead: Array.isArray(extracted.rows) ? extracted.rows.length : 0,
     totalProfilesFound: 0,
     skippedEmptyRows: 0,
+    rowsToCreate: 0,
+    rowsToUpdate: 0,
     importedProfiles: 0,
     updatedProfiles: 0,
+    skippedClaimed: 0,
+    skippedDuplicates: 0,
+    skippedInvalid: 0,
     skippedProfiles: 0,
     validationErrors: [],
     urlsDetected: [],
     urlsRejected: [],
     finalSavedProfileObjects: [],
     rows: [],
+    decisions: [],
   };
 
   const rowsById = new Map();
@@ -502,6 +750,7 @@ async function main() {
       report.skippedEmptyRows += 1;
       continue;
     }
+
     report.totalProfilesFound += 1;
 
     const parsed = buildNormalizedRecord(row, headerMap, referenceData);
@@ -520,11 +769,14 @@ async function main() {
       warnings: parsed.warnings,
       errors: parsed.errors,
       action: "pending",
+      matchingReason: null,
+      matchedProfileId: null,
     };
 
     if (parsed.skipped) {
+      report.skippedInvalid += 1;
       report.skippedProfiles += 1;
-      rowReport.action = "skipped";
+      rowReport.action = "skipped_invalid";
       report.validationErrors.push({
         sheet: row.sheet,
         rowNumber: row.rowNumber,
@@ -532,83 +784,139 @@ async function main() {
         errors: parsed.errors,
       });
       report.rows.push(rowReport);
+      report.decisions.push({
+        id: parsed.normalized.id || null,
+        sourceRows: [row.rowNumber],
+        sheet: row.sheet,
+        action: "skipped_invalid",
+        matchingReason: null,
+        matchedProfileId: null,
+        duplicateOf: null,
+        warnings: parsed.warnings,
+        errors: parsed.errors,
+      });
       continue;
     }
 
     const existing = rowsById.get(parsed.normalized.id);
-    rowsById.set(
-      parsed.normalized.id,
-      existing
-        ? {
-            ...existing,
-            normalized: mergeRecords(existing.normalized, parsed.normalized),
-            sourceRows: [...existing.sourceRows, row.rowNumber],
-            warnings: [...existing.warnings, ...parsed.warnings],
-          }
-        : {
-            normalized: parsed.normalized,
-            sourceRows: [row.rowNumber],
-            warnings: parsed.warnings,
-            sheet: row.sheet,
-          }
-    );
+    if (existing) {
+      existing.normalized = mergeRecords(existing.normalized, parsed.normalized);
+      existing.sourceRows.push(row.rowNumber);
+      existing.warnings.push(...parsed.warnings);
+      rowReport.action = "merged_duplicate_id";
+      rowReport.matchingReason = "id";
+      rowReport.matchedProfileId = parsed.normalized.id;
+      report.rows.push(rowReport);
+      continue;
+    }
 
-    rowReport.action = existing ? "merged-duplicate-id" : "queued";
+    rowsById.set(parsed.normalized.id, {
+      normalized: parsed.normalized,
+      sourceRows: [row.rowNumber],
+      warnings: [...parsed.warnings],
+      sheet: row.sheet,
+    });
+
+    rowReport.action = "queued";
     report.rows.push(rowReport);
   }
 
+  const existingIndexes = buildProfileMatchIndexes(referenceData.existingProfiles);
+  const plannedCreateIndexes = createPlannedCreateIndexes();
+  const plannedUpdateTargets = new Map();
+
   for (const [id, queued] of rowsById.entries()) {
-    const createData = {
+    const normalized = queued.normalized;
+    const existingMatch = findExistingProfileMatch(normalized, existingIndexes);
+
+    const decision = {
       id,
-      name: queued.normalized.name,
-      specialty: queued.normalized.specialty,
-      secondarySpecialty: queued.normalized.secondarySpecialty,
-      tertiarySpecialty: queued.normalized.tertiarySpecialty,
-      city: queued.normalized.city,
-      neighborhood: queued.normalized.neighborhood,
-      phone: queued.normalized.phone,
-      bio: queued.normalized.bio,
-      attendance: queued.normalized.attendance,
-      instagram: queued.normalized.instagram,
-      linkedin: queued.normalized.linkedin,
-      photoUrl: queued.normalized.photoUrl,
-      isClaimed: queued.normalized.isClaimed,
-      ownerUserId: queued.normalized.ownerUserId,
-      ...(queued.normalized.createdAt ? { createdAt: queued.normalized.createdAt } : {}),
-      ...(queued.normalized.updatedAt ? { updatedAt: queued.normalized.updatedAt } : {}),
+      sheet: queued.sheet,
+      sourceRows: queued.sourceRows,
+      normalized,
+      warnings: queued.warnings,
+      errors: [],
+      action: "pending",
+      matchingReason: existingMatch?.reason || null,
+      matchedProfileId: existingMatch?.profile?.id || null,
+      duplicateOf: null,
     };
 
-    const updateData = {
-      name: queued.normalized.name,
-      specialty: queued.normalized.specialty,
-      secondarySpecialty: queued.normalized.secondarySpecialty,
-      tertiarySpecialty: queued.normalized.tertiarySpecialty,
-      city: queued.normalized.city,
-      neighborhood: queued.normalized.neighborhood,
-      phone: queued.normalized.phone,
-      bio: queued.normalized.bio,
-      attendance: queued.normalized.attendance,
-      instagram: queued.normalized.instagram,
-      linkedin: queued.normalized.linkedin,
-      photoUrl: queued.normalized.photoUrl,
-      isClaimed: queued.normalized.isClaimed,
-      ownerUserId: queued.normalized.ownerUserId,
-      ...(queued.normalized.createdAt ? { createdAt: queued.normalized.createdAt } : {}),
-      ...(queued.normalized.updatedAt ? { updatedAt: queued.normalized.updatedAt } : {}),
-    };
+    if (existingMatch?.ambiguous) {
+      decision.action = "skipped_duplicate";
+      decision.errors.push(`Multiple existing profiles matched by ${existingMatch.reason}.`);
+      decision.matchedProfileId = null;
+      report.skippedDuplicates += 1;
+      report.skippedProfiles += 1;
+      report.decisions.push(decision);
+      continue;
+    }
 
-    const existing = await prisma.profile.findUnique({ where: { id } });
+    if (existingMatch?.profile) {
+      const matchedProfile = existingMatch.profile;
+      decision.matchedProfileId = matchedProfile.id;
+
+      if (isProtectedClaimedProfile(matchedProfile)) {
+        decision.action = "skipped_claimed";
+        decision.errors.push("Matched existing profile is claimed/owned and was protected from overwrite.");
+        report.skippedClaimed += 1;
+        report.skippedProfiles += 1;
+        report.decisions.push(decision);
+        continue;
+      }
+
+      if (plannedUpdateTargets.has(matchedProfile.id)) {
+        decision.action = "skipped_duplicate";
+        decision.duplicateOf = plannedUpdateTargets.get(matchedProfile.id);
+        decision.errors.push("Another spreadsheet row already targets this same existing profile.");
+        report.skippedDuplicates += 1;
+        report.skippedProfiles += 1;
+        report.decisions.push(decision);
+        continue;
+      }
+
+      const updateData = buildUpdateData(normalized);
+      decision.action = "update";
+      report.rowsToUpdate += 1;
+      plannedUpdateTargets.set(matchedProfile.id, id);
+
+      const saved = args.dryRun
+        ? buildDryRunSavedObject(matchedProfile, "update", null, updateData)
+        : await prisma.profile.update({
+            where: { id: matchedProfile.id },
+            data: updateData,
+          });
+
+      report.finalSavedProfileObjects.push(saved);
+      if (!args.dryRun) report.updatedProfiles += 1;
+      report.decisions.push(decision);
+      continue;
+    }
+
+    const plannedDuplicate = findPlannedCreateDuplicate(normalized, plannedCreateIndexes);
+    if (plannedDuplicate) {
+      decision.action = "skipped_duplicate";
+      decision.matchingReason = plannedDuplicate.reason;
+      decision.duplicateOf = plannedDuplicate.duplicateOf;
+      decision.errors.push("Another spreadsheet row already represents this same public seed profile.");
+      report.skippedDuplicates += 1;
+      report.skippedProfiles += 1;
+      report.decisions.push(decision);
+      continue;
+    }
+
+    const createData = buildCreateData(normalized);
+    decision.action = "create";
+    report.rowsToCreate += 1;
+    registerPlannedCreate(normalized, id, plannedCreateIndexes);
+
     const saved = args.dryRun
-      ? { ...createData, createdAt: createData.createdAt || null, updatedAt: createData.updatedAt || null }
-      : await prisma.profile.upsert({
-          where: { id },
-          update: updateData,
-          create: createData,
-        });
+      ? buildDryRunSavedObject(null, "create", createData, null)
+      : await prisma.profile.create({ data: createData });
 
     report.finalSavedProfileObjects.push(saved);
-    if (existing) report.updatedProfiles += 1;
-    else report.importedProfiles += 1;
+    if (!args.dryRun) report.importedProfiles += 1;
+    report.decisions.push(decision);
   }
 
   const reportPath =
@@ -622,11 +930,18 @@ async function main() {
     JSON.stringify(
       {
         summary: {
+          dryRun: report.dryRun,
+          totalRowsRead: report.totalRowsRead,
           totalProfilesFound: report.totalProfilesFound,
           skippedEmptyRows: report.skippedEmptyRows,
+          rowsToCreate: report.rowsToCreate,
+          rowsToUpdate: report.rowsToUpdate,
+          skippedClaimed: report.skippedClaimed,
+          skippedDuplicates: report.skippedDuplicates,
+          skippedInvalid: report.skippedInvalid,
+          skippedProfiles: report.skippedProfiles,
           importedProfiles: report.importedProfiles,
           updatedProfiles: report.updatedProfiles,
-          skippedProfiles: report.skippedProfiles,
           validationErrors: report.validationErrors.length,
           urlsDetected: report.urlsDetected.length,
           urlsRejected: report.urlsRejected.length,
