@@ -6411,6 +6411,15 @@ body:has(#cadastroForm) .tag-input-shell {
   gap: 16px;
 }
 
+.profile-gallery-empty {
+  margin: 0;
+  padding: 20px 22px;
+  border-radius: 20px;
+  border: 1px dashed rgba(37, 99, 235, 0.2);
+  background: rgba(239, 246, 255, 0.72);
+  color: #475569;
+}
+
 .profile-gallery-item {
   margin: 0;
   border-radius: 22px;

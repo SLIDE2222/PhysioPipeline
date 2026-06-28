@@ -498,23 +498,25 @@ function getGalleryPhotos(entity) {
 
 function renderProfileGallerySection(entity) {
   const photos = getGalleryPhotos(entity);
-  if (!photos.length) return '';
 
   return `
     <section class="profile-section profile-gallery-section">
       <div class="profile-section-heading">
         <div>
           <h3>Fotos</h3>
-          <p class="form-hint">Imagens adicionais deste perfil.</p>
+          <p class="form-hint">Fotos adicionais deste perfil.</p>
         </div>
       </div>
-      <div class="profile-gallery-grid">
-        ${photos.map((photoUrl, index) => `
-          <figure class="profile-gallery-item">
-            <img src="${escapeHtml(photoUrl)}" alt="Foto do perfil ${index + 1}" loading="lazy" decoding="async" />
-          </figure>
-        `).join('')}
-      </div>
+      ${photos.length
+        ? `<div class="profile-gallery-grid">
+            ${photos.map((photoUrl, index) => `
+              <figure class="profile-gallery-item">
+                <img src="${escapeHtml(photoUrl)}" alt="Foto do perfil ${index + 1}" loading="lazy" decoding="async" />
+              </figure>
+            `).join('')}
+          </div>`
+        : '<p class="profile-gallery-empty">Não possui fotos adicionais.</p>'
+      }
     </section>
   `;
 }

@@ -9,9 +9,17 @@ const profilePhotosEditor = window.PhysioProfilePhotos?.createEditor?.({
   addButtonId: 'addProfilePhotoButton',
   messageId: 'profilePhotosMessage',
   persistPhotos: async (photos) => {
+    console.log('EDIT PROFILE GALLERY SAVE REQUEST:', { photos });
     const updatedProfile = await window.physioApi.updateMyProfile({ photos });
+    const persistedPhotos = getPersistedProfilePhotos(updatedProfile);
+    console.log('EDIT PROFILE GALLERY SAVE RESPONSE:', {
+      profileId: updatedProfile?.id,
+      photos: updatedProfile?.photos,
+      photosList: updatedProfile?.photosList,
+      persistedPhotos,
+    });
     currentProfileId = updatedProfile?.id || currentProfileId || '';
-    return getPersistedProfilePhotos(updatedProfile);
+    return persistedPhotos;
   },
 });
 const VISIBLE_PROFILE_CLINIC_LINK_STATUSES = new Set(['PENDING', 'ACCEPTED']);
@@ -324,8 +332,15 @@ async function loadMyProfile() {
       fotoPreview.style.display = 'none';
     }
 
+    const persistedPhotos = getPersistedProfilePhotos(profile);
+    console.log('EDIT PROFILE LOADED PHOTOS:', {
+      profileId: profile?.id,
+      profilePhotos: profile?.photos,
+      profilePhotosList: profile?.photosList,
+      persistedPhotos,
+    });
     profilePhotosEditor?.setContext?.({ profileId: profile.id, accountType: 'physio' });
-    profilePhotosEditor?.setValue?.(getPersistedProfilePhotos(profile));
+    profilePhotosEditor?.setValue?.(persistedPhotos);
 
     return profile;
   } catch (error) {
@@ -564,8 +579,14 @@ if (editarForm) {
         photos,
         bio: document.getElementById('descricao').value.trim() || null,
       };
+      console.log('EDIT PROFILE SUBMIT PAYLOAD:', payload);
 
       const profile = await window.physioApi.updateMyProfile(payload);
+      console.log('EDIT PROFILE SUBMIT RESPONSE:', {
+        profileId: profile?.id,
+        photos: profile?.photos,
+        photosList: profile?.photosList,
+      });
       currentProfileId = profile?.id || currentProfileId || '';
       profilePhotosEditor?.setContext?.({ profileId: currentProfileId, accountType: 'physio' });
       profilePhotosEditor?.setValue?.(getPersistedProfilePhotos(profile));

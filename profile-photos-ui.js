@@ -302,6 +302,10 @@
 
     async function persistPhotoSet(nextValues, previousValues, successMessage, cleanup = null) {
       values = normalizeSavedPhotos(nextValues);
+      console.log('PROFILE GALLERY PERSIST REQUEST:', {
+        nextValues: values,
+        previousValues: normalizeSavedPhotos(previousValues),
+      });
       render();
 
       if (!persistPhotos) {
@@ -316,6 +320,10 @@
       try {
         const persistedResult = await persistPhotos(values);
         values = normalizeSavedPhotos(persistedResult || values);
+        console.log('PROFILE GALLERY PERSIST RESULT:', {
+          persistedResult,
+          finalValues: values,
+        });
         setMessage(successMessage, 'success', { lockHelperMessage: true });
         return true;
       } catch (error) {
