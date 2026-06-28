@@ -788,6 +788,81 @@
     }
   }
 
+  function arePhotoListsEqual(left, right) {
+    const normalizedLeft = normalizeProfilePhotosList(left);
+    const normalizedRight = normalizeProfilePhotosList(right);
+
+    return normalizedLeft.length === normalizedRight.length &&
+      normalizedLeft.every((item, index) => item === normalizedRight[index]);
+  }
+
+  function mergeProfileGallerySources(profile, publicProfile = null) {
+    const normalizedProfile = normalizeProfile(profile);
+    const normalizedPublicProfile = normalizeProfile(publicProfile);
+
+    if (!normalizedProfile) return normalizedPublicProfile;
+    if (!normalizedPublicProfile) return normalizedProfile;
+
+    const mergedPhotos = normalizeProfilePhotosList(
+      (Array.isArray(normalizedProfile.photosList) && normalizedProfile.photosList.length ? normalizedProfile.photosList : null)
+        ?? (Array.isArray(normalizedProfile.photos) && normalizedProfile.photos.length ? normalizedProfile.photos : null)
+        ?? normalizedProfile.fotos
+        ?? normalizedPublicProfile.photosList
+        ?? normalizedPublicProfile.photos
+        ?? normalizedPublicProfile.fotos
+    );
+
+    return {
+      ...normalizedPublicProfile,
+      ...normalizedProfile,
+      photos: mergedPhotos,
+      photosList: mergedPhotos,
+      fotos: mergedPhotos,
+    };
+  }
+
+  async function hydrateOwnProfileWithPublicPhotos(profile, options = {}) {
+    const normalizedProfile = normalizeProfile(profile);
+    if (!normalizedProfile?.id) return normalizedProfile;
+
+    const expectedPhotos = normalizeProfilePhotosList(options.expectedPhotos);
+    const retryCount = Number.isInteger(options.retryCount) ? options.retryCount : 2;
+    let lastPublicProfile = null;
+    let lastPublicError = null;
+
+    for (let attempt = 0; attempt <= retryCount; attempt += 1) {
+      try {
+        lastPublicProfile = await fetchPublicProfileFromSupabase(normalizedProfile.id);
+        console.log('OWN PROFILE PUBLIC HYDRATION RESPONSE:', {
+          profileId: normalizedProfile.id,
+          publicPhotos: lastPublicProfile?.photos,
+          publicPhotosList: lastPublicProfile?.photosList,
+          attempt,
+        });
+      } catch (error) {
+        lastPublicError = error;
+        console.warn('Could not hydrate own profile photos from Supabase:', error);
+      }
+
+      const hydratedProfile = mergeProfileGallerySources(normalizedProfile, lastPublicProfile);
+      const actualPhotos = normalizeProfilePhotosList(hydratedProfile?.photosList ?? hydratedProfile?.photos ?? hydratedProfile?.fotos);
+
+      if (!expectedPhotos.length || arePhotoListsEqual(actualPhotos, expectedPhotos)) {
+        return hydratedProfile;
+      }
+
+      if (attempt < retryCount) {
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
+      }
+    }
+
+    if (lastPublicError) {
+      console.warn('Falling back to backend own-profile response after failed public photo hydration:', lastPublicError);
+    }
+
+    return mergeProfileGallerySources(normalizedProfile, lastPublicProfile);
+  }
+
   window.physioApi = {
     getStoredAuth,
     setStoredAuth,
@@ -876,8 +951,21 @@
         });
       });
     },
-    fetchMyProfile() {
-      return request('/profiles/me').then((data) => normalizeProfile(data.profile));
+    async fetchMyProfile() {
+      const data = await request('/profiles/me');
+      const backendProfile = normalizeProfile(data.profile || data);
+      console.log('FETCH MY PROFILE BACKEND RESPONSE:', {
+        profileId: backendProfile?.id,
+        backendPhotos: backendProfile?.photos,
+        backendPhotosList: backendProfile?.photosList,
+      });
+      const hydratedProfile = await hydrateOwnProfileWithPublicPhotos(backendProfile);
+      console.log('FETCH MY PROFILE HYDRATED PHOTOS:', {
+        profileId: hydratedProfile?.id,
+        hydratedPhotos: hydratedProfile?.photos,
+        hydratedPhotosList: hydratedProfile?.photosList,
+      });
+      return hydratedProfile;
     },
     fetchMyClinicProfile() {
       return request('/clinics/me').then((data) => normalizeClinicProfile(data.clinicProfile || data));
@@ -1022,15 +1110,50 @@
         return profile;
       });
     },
-    updateMyProfile(payload) {
-      return request('/profiles/me', {
+    async updateMyProfile(payload) {
+      console.log('UPDATE MY PROFILE PAYLOAD:', payload);
+      const data = await request('/profiles/me', {
         method: 'PUT',
         body: payload,
         timeoutMs: 20000,
-      }).then((data) => {
-        clearPublicProfileCache();
-        return normalizeProfile(data.profile || data);
       });
+      clearPublicProfileCache();
+
+      const backendProfile = normalizeProfile(data.profile || data);
+      console.log('UPDATE MY PROFILE BACKEND RESPONSE:', {
+        profileId: backendProfile?.id,
+        backendPhotos: backendProfile?.photos,
+        backendPhotosList: backendProfile?.photosList,
+      });
+
+      const hydratedProfile = await hydrateOwnProfileWithPublicPhotos(backendProfile, {
+        expectedPhotos: payload?.photos,
+        retryCount: 3,
+      });
+
+      console.log('UPDATE MY PROFILE HYDRATED PHOTOS:', {
+        profileId: hydratedProfile?.id,
+        hydratedPhotos: hydratedProfile?.photos,
+        hydratedPhotosList: hydratedProfile?.photosList,
+      });
+
+      if (payload?.photos !== undefined) {
+        const expectedPhotos = normalizeProfilePhotosList(payload.photos);
+        const actualPhotos = normalizeProfilePhotosList(
+          hydratedProfile?.photosList ?? hydratedProfile?.photos ?? hydratedProfile?.fotos
+        );
+
+        if (!arePhotoListsEqual(actualPhotos, expectedPhotos)) {
+          console.error('PROFILE GALLERY SAVE VERIFICATION FAILED:', {
+            profileId: hydratedProfile?.id || backendProfile?.id || null,
+            expectedPhotos,
+            actualPhotos,
+          });
+          throw new Error('Não foi possível confirmar o salvamento das fotos do perfil. Atualize a página e tente novamente.');
+        }
+      }
+
+      return hydratedProfile;
     },
     async updateMyClinicProfile(payload) {
       const upsertWith = (path, method) => request(path, {

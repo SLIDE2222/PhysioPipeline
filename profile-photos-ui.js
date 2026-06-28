@@ -275,7 +275,7 @@
       } else if (visiblePhotoCount >= MAX_PROFILE_PHOTOS) {
         setMessage('Limite de 5 fotos atingido.');
       } else {
-        setMessage('Adicione até 5 fotos para deixar seu perfil mais completo e confiável.');
+        setMessage('');
       }
     }
 
@@ -383,6 +383,12 @@
       let objectPath = '';
 
       try {
+        console.log('PROFILE GALLERY SELECTED FILE:', {
+          slot: index,
+          name: file?.name || '',
+          type: file?.type || '',
+          size: file?.size || 0,
+        });
         const contentType = normalizeImageMimeType(file);
 
         if (!contentType) {
@@ -405,6 +411,7 @@
 
         const publicUrlResult = supabaseClient.storage.from(BUCKET_NAME).getPublicUrl(objectPath);
         const publicUrl = publicUrlResult?.data?.publicUrl || '';
+        console.log('PROFILE GALLERY UPLOADED PUBLIC URL:', publicUrl);
 
         if (!publicUrl || !isValidImageUrl(publicUrl)) {
           throw new Error('Não foi possível gerar a URL pública da foto.');
