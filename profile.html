@@ -13,7 +13,7 @@
   <!-- Google Analytics: cole aqui o script GA4 real quando tiver o ID de medição. -->
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="shortcut icon" href="favicon.svg" />
-  <link rel="stylesheet" href="style.css?v=reviewsdrawer4" />
+  <link rel="stylesheet" href="style.css?v=reviewsdrawer5" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -41,15 +41,26 @@
     </div>
   </main>
 
-  <div id="imgModal" class="img-modal" style="display:none;">
-    <img id="imgModalContent" alt="Foto ampliada">
+  <div id="galleryLightbox" class="gallery-lightbox" hidden aria-hidden="true">
+    <div class="gallery-lightbox__backdrop" data-gallery-close></div>
+    <div class="gallery-lightbox__dialog" role="dialog" aria-modal="true" aria-label="Galeria de fotos do perfil">
+      <button type="button" id="galleryLightboxClose" class="gallery-lightbox-close" aria-label="Fechar galeria">&times;</button>
+      <button type="button" id="galleryLightboxPrev" class="gallery-lightbox-nav gallery-lightbox-prev" aria-label="Foto anterior">&#8249;</button>
+      <div class="gallery-lightbox__stage">
+        <img id="galleryLightboxImage" class="gallery-lightbox-image" alt="Foto ampliada" />
+        <div class="gallery-lightbox__meta">
+          <span id="galleryLightboxCounter" class="gallery-lightbox__counter"></span>
+        </div>
+      </div>
+      <button type="button" id="galleryLightboxNext" class="gallery-lightbox-nav gallery-lightbox-next" aria-label="Próxima foto">&#8250;</button>
+    </div>
   </div>
 
   <script src="account-types.js?v=accounttype1"></script>
   <script src="api.js?v=gallerypersist3"></script>
   <script src="js/notifications.js?v=notifshared1"></script>
   <script src="script.js?v=notifshared3"></script>
-  <script src="profile.js?v=gallerypersist3"></script>
+  <script src="profile.js?v=gallerypersist5"></script>
   <footer class="footer tech-signature-footer">
     <div class="container footer-content tech-signature-footer__content">
       <div>

@@ -1,4 +1,12 @@
 const profileContainer = document.getElementById('profileContainer');
+const profileGalleryLightboxState = {
+  photos: [],
+  currentIndex: 0,
+  isOpen: false,
+  closeTimer: null,
+  keyHandler: null,
+  lastActiveElement: null,
+};
 
 function escapeHtml(value) {
   return String(value || '')
@@ -496,8 +504,19 @@ function getGalleryPhotos(entity) {
   return normalizePhotos(source);
 }
 
+function getGalleryDisplayName(entity) {
+  return String(
+    entity?.nomeClinica ||
+    entity?.clinicName ||
+    entity?.nome ||
+    entity?.name ||
+    'este perfil'
+  ).trim() || 'este perfil';
+}
+
 function renderProfileGallerySection(entity) {
   const photos = getGalleryPhotos(entity);
+  const displayName = escapeHtml(getGalleryDisplayName(entity));
 
   return `
     <section class="profile-section profile-gallery-section">
@@ -511,7 +530,19 @@ function renderProfileGallerySection(entity) {
         ? `<div class="profile-gallery-grid">
             ${photos.map((photoUrl, index) => `
               <figure class="profile-gallery-item">
-                <img src="${escapeHtml(photoUrl)}" alt="Foto do perfil ${index + 1}" loading="lazy" decoding="async" />
+                <button
+                  type="button"
+                  class="profile-gallery-photo"
+                  data-gallery-photo-index="${index}"
+                  aria-label="Abrir foto ${index + 1} de ${displayName}"
+                >
+                  <img
+                    src="${escapeHtml(photoUrl)}"
+                    alt="Foto adicional ${index + 1} de ${displayName}"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </button>
               </figure>
             `).join('')}
           </div>`
@@ -1456,23 +1487,255 @@ async function renderProfilePage() {
   }
 }
 
-function setupImageModal() {
-  const modal = document.getElementById('imgModal');
-  const modalContent = document.getElementById('imgModalContent');
-  const clickableAvatar = document.querySelector('.clickable-avatar');
+function getGalleryLightboxElements() {
+  return {
+    root: document.getElementById('galleryLightbox'),
+    backdrop: document.querySelector('[data-gallery-close]'),
+    dialog: document.querySelector('.gallery-lightbox__dialog'),
+    image: document.getElementById('galleryLightboxImage'),
+    close: document.getElementById('galleryLightboxClose'),
+    previous: document.getElementById('galleryLightboxPrev'),
+    next: document.getElementById('galleryLightboxNext'),
+    counter: document.getElementById('galleryLightboxCounter'),
+  };
+}
 
-  if (!modal || !modalContent || !clickableAvatar) return;
+function normalizeGalleryIndex(index, total) {
+  if (!total) return 0;
+  const normalizedIndex = Number(index) || 0;
+  return ((normalizedIndex % total) + total) % total;
+}
 
-  clickableAvatar.style.cursor = 'zoom-in';
+function clearGalleryAnimationClasses(image) {
+  if (!image) return;
+  image.classList.remove(
+    'is-entering',
+    'is-switching-next',
+    'is-switching-prev'
+  );
+}
 
-  clickableAvatar.addEventListener('click', () => {
-    modalContent.src = clickableAvatar.src;
-    modal.style.display = 'flex';
+function runGalleryImageAnimation(image, animationClass) {
+  if (!image || !animationClass) return;
+  clearGalleryAnimationClasses(image);
+  void image.offsetWidth;
+  image.classList.add(animationClass);
+}
+
+function syncGalleryLightboxControls() {
+  const elements = getGalleryLightboxElements();
+  if (!elements.root) return;
+
+  const total = profileGalleryLightboxState.photos.length;
+  const hasMultiplePhotos = total > 1;
+
+  if (elements.previous) {
+    elements.previous.disabled = !hasMultiplePhotos;
+    elements.previous.hidden = !hasMultiplePhotos;
+  }
+
+  if (elements.next) {
+    elements.next.disabled = !hasMultiplePhotos;
+    elements.next.hidden = !hasMultiplePhotos;
+  }
+
+  if (elements.counter) {
+    elements.counter.textContent = total
+      ? `${profileGalleryLightboxState.currentIndex + 1} / ${total}`
+      : '';
+  }
+}
+
+function showGalleryPhoto(index, options = {}) {
+  const elements = getGalleryLightboxElements();
+  const total = profileGalleryLightboxState.photos.length;
+  if (!elements.image || !total) return;
+
+  const direction = options.direction || 'open';
+  const nextIndex = normalizeGalleryIndex(index, total);
+  const activePhoto = profileGalleryLightboxState.photos[nextIndex];
+  if (!activePhoto?.src) return;
+
+  profileGalleryLightboxState.currentIndex = nextIndex;
+  elements.image.src = activePhoto.src;
+  elements.image.alt = activePhoto.alt || `Foto ${nextIndex + 1}`;
+
+  if (direction === 'prev') {
+    runGalleryImageAnimation(elements.image, 'is-switching-prev');
+  } else if (direction === 'next') {
+    runGalleryImageAnimation(elements.image, 'is-switching-next');
+  } else {
+    runGalleryImageAnimation(elements.image, 'is-entering');
+  }
+
+  syncGalleryLightboxControls();
+}
+
+function closeGalleryLightbox() {
+  const elements = getGalleryLightboxElements();
+  if (!elements.root || !profileGalleryLightboxState.isOpen) return;
+
+  profileGalleryLightboxState.isOpen = false;
+  elements.root.classList.remove('is-open');
+  elements.root.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('gallery-lightbox-open');
+
+  if (profileGalleryLightboxState.keyHandler) {
+    document.removeEventListener('keydown', profileGalleryLightboxState.keyHandler);
+    profileGalleryLightboxState.keyHandler = null;
+  }
+
+  if (profileGalleryLightboxState.closeTimer) {
+    window.clearTimeout(profileGalleryLightboxState.closeTimer);
+  }
+
+  profileGalleryLightboxState.closeTimer = window.setTimeout(() => {
+    elements.root.hidden = true;
+    if (elements.image) {
+      clearGalleryAnimationClasses(elements.image);
+      elements.image.removeAttribute('src');
+      elements.image.alt = 'Foto ampliada';
+    }
+    profileGalleryLightboxState.photos = [];
+  }, 260);
+
+  if (profileGalleryLightboxState.lastActiveElement?.focus) {
+    profileGalleryLightboxState.lastActiveElement.focus();
+  }
+}
+
+function goToNextPhoto() {
+  const total = profileGalleryLightboxState.photos.length;
+  if (total <= 1) return;
+  showGalleryPhoto(profileGalleryLightboxState.currentIndex + 1, { direction: 'next' });
+}
+
+function goToPreviousPhoto() {
+  const total = profileGalleryLightboxState.photos.length;
+  if (total <= 1) return;
+  showGalleryPhoto(profileGalleryLightboxState.currentIndex - 1, { direction: 'prev' });
+}
+
+function openGalleryLightbox(photos, index = 0) {
+  const elements = getGalleryLightboxElements();
+  if (!elements.root || !elements.image || !Array.isArray(photos) || !photos.length) return;
+
+  profileGalleryLightboxState.photos = photos
+    .filter((photo) => photo?.src)
+    .map((photo, photoIndex) => ({
+      src: photo.src,
+      alt: photo.alt || `Foto ${photoIndex + 1}`,
+    }));
+
+  if (!profileGalleryLightboxState.photos.length) return;
+
+  profileGalleryLightboxState.currentIndex = normalizeGalleryIndex(index, profileGalleryLightboxState.photos.length);
+  profileGalleryLightboxState.lastActiveElement = document.activeElement;
+
+  if (profileGalleryLightboxState.closeTimer) {
+    window.clearTimeout(profileGalleryLightboxState.closeTimer);
+    profileGalleryLightboxState.closeTimer = null;
+  }
+
+  if (profileGalleryLightboxState.keyHandler) {
+    document.removeEventListener('keydown', profileGalleryLightboxState.keyHandler);
+    profileGalleryLightboxState.keyHandler = null;
+  }
+
+  elements.root.hidden = false;
+  elements.root.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('gallery-lightbox-open');
+  profileGalleryLightboxState.isOpen = true;
+
+  showGalleryPhoto(profileGalleryLightboxState.currentIndex, { direction: 'open' });
+  requestAnimationFrame(() => {
+    elements.root.classList.add('is-open');
   });
 
-  modal.addEventListener('click', () => {
-    modal.style.display = 'none';
-    modalContent.src = '';
+  profileGalleryLightboxState.keyHandler = (event) => {
+    if (!profileGalleryLightboxState.isOpen) return;
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeGalleryLightbox();
+      return;
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      goToNextPhoto();
+      return;
+    }
+
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      goToPreviousPhoto();
+    }
+  };
+
+  document.addEventListener('keydown', profileGalleryLightboxState.keyHandler);
+  elements.close?.focus();
+}
+
+function setupImageModal() {
+  const elements = getGalleryLightboxElements();
+  const clickableAvatar = document.querySelector('.clickable-avatar');
+  const galleryButtons = Array.from(document.querySelectorAll('[data-gallery-photo-index]'));
+
+  if (!elements.root || !elements.image) return;
+
+  if (!elements.root.dataset.bound) {
+    elements.root.dataset.bound = 'true';
+    elements.backdrop?.addEventListener('click', closeGalleryLightbox);
+    elements.close?.addEventListener('click', closeGalleryLightbox);
+    elements.previous?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      goToPreviousPhoto();
+    });
+    elements.next?.addEventListener('click', (event) => {
+      event.stopPropagation();
+      goToNextPhoto();
+    });
+    elements.dialog?.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+  }
+
+  const galleryPhotos = galleryButtons
+    .map((button) => {
+      const image = button.querySelector('img');
+      const src = image?.currentSrc || image?.src || '';
+      const alt = image?.alt || 'Foto do perfil';
+      return src ? { src, alt } : null;
+    })
+    .filter(Boolean);
+
+  if (clickableAvatar) {
+    clickableAvatar.style.cursor = 'zoom-in';
+    if (!clickableAvatar.dataset.galleryBound) {
+      clickableAvatar.dataset.galleryBound = 'true';
+      clickableAvatar.addEventListener('click', () => {
+        openGalleryLightbox([
+          {
+            src: clickableAvatar.currentSrc || clickableAvatar.src,
+            alt: clickableAvatar.alt || 'Foto ampliada',
+          },
+        ], 0);
+      });
+    }
+  }
+
+  galleryButtons.forEach((button, index) => {
+    if (button.dataset.galleryBound) return;
+    button.dataset.galleryBound = 'true';
+
+    button.addEventListener('click', () => {
+      button.classList.remove('is-pressed');
+      void button.offsetWidth;
+      button.classList.add('is-pressed');
+      window.setTimeout(() => button.classList.remove('is-pressed'), 220);
+      openGalleryLightbox(galleryPhotos, index);
+    });
   });
 }
 
